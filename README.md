@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Concierge.js
+
+A modern concierge service management platform built with Next.js 14, TypeScript, and Tailwind CSS.
+
+## Overview
+
+Concierge.js is a full-stack web application migrated from Python/Streamlit, providing comprehensive service management for clients including expense tracking, investment management, health services, and more.
+
+## Features
+
+- 🔐 **Authentication & Authorization** - Secure user authentication with NextAuth.js
+- 👥 **Multi-tier Plans** - Basic, Premium, and Elite subscription plans
+- 💰 **Expense Management** - Track and categorize expenses
+- 📈 **Investment Tracking** - Portfolio management and broker integration
+- 🏥 **Health Management** - Prescription tracking and pharmacy integration
+- 🛡️ **Insurance Management** - Policy tracking and claims
+- ⚖️ **Legal Services** - Case management and document tracking
+- 📊 **Tax Management** - Tax document organization and provider integration
+- ✈️ **Travel Planning** - Trip management and service integration
+- 💬 **Messaging System** - Multi-channel communication
+- 🤖 **AI Agents** - Automated assistance and insights
+- 👨‍💼 **Admin Dashboard** - User management and analytics
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Auth**: NextAuth.js
+- **Database**: MongoDB/Mongoose
+- **Forms**: React Hook Form + Zod
+- **Icons**: Lucide React
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- MongoDB (local or cloud)
+
+### Installation
 
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your configuration
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file:
 
-## Learn More
+```env
+DATABASE_URL=mongodb://localhost:27017/concierge
+NEXTAUTH_SECRET=your-secret-key
+NEXTAUTH_URL=http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+concierge-js/
+├── src/
+│   ├── app/              # Next.js App Router pages
+│   ├── components/       # React components
+│   ├── lib/              # Utilities and configs
+│   └── types/            # TypeScript types
+├── public/               # Static assets
+└── tests/                # Test files
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development
 
-## Deploy on Vercel
+```bash
+# Run dev server with Turbopack
+npm run dev
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Type checking
+npm run type-check
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Linting
+npm run lint
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+## Migration from Python
+
+This project is being migrated from a Python/Streamlit application. See [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) for details on the migration strategy.
+
+## License
+
+Private - All rights reserved
+
+## Original Python Project
+
+The original Python/Streamlit version is maintained separately at `/Users/timmitchell/my-new-project` and is deployed on Streamlit Cloud.
