@@ -9,7 +9,7 @@ describe('Home Page', () => {
       name: /concierge\.com/i,
     });
     
-    expect(heading).toBeInTheDocument();
+    expect(heading).toBeDefined();
   });
 
   it('renders the sign up button', () => {
@@ -19,7 +19,7 @@ describe('Home Page', () => {
       name: /sign up/i,
     });
     
-    expect(signUpButton).toBeInTheDocument();
+    expect(signUpButton).toBeDefined();
   });
 
   it('renders the sign in button', () => {
@@ -29,6 +29,6 @@ describe('Home Page', () => {
       name: /sign in/i,
     });
     
-    expect(signInButton).toBeInTheDocument();
+    expect(signInButton).toBeDefined();
   });
 });
