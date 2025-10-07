@@ -1,0 +1,64 @@
+name: 📊 Performance Testing
+
+on:
+  schedule:
+    - cron: '0 6 * * 0' # Weekly on Sunday at 6 AM
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    name: 📊 Lighthouse Performance
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Build application
+        run: npm run build
+        env:
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'test-secret' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'mongodb://localhost:27017/concierge' }}
+
+      - name: 📊 Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.12.x
+          lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  bundle-analysis:
+    name: 📦 Bundle Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 📦 Analyze bundle size
+        run: npm run analyze
+
+      - name: 📦 Upload bundle analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: .next/analyze/
+          retention-days: 7
