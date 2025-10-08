@@ -70,9 +70,13 @@ export default function InvestmentsPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Portfolios data:', data);
-        setPortfolios(data.portfolios || []);
-        if (data.portfolios && data.portfolios.length > 0 && !selectedPortfolio) {
-          setSelectedPortfolio(data.portfolios[0]);
+        const portfolioList = data.portfolios || [];
+        console.log('Setting portfolios state:', portfolioList);
+        setPortfolios(portfolioList);
+        console.log('Portfolios state updated, length:', portfolioList.length);
+        if (portfolioList.length > 0 && !selectedPortfolio) {
+          console.log('Setting selected portfolio:', portfolioList[0]);
+          setSelectedPortfolio(portfolioList[0]);
         }
       } else {
         console.error('Portfolios API error:', response.status, response.statusText);
@@ -209,6 +213,14 @@ export default function InvestmentsPage() {
     totals.totalGainLoss += holding.gainLoss || 0;
     return totals;
   }, { totalValue: 0, totalCost: 0, totalGainLoss: 0 });
+
+  // Debug logging
+  console.log('Current state:', {
+    portfolios: portfolios.length,
+    selectedPortfolio: selectedPortfolio?.name,
+    holdings: holdings.length,
+    loading
+  });
 
   const totalGainLossPercent = portfolioTotals.totalCost > 0 
     ? (portfolioTotals.totalGainLoss / portfolioTotals.totalCost) * 100 
