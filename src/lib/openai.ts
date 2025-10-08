@@ -1,11 +1,48 @@
-import Anthropic from '@anthropic-ai/sdk';
-
-// Initialize Claude client - will be created per request to avoid build-time errors
-function getClaudeClient() {
-  return new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY || '',
-  });
-}
+// Mock AI responses for demo purposes - no API costs!
+const MOCK_RESPONSES = {
+  financial: [
+    "I'd be happy to help you create a monthly budget! Let's start by listing your income sources and fixed expenses.",
+    "For a $5000 monthly income, I recommend the 50/30/20 rule: 50% needs, 30% wants, 20% savings.",
+    "Consider tracking your expenses for a month to see where your money actually goes.",
+    "Emergency funds should cover 3-6 months of expenses. Start with $1000 if you're building from scratch.",
+    "High-yield savings accounts are great for emergency funds - they offer better returns than regular savings."
+  ],
+  health: [
+    "I'm here to help with your health and wellness questions. What specific area would you like guidance on?",
+    "Regular exercise and a balanced diet are the foundation of good health.",
+    "Don't forget to stay hydrated - aim for 8 glasses of water per day.",
+    "Sleep is crucial for health - adults need 7-9 hours per night.",
+    "Regular check-ups with your healthcare provider are important for preventive care."
+  ],
+  travel: [
+    "I'd love to help you plan your trip! Where are you thinking of going?",
+    "For budget travel, consider off-season timing and flexible dates.",
+    "Don't forget to check visa requirements and passport expiration dates.",
+    "Travel insurance is worth considering for international trips.",
+    "Research local customs and learn a few key phrases in the local language."
+  ],
+  legal: [
+    "I can provide general legal information, but always consult a licensed attorney for specific advice.",
+    "Keep important legal documents organized and in a safe place.",
+    "Review contracts carefully before signing - don't hesitate to ask questions.",
+    "Consider having a will and power of attorney documents prepared.",
+    "Many legal issues can be prevented with good documentation and clear communication."
+  ],
+  tax: [
+    "I can help with general tax planning strategies and information.",
+    "Keep all receipts and documents organized throughout the year.",
+    "Consider contributing to retirement accounts for tax benefits.",
+    "Track deductible expenses like home office, business meals, and charitable donations.",
+    "Always consult a tax professional for complex situations."
+  ],
+  general: [
+    "Hello! I'm your AI assistant. How can I help you today?",
+    "I'm here to assist with various aspects of your life management.",
+    "Feel free to ask me questions about any of our service areas.",
+    "I can help coordinate between different aspects of your lifestyle management.",
+    "What would you like to know more about?"
+  ]
+};
 
 // Agent configurations with specialized system prompts
 export const AI_AGENTS = {
@@ -99,66 +136,61 @@ export async function generateAIResponse(
   agentType: keyof typeof AI_AGENTS = 'general'
 ): Promise<{ response: string; tokens: number; model: string }> {
   try {
-    const claude = getClaudeClient();
-    const agent = AI_AGENTS[agentType];
+    console.log('Generating mock AI response:', { agentType, messageCount: messages.length });
     
-    console.log('Generating AI response with Claude:', { agentType, messageCount: messages.length });
+    // Get the last user message
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    const userMessage = lastUserMessage?.content.toLowerCase() || '';
     
-    // Convert messages to Claude format
-    const claudeMessages = messages.map(msg => ({
-      role: msg.role === 'assistant' ? 'assistant' : 'user',
-      content: msg.content,
-    }));
-
-    const completion = await claude.messages.create({
-      model: 'claude-3-haiku-20240307', // Fast and free model
-      max_tokens: 1000,
-      system: agent.systemPrompt,
-      messages: claudeMessages,
-    });
-
-    console.log('Claude response received:', { 
-      hasResponse: !!completion.content[0]?.text,
-      model: completion.model,
-      usage: completion.usage 
-    });
-
-    const response = completion.content[0]?.text || 'Sorry, I could not generate a response.';
-    const tokens = completion.usage?.input_tokens + completion.usage?.output_tokens || 0;
-
+    // Get appropriate responses for this agent type
+    const responses = MOCK_RESPONSES[agentType];
+    
+    // Simple keyword matching for more relevant responses
+    let selectedResponse = responses[Math.floor(Math.random() * responses.length)];
+    
+    // Customize response based on user message
+    if (userMessage.includes('budget') || userMessage.includes('money')) {
+      selectedResponse = responses[0]; // Usually budget-related
+    } else if (userMessage.includes('help') || userMessage.includes('how')) {
+      selectedResponse = responses[1] || responses[0];
+    } else if (userMessage.includes('plan') || userMessage.includes('planning')) {
+      selectedResponse = responses[2] || responses[0];
+    }
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    
+    console.log('Mock AI response generated:', { agentType, responseLength: selectedResponse.length });
+    
     return {
-      response,
-      tokens,
-      model: completion.model,
+      response: selectedResponse,
+      tokens: Math.floor(selectedResponse.length / 4), // Rough token estimate
+      model: 'mock-ai-v1',
     };
   } catch (error) {
-    console.error('Claude API error:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      apiKey: process.env.ANTHROPIC_API_KEY ? 'Present' : 'Missing'
-    });
-    
-    throw new Error(`Claude API failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Mock AI error:', error);
+    throw new Error(`Mock AI failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 export async function generateChatTitle(firstMessage: string): Promise<string> {
   try {
-    const claude = getClaudeClient();
-    const completion = await claude.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 20,
-      system: 'Generate a short, descriptive title (3-6 words) for a chat conversation based on the first user message. Only return the title, nothing else.',
-      messages: [
-        {
-          role: 'user',
-          content: firstMessage,
-        },
-      ],
-    });
-
-    return completion.content[0]?.text || 'New Conversation';
+    // Simple title generation based on keywords
+    const message = firstMessage.toLowerCase();
+    
+    if (message.includes('budget') || message.includes('money')) {
+      return 'Budget Planning';
+    } else if (message.includes('health') || message.includes('wellness')) {
+      return 'Health Discussion';
+    } else if (message.includes('travel') || message.includes('trip')) {
+      return 'Travel Planning';
+    } else if (message.includes('legal') || message.includes('law')) {
+      return 'Legal Questions';
+    } else if (message.includes('tax') || message.includes('taxes')) {
+      return 'Tax Planning';
+    } else {
+      return 'New Conversation';
+    }
   } catch (error) {
     console.error('Error generating title:', error);
     return 'New Conversation';

@@ -6,7 +6,7 @@ export async function GET() {
       status: 'ok',
       timestamp: new Date().toISOString(),
       environment: {
-        hasClaude: !!process.env.ANTHROPIC_API_KEY,
+        hasMockAI: true, // Using mock responses - no API needed
         hasDatabase: !!process.env.DATABASE_URL,
         hasNextAuth: !!process.env.NEXTAUTH_SECRET,
       }
