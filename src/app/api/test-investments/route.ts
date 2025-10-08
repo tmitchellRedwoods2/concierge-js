@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     let hasYahooFinance = false;
     let yahooError = null;
     try {
-      const yahooFinance = require('yahoo-finance2');
+      const yahooFinance = require('yahoo-finance2').default;
       const result = await yahooFinance.quote('AAPL');
       hasYahooFinance = !!result;
     } catch (error) {
