@@ -1,9 +1,11 @@
 import OpenAI from 'openai';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client - will be created per request to avoid build-time errors
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || '',
+  });
+}
 
 // Agent configurations with specialized system prompts
 export const AI_AGENTS = {
@@ -97,6 +99,7 @@ export async function generateAIResponse(
   agentType: keyof typeof AI_AGENTS = 'general'
 ): Promise<{ response: string; tokens: number; model: string }> {
   try {
+    const openai = getOpenAIClient();
     const agent = AI_AGENTS[agentType];
     
     // Prepend system message with agent-specific prompt
@@ -128,6 +131,7 @@ export async function generateAIResponse(
 
 export async function generateChatTitle(firstMessage: string): Promise<string> {
   try {
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [

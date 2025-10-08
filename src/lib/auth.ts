@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db/mongodb";
 import getUser from "@/lib/db/models/User";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -58,7 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   trustHost: true,
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id;
         token.username = user.username;
@@ -66,7 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
@@ -81,8 +81,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: "/login",
   },
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+export const { handlers, signIn, signOut, auth } = NextAuth(authOptions);
 
