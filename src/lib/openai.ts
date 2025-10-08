@@ -138,6 +138,12 @@ export async function generateAIResponse(
       stack: error instanceof Error ? error.stack : undefined,
       apiKey: process.env.OPENAI_API_KEY ? 'Present' : 'Missing'
     });
+    
+    // Handle rate limit errors specifically
+    if (error instanceof Error && error.message.includes('429')) {
+      throw new Error('OpenAI rate limit exceeded. Please try again in a few minutes or add billing to your OpenAI account.');
+    }
+    
     throw new Error(`OpenAI API failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

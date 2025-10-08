@@ -132,6 +132,14 @@ export default function MessagesPage() {
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('rate limit')) {
+        alert('AI service is temporarily unavailable due to usage limits. Please try again in a few minutes.');
+      } else {
+        alert('Failed to send message. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
