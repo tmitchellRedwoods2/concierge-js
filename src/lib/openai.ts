@@ -102,6 +102,8 @@ export async function generateAIResponse(
     const openai = getOpenAIClient();
     const agent = AI_AGENTS[agentType];
     
+    console.log('Generating AI response with:', { agentType, messageCount: messages.length });
+    
     // Prepend system message with agent-specific prompt
     const systemMessage: ChatMessage = {
       role: 'system',
@@ -115,6 +117,12 @@ export async function generateAIResponse(
       max_tokens: 1000,
     });
 
+    console.log('OpenAI response received:', { 
+      hasResponse: !!completion.choices[0]?.message?.content,
+      model: completion.model,
+      usage: completion.usage 
+    });
+
     const response = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
     const tokens = completion.usage?.total_tokens || 0;
 
@@ -125,7 +133,12 @@ export async function generateAIResponse(
     };
   } catch (error) {
     console.error('OpenAI API error:', error);
-    throw new Error('Failed to generate AI response');
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      apiKey: process.env.OPENAI_API_KEY ? 'Present' : 'Missing'
+    });
+    throw new Error(`OpenAI API failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
