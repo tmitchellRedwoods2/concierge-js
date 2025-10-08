@@ -11,6 +11,11 @@ export default function AIAgentsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [stats, setStats] = useState<any>({});
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -19,8 +24,10 @@ export default function AIAgentsPage() {
   }, [status, router]);
 
   useEffect(() => {
-    loadStats();
-  }, []);
+    if (mounted) {
+      loadStats();
+    }
+  }, [mounted]);
 
   const loadStats = async () => {
     try {
@@ -46,7 +53,7 @@ export default function AIAgentsPage() {
     router.push(`/messages?agent=${agentType}`);
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || !mounted) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-xl">Loading...</div>
@@ -60,7 +67,7 @@ export default function AIAgentsPage() {
       <div className="max-w-7xl mx-auto mb-6">
         <div className="flex gap-2 items-center justify-center bg-white p-2 rounded-lg shadow-sm">
           <Button
-            variant={window.location.pathname === '/dashboard' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/dashboard')}
@@ -68,7 +75,7 @@ export default function AIAgentsPage() {
             🏠 Dashboard
           </Button>
           <Button
-            variant={window.location.pathname === '/expenses' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/expenses')}
@@ -76,7 +83,7 @@ export default function AIAgentsPage() {
             💰 Expenses
           </Button>
           <Button
-            variant={window.location.pathname === '/investments' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/investments')}
@@ -84,7 +91,7 @@ export default function AIAgentsPage() {
             📈 Investments
           </Button>
           <Button
-            variant={window.location.pathname === '/health' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/health')}
@@ -92,7 +99,7 @@ export default function AIAgentsPage() {
             🏥 Health
           </Button>
           <Button
-            variant={window.location.pathname === '/insurance' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/insurance')}
@@ -100,7 +107,7 @@ export default function AIAgentsPage() {
             🛡️ Insurance
           </Button>
           <Button
-            variant={window.location.pathname === '/legal' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/legal')}
@@ -108,7 +115,7 @@ export default function AIAgentsPage() {
             ⚖️ Legal
           </Button>
           <Button
-            variant={window.location.pathname === '/tax' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/tax')}
@@ -116,7 +123,7 @@ export default function AIAgentsPage() {
             💵 Tax
           </Button>
           <Button
-            variant={window.location.pathname === '/travel' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/travel')}
@@ -124,7 +131,7 @@ export default function AIAgentsPage() {
             ✈️ Travel
           </Button>
           <Button
-            variant={window.location.pathname === '/messages' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/messages')}
@@ -139,7 +146,7 @@ export default function AIAgentsPage() {
             🤖 AI Agents
           </Button>
           <Button
-            variant={window.location.pathname === '/settings' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/settings')}

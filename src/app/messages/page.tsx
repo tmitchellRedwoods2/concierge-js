@@ -34,6 +34,11 @@ export default function MessagesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<keyof typeof AI_AGENTS>('general');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -148,7 +153,7 @@ export default function MessagesPage() {
     }
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || !mounted) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-xl">Loading...</div>
@@ -162,7 +167,7 @@ export default function MessagesPage() {
       <div className="max-w-7xl mx-auto mb-4">
         <div className="flex gap-2 items-center justify-center bg-white p-2 rounded-lg shadow-sm">
           <Button
-            variant={window.location.pathname === '/dashboard' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/dashboard')}
@@ -170,7 +175,7 @@ export default function MessagesPage() {
             🏠 Dashboard
           </Button>
           <Button
-            variant={window.location.pathname === '/expenses' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/expenses')}
@@ -178,7 +183,7 @@ export default function MessagesPage() {
             💰 Expenses
           </Button>
           <Button
-            variant={window.location.pathname === '/investments' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/investments')}
@@ -186,7 +191,7 @@ export default function MessagesPage() {
             📈 Investments
           </Button>
           <Button
-            variant={window.location.pathname === '/health' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/health')}
@@ -194,7 +199,7 @@ export default function MessagesPage() {
             🏥 Health
           </Button>
           <Button
-            variant={window.location.pathname === '/insurance' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/insurance')}
@@ -202,7 +207,7 @@ export default function MessagesPage() {
             🛡️ Insurance
           </Button>
           <Button
-            variant={window.location.pathname === '/legal' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/legal')}
@@ -210,7 +215,7 @@ export default function MessagesPage() {
             ⚖️ Legal
           </Button>
           <Button
-            variant={window.location.pathname === '/tax' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/tax')}
@@ -218,7 +223,7 @@ export default function MessagesPage() {
             💵 Tax
           </Button>
           <Button
-            variant={window.location.pathname === '/travel' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/travel')}
@@ -233,7 +238,7 @@ export default function MessagesPage() {
             💬 Messages
           </Button>
           <Button
-            variant={window.location.pathname === '/ai-agents' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/ai-agents')}
@@ -241,7 +246,7 @@ export default function MessagesPage() {
             🤖 AI Agents
           </Button>
           <Button
-            variant={window.location.pathname === '/settings' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
             onClick={() => router.push('/settings')}
