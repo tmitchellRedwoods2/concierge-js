@@ -136,26 +136,40 @@ export async function generateAIResponse(
   agentType: keyof typeof AI_AGENTS = 'general'
 ): Promise<{ response: string; tokens: number; model: string }> {
   try {
-    console.log('Generating mock AI response:', { agentType, messageCount: messages.length });
+    console.log('Generating mock AI response:', { 
+      agentType, 
+      messageCount: messages.length,
+      messages: messages.map(m => ({ role: m.role, contentLength: m.content.length }))
+    });
     
     // Get the last user message
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-    const userMessage = lastUserMessage?.content.toLowerCase() || '';
+    const userMessage = lastUserMessage?.content || '';
+    
+    console.log('Last user message:', userMessage);
     
     // Get appropriate responses for this agent type
     const responses = MOCK_RESPONSES[agentType];
+    console.log('Available responses for', agentType, ':', responses.length);
     
     // Simple keyword matching for more relevant responses
     let selectedResponse = responses[Math.floor(Math.random() * responses.length)];
     
     // Customize response based on user message
-    if (userMessage.includes('budget') || userMessage.includes('money')) {
+    if (userMessage.toLowerCase().includes('budget') || userMessage.toLowerCase().includes('money')) {
       selectedResponse = responses[0]; // Usually budget-related
-    } else if (userMessage.includes('help') || userMessage.includes('how')) {
+      console.log('Selected budget response');
+    } else if (userMessage.toLowerCase().includes('help') || userMessage.toLowerCase().includes('how')) {
       selectedResponse = responses[1] || responses[0];
-    } else if (userMessage.includes('plan') || userMessage.includes('planning')) {
+      console.log('Selected help response');
+    } else if (userMessage.toLowerCase().includes('plan') || userMessage.toLowerCase().includes('planning')) {
       selectedResponse = responses[2] || responses[0];
+      console.log('Selected planning response');
+    } else {
+      console.log('Selected random response');
     }
+    
+    console.log('Selected response:', selectedResponse);
     
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
