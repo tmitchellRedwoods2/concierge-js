@@ -384,6 +384,11 @@ export default function InvestmentsPage() {
                     loading = {loading.toString()}
                   </div>
                   
+                  {/* Force show portfolios for debugging */}
+                  <div className="mb-4 p-2 bg-yellow-100 rounded text-sm">
+                    <strong>Conditional Check:</strong> portfolios.length === 0 is {portfolios.length === 0 ? 'TRUE' : 'FALSE'}
+                  </div>
+                  
                   {portfolios.length === 0 ? (
                     <div className="text-center py-8">
                       <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
