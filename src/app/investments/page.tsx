@@ -63,13 +63,21 @@ export default function InvestmentsPage() {
 
   const loadPortfolios = async () => {
     try {
+      console.log('Loading portfolios...');
       const response = await fetch('/api/investments/portfolios');
+      console.log('Portfolios response:', response.status, response.ok);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Portfolios data:', data);
         setPortfolios(data.portfolios || []);
-        if (data.portfolios.length > 0 && !selectedPortfolio) {
+        if (data.portfolios && data.portfolios.length > 0 && !selectedPortfolio) {
           setSelectedPortfolio(data.portfolios[0]);
         }
+      } else {
+        console.error('Portfolios API error:', response.status, response.statusText);
+        const errorData = await response.text();
+        console.error('Error details:', errorData);
       }
     } catch (error) {
       console.error('Failed to load portfolios:', error);
