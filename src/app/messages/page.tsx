@@ -118,12 +118,17 @@ export default function MessagesPage() {
         loadSessions();
       }
 
-      // Replace temp message with real ones
+    // Replace temp message with real ones
+    if (data.userMessage && data.assistantMessage) {
       setMessages((prev) => [
         ...prev.filter((m) => m._id !== tempMessage._id),
         data.userMessage,
         data.assistantMessage,
       ]);
+    } else {
+      console.error('Invalid response from API:', data);
+      setMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+    }
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
@@ -360,7 +365,7 @@ export default function MessagesPage() {
                       </p>
                     </div>
                   ) : (
-                    messages.map((msg) => (
+                    messages.filter(msg => msg && msg.role && msg.content).map((msg) => (
                       <div
                         key={msg._id}
                         className={`flex ${
