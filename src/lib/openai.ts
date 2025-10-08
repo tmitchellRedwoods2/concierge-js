@@ -1,9 +1,9 @@
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
-// Initialize OpenAI client - will be created per request to avoid build-time errors
-function getOpenAIClient() {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || '',
+// Initialize Claude client - will be created per request to avoid build-time errors
+function getClaudeClient() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
   });
 }
 
@@ -99,32 +99,32 @@ export async function generateAIResponse(
   agentType: keyof typeof AI_AGENTS = 'general'
 ): Promise<{ response: string; tokens: number; model: string }> {
   try {
-    const openai = getOpenAIClient();
+    const claude = getClaudeClient();
     const agent = AI_AGENTS[agentType];
     
-    console.log('Generating AI response with:', { agentType, messageCount: messages.length });
+    console.log('Generating AI response with Claude:', { agentType, messageCount: messages.length });
     
-    // Prepend system message with agent-specific prompt
-    const systemMessage: ChatMessage = {
-      role: 'system',
-      content: agent.systemPrompt,
-    };
+    // Convert messages to Claude format
+    const claudeMessages = messages.map(msg => ({
+      role: msg.role === 'assistant' ? 'assistant' : 'user',
+      content: msg.content,
+    }));
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [systemMessage, ...messages],
-      temperature: 0.7,
+    const completion = await claude.messages.create({
+      model: 'claude-3-haiku-20240307', // Fast and free model
       max_tokens: 1000,
+      system: agent.systemPrompt,
+      messages: claudeMessages,
     });
 
-    console.log('OpenAI response received:', { 
-      hasResponse: !!completion.choices[0]?.message?.content,
+    console.log('Claude response received:', { 
+      hasResponse: !!completion.content[0]?.text,
       model: completion.model,
       usage: completion.usage 
     });
 
-    const response = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
-    const tokens = completion.usage?.total_tokens || 0;
+    const response = completion.content[0]?.text || 'Sorry, I could not generate a response.';
+    const tokens = completion.usage?.input_tokens + completion.usage?.output_tokens || 0;
 
     return {
       response,
@@ -132,42 +132,33 @@ export async function generateAIResponse(
       model: completion.model,
     };
   } catch (error) {
-    console.error('OpenAI API error:', error);
+    console.error('Claude API error:', error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      apiKey: process.env.OPENAI_API_KEY ? 'Present' : 'Missing'
+      apiKey: process.env.ANTHROPIC_API_KEY ? 'Present' : 'Missing'
     });
     
-    // Handle rate limit errors specifically
-    if (error instanceof Error && error.message.includes('429')) {
-      throw new Error('OpenAI rate limit exceeded. Please try again in a few minutes or add billing to your OpenAI account.');
-    }
-    
-    throw new Error(`OpenAI API failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Claude API failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 export async function generateChatTitle(firstMessage: string): Promise<string> {
   try {
-    const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+    const claude = getClaudeClient();
+    const completion = await claude.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 20,
+      system: 'Generate a short, descriptive title (3-6 words) for a chat conversation based on the first user message. Only return the title, nothing else.',
       messages: [
-        {
-          role: 'system',
-          content: 'Generate a short, descriptive title (3-6 words) for a chat conversation based on the first user message. Only return the title, nothing else.',
-        },
         {
           role: 'user',
           content: firstMessage,
         },
       ],
-      temperature: 0.7,
-      max_tokens: 20,
     });
 
-    return completion.choices[0]?.message?.content || 'New Conversation';
+    return completion.content[0]?.text || 'New Conversation';
   } catch (error) {
     console.error('Error generating title:', error);
     return 'New Conversation';

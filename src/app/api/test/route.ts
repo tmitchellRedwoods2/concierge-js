@@ -6,7 +6,7 @@ export async function GET() {
       status: 'ok',
       timestamp: new Date().toISOString(),
       environment: {
-        hasOpenAI: !!process.env.OPENAI_API_KEY,
+        hasClaude: !!process.env.ANTHROPIC_API_KEY,
         hasDatabase: !!process.env.DATABASE_URL,
         hasNextAuth: !!process.env.NEXTAUTH_SECRET,
       }
