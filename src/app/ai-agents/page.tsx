@@ -1,262 +1,264 @@
-/**
- * AI Agents page
- */
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { AI_AGENTS } from '@/lib/openai';
 
 export default function AIAgentsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [agents, setAgents] = useState([
-    { id: 1, name: "Financial Advisor AI", type: "Investment", status: "Active", lastActive: "2024-01-15 14:30", tasks: 12, description: "Helps with investment decisions and portfolio optimization" },
-    { id: 2, name: "Expense Tracker AI", type: "Finance", status: "Active", lastActive: "2024-01-15 10:15", tasks: 8, description: "Monitors spending patterns and suggests budget optimizations" },
-    { id: 3, name: "Health Coach AI", type: "Health", status: "Inactive", lastActive: "2024-01-14 16:45", tasks: 5, description: "Provides health insights and wellness recommendations" },
-  ]);
-  const [conversations, setConversations] = useState([
-    { id: 1, agent: "Financial Advisor AI", message: "Your portfolio has gained 3.2% this month. Consider rebalancing your tech stocks.", timestamp: "2024-01-15 14:30", type: "suggestion" },
-    { id: 2, agent: "Expense Tracker AI", message: "You've spent 15% more on dining this month. Would you like budget recommendations?", timestamp: "2024-01-15 10:15", type: "alert" },
-    { id: 3, agent: "Health Coach AI", message: "Your step count is below target. Try taking a 10-minute walk.", timestamp: "2024-01-14 16:45", type: "reminder" },
-  ]);
-  const [newQuery, setNewQuery] = useState("");
+  const [stats, setStats] = useState<any>({});
 
-  const sendQuery = () => {
-    if (newQuery.trim()) {
-      const conversation = {
-        id: conversations.length + 1,
-        agent: "General AI Assistant",
-        message: `Query: "${newQuery}" - I'm analyzing your request and will provide personalized recommendations based on your financial profile.`,
-        timestamp: new Date().toLocaleString(),
-        type: "response"
-      };
-      setConversations([conversation, ...conversations]);
-      setNewQuery("");
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const res = await fetch('/api/chat/sessions?agentType=all');
+      const data = await res.json();
+      
+      // Count messages by agent type
+      const agentStats: any = {};
+      data.sessions?.forEach((session: any) => {
+        if (!agentStats[session.agentType]) {
+          agentStats[session.agentType] = 0;
+        }
+        agentStats[session.agentType] += session.messageCount;
+      });
+      
+      setStats(agentStats);
+    } catch (error) {
+      console.error('Error loading stats:', error);
     }
   };
 
-  const activeAgents = agents.filter(agent => agent.status === 'Active').length;
-  const totalTasks = agents.reduce((sum, agent) => sum + agent.tasks, 0);
+  const startChatWithAgent = (agentType: string) => {
+    router.push(`/messages?agent=${agentType}`);
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Top Navigation Bar */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-gray-900">🏆 Concierge.com</h1>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                Welcome, {session?.user?.name}
-              </span>
-              <Button
-                onClick={() => router.push("/")}
-                variant="outline"
-                size="sm"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Navigation Tabs */}
-      <div className="bg-gray-50 border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex overflow-x-auto gap-1 py-3">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard")} className="whitespace-nowrap text-xs px-3 py-2">
-              🏠 Dashboard
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/expenses")} className="whitespace-nowrap text-xs px-3 py-2">
-              💰 Expenses
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/investments")} className="whitespace-nowrap text-xs px-3 py-2">
-              📈 Investments
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/health")} className="whitespace-nowrap text-xs px-3 py-2">
-              🏥 Health
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/insurance")} className="whitespace-nowrap text-xs px-3 py-2">
-              🛡️ Insurance
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/legal")} className="whitespace-nowrap text-xs px-3 py-2">
-              ⚖️ Legal
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/tax")} className="whitespace-nowrap text-xs px-3 py-2">
-              📊 Tax
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/travel")} className="whitespace-nowrap text-xs px-3 py-2">
-              ✈️ Travel
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/messages")} className="whitespace-nowrap text-xs px-3 py-2">
-              💬 Messages
-            </Button>
-            <Button variant="ghost" size="sm" className="bg-blue-100 text-blue-800 whitespace-nowrap text-xs px-3 py-2">
-              🤖 AI Agents
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/settings")} className="whitespace-nowrap text-xs px-3 py-2">
-              ⚙️ Settings
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gray-50 p-4">
+      {/* Top Navigation */}
+      <div className="max-w-7xl mx-auto mb-6">
+        <div className="flex gap-2 items-center justify-center bg-white p-2 rounded-lg shadow-sm">
+          <Button
+            variant={window.location.pathname === '/dashboard' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/dashboard')}
+          >
+            🏠 Dashboard
+          </Button>
+          <Button
+            variant={window.location.pathname === '/expenses' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/expenses')}
+          >
+            💰 Expenses
+          </Button>
+          <Button
+            variant={window.location.pathname === '/investments' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/investments')}
+          >
+            📈 Investments
+          </Button>
+          <Button
+            variant={window.location.pathname === '/health' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/health')}
+          >
+            🏥 Health
+          </Button>
+          <Button
+            variant={window.location.pathname === '/insurance' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/insurance')}
+          >
+            🛡️ Insurance
+          </Button>
+          <Button
+            variant={window.location.pathname === '/legal' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/legal')}
+          >
+            ⚖️ Legal
+          </Button>
+          <Button
+            variant={window.location.pathname === '/tax' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/tax')}
+          >
+            💵 Tax
+          </Button>
+          <Button
+            variant={window.location.pathname === '/travel' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/travel')}
+          >
+            ✈️ Travel
+          </Button>
+          <Button
+            variant={window.location.pathname === '/messages' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/messages')}
+          >
+            💬 Messages
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="text-xs px-3 py-2"
+          >
+            🤖 AI Agents
+          </Button>
+          <Button
+            variant={window.location.pathname === '/settings' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/settings')}
+          >
+            ⚙️ Settings
+          </Button>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            🤖 AI Agents
-          </h1>
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">🤖 AI Agents</h1>
           <p className="text-gray-600">
-            Your intelligent assistants for financial and life management
+            Specialized AI assistants to help you with different aspects of your life
           </p>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Active Agents</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {activeAgents}
+        {/* AI Agents Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Object.entries(AI_AGENTS).map(([key, agent]) => (
+            <Card key={key} className="p-6 hover:shadow-lg transition-shadow">
+              <div className="text-center mb-4">
+                <div className="text-5xl mb-3">{agent.icon}</div>
+                <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>
               </div>
-            </CardContent>
+
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {agent.systemPrompt.split('\n')[0].replace('You are a', 'I am a').replace('You are an', 'I am an')}
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  {stats[key] > 0 && (
+                    <p className="text-sm text-gray-600 mb-3">
+                      💬 {stats[key]} messages exchanged
+                    </p>
+                  )}
+                  <Button
+                    onClick={() => startChatWithAgent(key)}
+                    className="w-full"
+                  >
+                    Start Conversation
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Features Section */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="p-6">
+            <div className="text-3xl mb-3">⚡</div>
+            <h3 className="text-lg font-semibold mb-2">Instant Responses</h3>
+            <p className="text-sm text-gray-600">
+              Get immediate answers and guidance powered by advanced AI technology
+            </p>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Total Tasks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {totalTasks}
-              </div>
-            </CardContent>
+          <Card className="p-6">
+            <div className="text-3xl mb-3">🎯</div>
+            <h3 className="text-lg font-semibold mb-2">Specialized Expertise</h3>
+            <p className="text-sm text-gray-600">
+              Each agent is trained with specific knowledge in their domain
+            </p>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">AI Conversations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {conversations.length}
-              </div>
-            </CardContent>
+          <Card className="p-6">
+            <div className="text-3xl mb-3">🔒</div>
+            <h3 className="text-lg font-semibold mb-2">Private & Secure</h3>
+            <p className="text-sm text-gray-600">
+              Your conversations are encrypted and only visible to you
+            </p>
           </Card>
         </div>
 
-        {/* AI Query Interface */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Ask Your AI Assistant</CardTitle>
-            <CardDescription>Get personalized recommendations and insights</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <Input
-                  placeholder="Ask about investments, expenses, health, or any financial question..."
-                  value={newQuery}
-                  onChange={(e) => setNewQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendQuery()}
-                />
-                <Button onClick={sendQuery} disabled={!newQuery.trim()}>
-                  Ask AI
-                </Button>
+        {/* How It Works */}
+        <Card className="mt-12 p-6">
+          <h2 className="text-2xl font-bold mb-4">How AI Agents Work</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div>
+              <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mb-3">
+                <span className="text-xl font-bold text-blue-600">1</span>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setNewQuery("How can I optimize my investment portfolio?")}>
-                  Investment Help
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setNewQuery("What are my biggest expense categories?")}>
-                  Expense Analysis
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setNewQuery("How can I improve my health metrics?")}>
-                  Health Tips
-                </Button>
+              <h4 className="font-semibold mb-2">Choose an Agent</h4>
+              <p className="text-sm text-gray-600">
+                Select the AI assistant that matches your needs
+              </p>
+            </div>
+            <div>
+              <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mb-3">
+                <span className="text-xl font-bold text-blue-600">2</span>
               </div>
+              <h4 className="font-semibold mb-2">Ask Questions</h4>
+              <p className="text-sm text-gray-600">
+                Type your questions or describe what you need help with
+              </p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* AI Agents List */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Your AI Agents</CardTitle>
-            <CardDescription>Specialized AI assistants for different aspects of your life</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {agents.map((agent) => (
-                <div key={agent.id} className="flex justify-between items-center p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold">{agent.name}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        agent.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {agent.status}
-                      </span>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {agent.type}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-1">{agent.description}</p>
-                    <p className="text-sm text-gray-500">Last active: {agent.lastActive} • {agent.tasks} tasks completed</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      Configure
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Chat
-                    </Button>
-                  </div>
-                </div>
-              ))}
+            <div>
+              <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mb-3">
+                <span className="text-xl font-bold text-blue-600">3</span>
+              </div>
+              <h4 className="font-semibold mb-2">Get Expert Advice</h4>
+              <p className="text-sm text-gray-600">
+                Receive personalized recommendations and guidance
+              </p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* AI Conversations */}
-        <Card>
-          <CardHeader>
-            <CardTitle>AI Conversations</CardTitle>
-            <CardDescription>Recent interactions with your AI agents</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {conversations.map((conversation) => (
-                <div key={conversation.id} className="p-4 border rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">{conversation.agent}</h4>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        conversation.type === 'suggestion' ? 'bg-blue-100 text-blue-800' :
-                        conversation.type === 'alert' ? 'bg-red-100 text-red-800' :
-                        conversation.type === 'reminder' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {conversation.type}
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-500">{conversation.timestamp}</span>
-                  </div>
-                  <p className="text-sm text-gray-700">{conversation.message}</p>
-                </div>
-              ))}
+            <div>
+              <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mb-3">
+                <span className="text-xl font-bold text-blue-600">4</span>
+              </div>
+              <h4 className="font-semibold mb-2">Take Action</h4>
+              <p className="text-sm text-gray-600">
+                Implement suggestions and track your progress
+              </p>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
     </div>

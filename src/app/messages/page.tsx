@@ -1,271 +1,417 @@
-/**
- * Messages page
- */
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { AI_AGENTS } from '@/lib/openai';
+
+interface Message {
+  _id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+}
+
+interface ChatSession {
+  _id: string;
+  sessionId: string;
+  title: string;
+  agentType: string;
+  lastMessageAt: string;
+}
 
 export default function MessagesPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [messages, setMessages] = useState([
-    { id: 1, from: "Concierge Team", subject: "Welcome to your new account", content: "Thank you for joining Concierge.com! We're here to help manage your financial life.", timestamp: "2024-01-15 10:30", read: false, priority: "Normal" },
-    { id: 2, from: "Investment Advisor", subject: "Portfolio Update", content: "Your portfolio has gained 3.2% this month. Would you like to schedule a review?", timestamp: "2024-01-14 14:20", read: true, priority: "High" },
-    { id: 3, from: "Tax Specialist", subject: "Tax Documents Ready", content: "Your 2023 tax documents are ready for review. Please log in to download them.", timestamp: "2024-01-13 09:15", read: true, priority: "Normal" },
-  ]);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: "Reminder", message: "Insurance payment due in 3 days", timestamp: "2024-01-15 08:00", read: false },
-    { id: 2, type: "Alert", message: "Investment threshold reached", timestamp: "2024-01-14 16:30", read: false },
-    { id: 3, type: "Update", message: "New feature: AI Agents available", timestamp: "2024-01-13 12:00", read: true },
-  ]);
-  const [newMessage, setNewMessage] = useState({ to: "", subject: "", content: "" });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<keyof typeof AI_AGENTS>('general');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const sendMessage = () => {
-    if (newMessage.to && newMessage.subject && newMessage.content) {
-      const message = {
-        id: messages.length + 1,
-        from: session?.user?.name || "You",
-        subject: newMessage.subject,
-        content: newMessage.content,
-        timestamp: new Date().toLocaleString(),
-        read: true,
-        priority: "Normal"
-      };
-      setMessages([message, ...messages]);
-      setNewMessage({ to: "", subject: "", content: "" });
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    loadSessions();
+  }, [selectedAgent]);
+
+  useEffect(() => {
+    if (currentSessionId) {
+      loadMessages(currentSessionId);
+    }
+  }, [currentSessionId]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const loadSessions = async () => {
+    try {
+      const res = await fetch(`/api/chat/sessions?agentType=${selectedAgent}`);
+      const data = await res.json();
+      setSessions(data.sessions || []);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
     }
   };
 
-  const unreadMessages = messages.filter(m => !m.read).length;
-  const unreadNotifications = notifications.filter(n => !n.read).length;
+  const loadMessages = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/chat?sessionId=${sessionId}`);
+      const data = await res.json();
+      setMessages(data.messages || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    setIsLoading(true);
+    const userMessage = inputMessage;
+    setInputMessage('');
+
+    // Optimistically add user message
+    const tempMessage: Message = {
+      _id: Date.now().toString(),
+      role: 'user',
+      content: userMessage,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, tempMessage]);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          sessionId: currentSessionId,
+          agentType: selectedAgent,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!currentSessionId) {
+        setCurrentSessionId(data.sessionId);
+        loadSessions();
+      }
+
+      // Replace temp message with real ones
+      setMessages((prev) => [
+        ...prev.filter((m) => m._id !== tempMessage._id),
+        data.userMessage,
+        data.assistantMessage,
+      ]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startNewChat = () => {
+    setCurrentSessionId(null);
+    setMessages([]);
+  };
+
+  const deleteSession = async (sessionId: string) => {
+    try {
+      await fetch('/api/chat/sessions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      loadSessions();
+      if (currentSessionId === sessionId) {
+        startNewChat();
+      }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+    }
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Top Navigation Bar */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-gray-900">🏆 Concierge.com</h1>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                Welcome, {session?.user?.name}
-              </span>
-              <Button
-                onClick={() => router.push("/")}
-                variant="outline"
-                size="sm"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Navigation Tabs */}
-      <div className="bg-gray-50 border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex overflow-x-auto gap-1 py-3">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard")} className="whitespace-nowrap text-xs px-3 py-2">
-              🏠 Dashboard
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/expenses")} className="whitespace-nowrap text-xs px-3 py-2">
-              💰 Expenses
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/investments")} className="whitespace-nowrap text-xs px-3 py-2">
-              📈 Investments
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/health")} className="whitespace-nowrap text-xs px-3 py-2">
-              🏥 Health
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/insurance")} className="whitespace-nowrap text-xs px-3 py-2">
-              🛡️ Insurance
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/legal")} className="whitespace-nowrap text-xs px-3 py-2">
-              ⚖️ Legal
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/tax")} className="whitespace-nowrap text-xs px-3 py-2">
-              📊 Tax
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/travel")} className="whitespace-nowrap text-xs px-3 py-2">
-              ✈️ Travel
-            </Button>
-            <Button variant="ghost" size="sm" className="bg-blue-100 text-blue-800 whitespace-nowrap text-xs px-3 py-2">
-              💬 Messages
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/ai-agents")} className="whitespace-nowrap text-xs px-3 py-2">
-              🤖 AI Agents
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/settings")} className="whitespace-nowrap text-xs px-3 py-2">
-              ⚙️ Settings
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gray-50 p-4">
+      {/* Top Navigation */}
+      <div className="max-w-7xl mx-auto mb-4">
+        <div className="flex gap-2 items-center justify-center bg-white p-2 rounded-lg shadow-sm">
+          <Button
+            variant={window.location.pathname === '/dashboard' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/dashboard')}
+          >
+            🏠 Dashboard
+          </Button>
+          <Button
+            variant={window.location.pathname === '/expenses' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/expenses')}
+          >
+            💰 Expenses
+          </Button>
+          <Button
+            variant={window.location.pathname === '/investments' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/investments')}
+          >
+            📈 Investments
+          </Button>
+          <Button
+            variant={window.location.pathname === '/health' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/health')}
+          >
+            🏥 Health
+          </Button>
+          <Button
+            variant={window.location.pathname === '/insurance' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/insurance')}
+          >
+            🛡️ Insurance
+          </Button>
+          <Button
+            variant={window.location.pathname === '/legal' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/legal')}
+          >
+            ⚖️ Legal
+          </Button>
+          <Button
+            variant={window.location.pathname === '/tax' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/tax')}
+          >
+            💵 Tax
+          </Button>
+          <Button
+            variant={window.location.pathname === '/travel' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/travel')}
+          >
+            ✈️ Travel
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="text-xs px-3 py-2"
+          >
+            💬 Messages
+          </Button>
+          <Button
+            variant={window.location.pathname === '/ai-agents' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/ai-agents')}
+          >
+            🤖 AI Agents
+          </Button>
+          <Button
+            variant={window.location.pathname === '/settings' ? 'default' : 'ghost'}
+            size="sm"
+            className="text-xs px-3 py-2"
+            onClick={() => router.push('/settings')}
+          >
+            ⚙️ Settings
+          </Button>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            💬 Messages & Communication
-          </h1>
-          <p className="text-gray-600">
-            Stay connected with your concierge team
-          </p>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Unread Messages</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {unreadMessages}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Notifications</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {unreadNotifications}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Total Messages</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {messages.length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Send Message Form */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Send Message</CardTitle>
-            <CardDescription>Contact your concierge team</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Input
-                placeholder="To (e.g., Investment Advisor, Tax Specialist)"
-                value={newMessage.to}
-                onChange={(e) => setNewMessage({ ...newMessage, to: e.target.value })}
-              />
-              <Input
-                placeholder="Subject"
-                value={newMessage.subject}
-                onChange={(e) => setNewMessage({ ...newMessage, subject: e.target.value })}
-              />
-              <textarea
-                placeholder="Message content..."
-                value={newMessage.content}
-                onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
-                className="w-full p-3 border rounded-md h-24 resize-none"
-              />
-              <Button onClick={sendMessage} className="w-full">
-                Send Message
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Messages List */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Messages</CardTitle>
-            <CardDescription>Your communication with the concierge team</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div key={message.id} className={`p-4 border rounded-lg ${!message.read ? 'bg-blue-50 border-blue-200' : ''}`}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold">{message.from}</h3>
-                        {!message.read && <span className="w-2 h-2 bg-blue-600 rounded-full"></span>}
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          message.priority === 'High' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {message.priority}
-                        </span>
-                      </div>
-                      <h4 className="font-medium text-gray-900 mb-1">{message.subject}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{message.content}</p>
-                      <p className="text-xs text-gray-500">{message.timestamp}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        Reply
-                      </Button>
-                      {!message.read && (
-                        <Button variant="ghost" size="sm">
-                          Mark Read
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-120px)]">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="h-full p-4">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold mb-2">💬 Messages</h2>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Chat with AI assistants
+                  </p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Notifications List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Notifications</CardTitle>
-            <CardDescription>System alerts and updates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {notifications.map((notification) => (
-                <div key={notification.id} className={`p-4 border rounded-lg ${!notification.read ? 'bg-orange-50 border-orange-200' : ''}`}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          notification.type === 'Alert' ? 'bg-red-100 text-red-800' : 
-                          notification.type === 'Reminder' ? 'bg-yellow-100 text-yellow-800' : 
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {notification.type}
-                        </span>
-                        {!notification.read && <span className="w-2 h-2 bg-orange-600 rounded-full"></span>}
-                      </div>
-                      <p className="text-sm text-gray-700 mb-1">{notification.message}</p>
-                      <p className="text-xs text-gray-500">{notification.timestamp}</p>
-                    </div>
-                    {!notification.read && (
-                      <Button variant="ghost" size="sm">
-                        Mark Read
-                      </Button>
-                    )}
-                  </div>
+                {/* Agent Selector */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Select Assistant</label>
+                  <select
+                    value={selectedAgent}
+                    onChange={(e) => {
+                      setSelectedAgent(e.target.value as keyof typeof AI_AGENTS);
+                      startNewChat();
+                    }}
+                    className="w-full p-2 border rounded-md text-sm"
+                  >
+                    {Object.entries(AI_AGENTS).map(([key, agent]) => (
+                      <option key={key} value={key}>
+                        {agent.icon} {agent.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+
+                <Button onClick={startNewChat} className="w-full" size="sm">
+                  + New Chat
+                </Button>
+
+                {/* Chat History */}
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Recent Chats</h3>
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-2">
+                      {sessions.map((session) => (
+                        <div
+                          key={session.sessionId}
+                          className={`p-2 rounded cursor-pointer hover:bg-gray-100 ${
+                            currentSessionId === session.sessionId ? 'bg-gray-100' : ''
+                          }`}
+                        >
+                          <div
+                            onClick={() => setCurrentSessionId(session.sessionId)}
+                            className="flex-1"
+                          >
+                            <p className="text-sm font-medium truncate">{session.title}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(session.lastMessageAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteSession(session.sessionId);
+                            }}
+                            className="text-red-500 hover:text-red-700 p-1 h-auto"
+                          >
+                            🗑️
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Chat Area */}
+          <div className="lg:col-span-3">
+            <Card className="h-full flex flex-col">
+              {/* Chat Header */}
+              <div className="p-4 border-b">
+                <h2 className="text-xl font-semibold">
+                  {AI_AGENTS[selectedAgent].icon} {AI_AGENTS[selectedAgent].name}
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Ask me anything about {selectedAgent === 'general' ? 'the platform' : selectedAgent}
+                </p>
+              </div>
+
+              {/* Messages */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {messages.length === 0 ? (
+                    <div className="text-center text-gray-500 mt-8">
+                      <p className="text-4xl mb-4">{AI_AGENTS[selectedAgent].icon}</p>
+                      <p className="text-lg font-medium">
+                        Start a conversation with {AI_AGENTS[selectedAgent].name}
+                      </p>
+                      <p className="text-sm mt-2">
+                        Type a message below to get started
+                      </p>
+                    </div>
+                  ) : (
+                    messages.map((msg) => (
+                      <div
+                        key={msg._id}
+                        className={`flex ${
+                          msg.role === 'user' ? 'justify-end' : 'justify-start'
+                        }`}
+                      >
+                        <div
+                          className={`max-w-[80%] p-3 rounded-lg ${
+                            msg.role === 'user'
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-100 text-gray-900'
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          <p className="text-xs mt-1 opacity-70">
+                            {new Date(msg.createdAt).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 p-3 rounded-lg">
+                        <p className="text-sm text-gray-600">Typing...</p>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Input */}
+              <div className="p-4 border-t">
+                <div className="flex gap-2">
+                  <Input
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    placeholder="Type your message..."
+                    disabled={isLoading}
+                    className="flex-1"
+                  />
+                  <Button onClick={sendMessage} disabled={isLoading || !inputMessage.trim()}>
+                    Send
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
