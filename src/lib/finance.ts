@@ -118,19 +118,49 @@ export async function getHistoricalData(
 
 export async function searchStocks(query: string): Promise<Array<{ symbol: string; name: string }>> {
   try {
+    console.log('Searching for:', query);
+    
     // Use Yahoo Finance search
     const searchResult = await yahooFinance.search(query);
+    console.log('Search result:', searchResult);
     
-    return searchResult.quotes
-      .filter(quote => quote.symbol && quote.longname)
+    if (!searchResult || !searchResult.quotes) {
+      console.log('No quotes in search result');
+      return [];
+    }
+    
+    const results = searchResult.quotes
+      .filter(quote => quote && quote.symbol && (quote.longname || quote.shortname))
       .slice(0, 10)
       .map(quote => ({
-        symbol: quote.symbol!,
-        name: quote.longname!,
+        symbol: quote.symbol,
+        name: quote.longname || quote.shortname || quote.symbol,
       }));
+    
+    console.log('Filtered results:', results);
+    return results;
   } catch (error) {
     console.error('Error searching stocks:', error);
-    return [];
+    
+    // Fallback to common stocks if search fails
+    const fallbackStocks = [
+      { symbol: 'AAPL', name: 'Apple Inc.' },
+      { symbol: 'MSFT', name: 'Microsoft Corporation' },
+      { symbol: 'GOOGL', name: 'Alphabet Inc.' },
+      { symbol: 'TSLA', name: 'Tesla Inc.' },
+      { symbol: 'AMZN', name: 'Amazon.com Inc.' },
+      { symbol: 'META', name: 'Meta Platforms Inc.' },
+      { symbol: 'NVDA', name: 'NVIDIA Corporation' },
+      { symbol: 'NFLX', name: 'Netflix Inc.' },
+      { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust' },
+      { symbol: 'QQQ', name: 'Invesco QQQ Trust' },
+    ];
+    
+    // Filter fallback stocks based on query
+    return fallbackStocks.filter(stock => 
+      stock.symbol.toLowerCase().includes(query.toLowerCase()) ||
+      stock.name.toLowerCase().includes(query.toLowerCase())
+    );
   }
 }
 
