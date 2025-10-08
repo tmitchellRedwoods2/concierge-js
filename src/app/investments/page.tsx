@@ -377,6 +377,13 @@ export default function InvestmentsPage() {
                   <CardDescription>Choose a portfolio to view details</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* Debug info */}
+                  <div className="mb-4 p-2 bg-gray-100 rounded text-sm">
+                    <strong>Debug:</strong> portfolios.length = {portfolios.length}, 
+                    selectedPortfolio = {selectedPortfolio?.name || 'none'}, 
+                    loading = {loading.toString()}
+                  </div>
+                  
                   {portfolios.length === 0 ? (
                     <div className="text-center py-8">
                       <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
