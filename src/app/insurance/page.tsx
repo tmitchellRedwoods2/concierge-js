@@ -88,16 +88,29 @@ export default function InsurancePage() {
   };
 
   const addPolicy = async () => {
-    if (!newPolicy.policyNumber || !newPolicy.policyName || !newPolicy.coverageAmount) return;
+    if (!newPolicy.policyNumber || !newPolicy.policyName || !newPolicy.coverageAmount) {
+      alert('Please fill in Policy Number, Policy Name, and Coverage Amount');
+      return;
+    }
+
+    if (!newPolicy.effectiveDate || !newPolicy.expirationDate) {
+      alert('Please fill in Effective Date and Expiration Date');
+      return;
+    }
 
     try {
+      console.log('Submitting policy:', newPolicy);
       const response = await fetch('/api/insurance/policies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPolicy),
       });
 
+      const data = await response.json();
+      console.log('API response:', data);
+
       if (response.ok) {
+        alert('Policy added successfully!');
         await loadPolicies();
         setShowAddPolicy(false);
         setNewPolicy({
@@ -117,9 +130,12 @@ export default function InsurancePage() {
           agentEmail: "",
           notes: ""
         });
+      } else {
+        alert(`Error: ${data.error || 'Failed to add policy'}`);
       }
     } catch (error) {
       console.error('Failed to add policy:', error);
+      alert('Network error. Please try again.');
     }
   };
 
