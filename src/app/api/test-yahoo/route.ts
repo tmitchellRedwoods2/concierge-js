@@ -10,7 +10,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('Testing Yahoo Finance API...');
+    console.log('Testing Alpha Vantage API...');
+    console.log('API Key exists:', !!process.env.ALPHA_VANTAGE_API_KEY);
+    console.log('API Key length:', process.env.ALPHA_VANTAGE_API_KEY?.length || 0);
     
     // Test AAPL quote
     const quote = await getStockQuote('AAPL');
@@ -19,14 +21,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       status: 'ok',
       testSymbol: 'AAPL',
+      hasApiKey: !!process.env.ALPHA_VANTAGE_API_KEY,
+      apiKeyLength: process.env.ALPHA_VANTAGE_API_KEY?.length || 0,
       quote,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Test Yahoo Finance error:', error);
+    console.error('Test Alpha Vantage error:', error);
     return NextResponse.json(
       { 
         status: 'error',
+        hasApiKey: !!process.env.ALPHA_VANTAGE_API_KEY,
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),

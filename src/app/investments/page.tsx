@@ -21,8 +21,23 @@ import {
   PieChart,
   BarChart3,
   Target,
-  Star
+  Star,
+  History,
+  LineChart
 } from "lucide-react";
+import { 
+  LineChart as RechartsLineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart as RechartsPieChart, 
+  Cell,
+  AreaChart,
+  Area
+} from 'recharts';
 
 export default function InvestmentsPage() {
   const { data: session } = useSession();
@@ -33,6 +48,8 @@ export default function InvestmentsPage() {
   const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
   const [holdings, setHoldings] = useState<any[]>([]);
   const [watchlist, setWatchlist] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Portfolio creation state
@@ -111,6 +128,34 @@ export default function InvestmentsPage() {
       }
     } catch (error) {
       console.error('Failed to load watchlist:', error);
+    }
+  };
+
+  const loadTransactions = async () => {
+    if (!selectedPortfolio) return;
+    try {
+      const response = await fetch(`/api/investments/transactions?portfolioId=${selectedPortfolio._id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTransactions(data.transactions || []);
+      }
+    } catch (error) {
+      console.error('Failed to load transactions:', error);
+    }
+  };
+
+  const loadHistoricalData = async () => {
+    if (!selectedPortfolio || holdings.length === 0) return;
+    try {
+      // Load historical data for portfolio performance
+      const symbols = holdings.map(h => h.symbol).join(',');
+      const response = await fetch(`/api/investments/historical?symbols=${symbols}`);
+      if (response.ok) {
+        const data = await response.json();
+        setHistoricalData(data.historicalData || []);
+      }
+    } catch (error) {
+      console.error('Failed to load historical data:', error);
     }
   };
 
@@ -199,12 +244,20 @@ export default function InvestmentsPage() {
     }
   };
 
-  // Load holdings when portfolio changes
+  // Load holdings, transactions, and historical data when portfolio changes
   useEffect(() => {
     if (selectedPortfolio) {
       loadHoldings(selectedPortfolio._id);
+      loadTransactions();
     }
   }, [selectedPortfolio]);
+
+  // Load historical data when holdings change
+  useEffect(() => {
+    if (holdings.length > 0) {
+      loadHistoricalData();
+    }
+  }, [holdings]);
 
   // Calculate portfolio totals
   const portfolioTotals = holdings.reduce((totals, holding) => {
@@ -311,7 +364,7 @@ export default function InvestmentsPage() {
           </div>
         ) : (
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <PieChart className="h-4 w-4" />
                 Overview
@@ -327,6 +380,10 @@ export default function InvestmentsPage() {
               <TabsTrigger value="watchlist" className="flex items-center gap-2">
                 <Star className="h-4 w-4" />
                 Watchlist
+              </TabsTrigger>
+              <TabsTrigger value="rebalance" className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Rebalance
               </TabsTrigger>
             </TabsList>
 
@@ -374,6 +431,95 @@ export default function InvestmentsPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Performance Charts */}
+              {selectedPortfolio && holdings.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Portfolio Performance Chart */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <LineChart className="h-5 w-5 mr-2" />
+                        Portfolio Performance
+                      </CardTitle>
+                      <CardDescription>30-day performance overview</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-64">
+                        {historicalData.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsLineChart data={historicalData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis 
+                                dataKey="date" 
+                                tickFormatter={(date) => new Date(date).toLocaleDateString()}
+                              />
+                              <YAxis tickFormatter={(value) => `$${value.toFixed(0)}`} />
+                              <Tooltip 
+                                labelFormatter={(date) => new Date(date).toLocaleDateString()}
+                                formatter={(value: any) => [`$${value.toFixed(2)}`, 'Portfolio Value']}
+                              />
+                              <Line 
+                                type="monotone" 
+                                dataKey="portfolioValue" 
+                                stroke="#2563eb" 
+                                strokeWidth={2}
+                                dot={false}
+                              />
+                            </RechartsLineChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-500">
+                            Loading chart data...
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Asset Allocation Chart */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <RechartsPieChart className="h-5 w-5 mr-2" />
+                        Asset Allocation
+                      </CardTitle>
+                      <CardDescription>Portfolio composition by value</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-64">
+                        {holdings.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsPieChart>
+                              <RechartsPieChart
+                                data={holdings.map(holding => ({
+                                  name: holding.symbol,
+                                  value: holding.marketValue || 0
+                                }))}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="value"
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              >
+                                {holdings.map((_, index) => (
+                                  <Cell key={`cell-${index}`} fill={`hsl(${index * 137.5}, 70%, 50%)`} />
+                                ))}
+                              </RechartsPieChart>
+                              <Tooltip formatter={(value: any) => [`$${value.toFixed(2)}`, 'Value']} />
+                            </RechartsPieChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-500">
+                            No holdings to display
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
 
               {/* Portfolio Selection */}
               <Card>
@@ -525,21 +671,83 @@ export default function InvestmentsPage() {
                   <h2 className="text-2xl font-bold">Transaction History</h2>
                   <p className="text-gray-600">Track all your buy and sell transactions</p>
                 </div>
-                <Button onClick={() => setShowAddTransaction(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Transaction
-                </Button>
+                {selectedPortfolio && (
+                  <Button onClick={() => setShowAddTransaction(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Transaction
+                  </Button>
+                )}
               </div>
 
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <DollarSign className="h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Transaction tracking coming soon</h3>
-                  <p className="text-gray-500 text-center">
-                    View detailed transaction history, export data, and analyze trading patterns.
-                  </p>
-                </CardContent>
-              </Card>
+              {!selectedPortfolio ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <History className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a portfolio</h3>
+                    <p className="text-gray-500 text-center">
+                      Choose a portfolio from the Overview tab to view its transaction history.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <History className="h-5 w-5 mr-2" />
+                      {selectedPortfolio.name} - Transaction History
+                    </CardTitle>
+                    <CardDescription>
+                      {transactions.length} transactions recorded
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {transactions.length === 0 ? (
+                      <div className="text-center py-8">
+                        <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No transactions yet</h3>
+                        <p className="text-gray-500 mb-4">Add your first transaction to start tracking this portfolio.</p>
+                        <Button onClick={() => setShowAddTransaction(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add First Transaction
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {transactions.map((transaction) => (
+                          <div key={transaction._id} className="flex justify-between items-center p-4 border rounded-lg">
+                            <div className="flex items-center gap-4">
+                              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                transaction.transactionType === 'BUY' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {transaction.transactionType}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold">{transaction.symbol}</h3>
+                                <p className="text-sm text-gray-600">
+                                  {new Date(transaction.date).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold">
+                                {transaction.shares} shares @ ${transaction.price.toFixed(2)}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Total: ${(transaction.shares * transaction.price).toLocaleString()}
+                              </p>
+                              {transaction.notes && (
+                                <p className="text-xs text-gray-500 mt-1">{transaction.notes}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Watchlist Tab */}
@@ -634,6 +842,120 @@ export default function InvestmentsPage() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Rebalance Tab */}
+            <TabsContent value="rebalance" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Portfolio Rebalancing</h2>
+                  <p className="text-gray-600">Optimize your portfolio allocation</p>
+                </div>
+              </div>
+
+              {!selectedPortfolio ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Target className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a portfolio</h3>
+                    <p className="text-gray-500 text-center">
+                      Choose a portfolio from the Overview tab to view rebalancing suggestions.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Current Allocation */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <PieChart className="h-5 w-5 mr-2" />
+                        Current Allocation
+                      </CardTitle>
+                      <CardDescription>Your current portfolio distribution</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {holdings.length > 0 ? (
+                        <div className="space-y-3">
+                          {holdings.map((holding) => {
+                            const percentage = portfolioTotals.totalValue > 0 
+                              ? (holding.marketValue / portfolioTotals.totalValue) * 100 
+                              : 0;
+                            return (
+                              <div key={holding._id} className="flex justify-between items-center p-3 border rounded-lg">
+                                <div>
+                                  <h4 className="font-semibold">{holding.symbol}</h4>
+                                  <p className="text-sm text-gray-600">{holding.name}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold">${holding.marketValue?.toFixed(2) || 0}</p>
+                                  <p className="text-sm text-gray-600">{percentage.toFixed(1)}%</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          No holdings to analyze
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Rebalancing Suggestions */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Target className="h-5 w-5 mr-2" />
+                        Rebalancing Suggestions
+                      </CardTitle>
+                      <CardDescription>Recommended actions to optimize allocation</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {holdings.length > 0 ? (
+                        <div className="space-y-4">
+                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h4 className="font-semibold text-blue-900 mb-2">💡 Smart Suggestions</h4>
+                            <ul className="text-sm text-blue-800 space-y-1">
+                              <li>• Consider diversifying across sectors</li>
+                              <li>• Rebalance quarterly to maintain target allocation</li>
+                              <li>• Consider adding bonds for stability</li>
+                              <li>• Monitor concentration risk in single stocks</li>
+                            </ul>
+                          </div>
+                          
+                          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h4 className="font-semibold text-green-900 mb-2">✅ Portfolio Health</h4>
+                            <div className="text-sm text-green-800 space-y-1">
+                              <p>• Number of positions: {holdings.length}</p>
+                              <p>• Total diversification score: {holdings.length >= 3 ? 'Good' : 'Needs improvement'}</p>
+                              <p>• Risk level: {holdings.length >= 5 ? 'Balanced' : 'Concentrated'}</p>
+                            </div>
+                          </div>
+
+                          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Attention Needed</h4>
+                            {holdings.some(h => (h.marketValue / portfolioTotals.totalValue) > 0.4) ? (
+                              <p className="text-sm text-yellow-800">
+                                Consider reducing concentration in single positions (over 40%)
+                              </p>
+                            ) : (
+                              <p className="text-sm text-yellow-800">
+                                Portfolio allocation looks balanced
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          Add holdings to get rebalancing suggestions
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         )}
