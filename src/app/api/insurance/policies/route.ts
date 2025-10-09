@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     // Create new insurance policy
     const policy = new InsurancePolicy({
       userId: session.user.id,
-      providerId,
+      providerId: providerId && providerId.trim() !== '' ? providerId : undefined,
       policyNumber,
       policyType,
       policyName,

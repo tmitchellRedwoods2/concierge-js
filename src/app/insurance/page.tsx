@@ -99,11 +99,22 @@ export default function InsurancePage() {
     }
 
     try {
-      console.log('Submitting policy:', newPolicy);
+      // Clean up the data before sending
+      const policyData = {
+        ...newPolicy,
+        providerId: newPolicy.providerId && newPolicy.providerId.trim() !== '' ? newPolicy.providerId : undefined,
+        description: newPolicy.description || undefined,
+        agentName: newPolicy.agentName || undefined,
+        agentPhone: newPolicy.agentPhone || undefined,
+        agentEmail: newPolicy.agentEmail || undefined,
+        notes: newPolicy.notes || undefined
+      };
+      
+      console.log('Submitting policy:', policyData);
       const response = await fetch('/api/insurance/policies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPolicy),
+        body: JSON.stringify(policyData),
       });
 
       const data = await response.json();
