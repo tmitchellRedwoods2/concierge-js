@@ -145,14 +145,22 @@ export default function InvestmentsPage() {
   };
 
   const loadHistoricalData = async () => {
-    if (!selectedPortfolio || holdings.length === 0) return;
+    if (!selectedPortfolio || holdings.length === 0) {
+      console.log('Skipping historical data load:', { selectedPortfolio: !!selectedPortfolio, holdingsCount: holdings.length });
+      return;
+    }
     try {
+      console.log('Loading historical data for symbols:', holdings.map(h => h.symbol));
       // Load historical data for portfolio performance
       const symbols = holdings.map(h => h.symbol).join(',');
       const response = await fetch(`/api/investments/historical?symbols=${symbols}`);
+      console.log('Historical data response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('Historical data received:', data);
         setHistoricalData(data.historicalData || []);
+      } else {
+        console.error('Failed to fetch historical data:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to load historical data:', error);
@@ -454,13 +462,43 @@ export default function InvestmentsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="h-64">
-                        <div className="flex items-center justify-center h-full">
-                          <div className="text-center">
-                            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-500">Performance charts coming soon</p>
-                            <p className="text-xs text-gray-400 mt-2">Historical data: {historicalData.length} points</p>
+                        {historicalData.length > 0 ? (
+                          <div className="p-4">
+                            <div className="text-sm text-gray-600 mb-3">
+                              Debug: {historicalData.length} historical data points loaded
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm">Portfolio Value:</span>
+                                <span className="font-medium">${portfolioTotals.totalValue.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm">Total Cost:</span>
+                                <span className="font-medium">${portfolioTotals.totalCost.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm">Gain/Loss:</span>
+                                <span className={`font-medium ${portfolioTotals.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  ${portfolioTotals.totalGainLoss.toFixed(2)} ({totalGainLossPercent.toFixed(2)}%)
+                                </span>
+                              </div>
+                              <div className="mt-4 p-3 bg-blue-50 rounded">
+                                <p className="text-sm text-blue-800">
+                                  💡 Advanced charts will show historical performance trends once we have more data points.
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <div className="text-center">
+                              <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                              <p className="text-gray-500">Loading performance data...</p>
+                              <p className="text-xs text-gray-400 mt-2">Historical data: {historicalData.length} points</p>
+                              <p className="text-xs text-gray-400">Holdings: {holdings.length}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
