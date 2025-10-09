@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 export interface IInsurancePolicy extends mongoose.Document {
   userId: mongoose.Types.ObjectId;
-  providerId: mongoose.Types.ObjectId;
+  providerId?: mongoose.Types.ObjectId;
   policyNumber: string;
   policyType: 'AUTO' | 'HOME' | 'HEALTH' | 'LIFE' | 'DISABILITY' | 'RENTERS' | 'UMBRELLA' | 'BUSINESS';
   status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PENDING';
@@ -48,13 +48,12 @@ const InsurancePolicySchema = new mongoose.Schema<IInsurancePolicy>(
     providerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'InsuranceProvider',
-      required: true,
+      required: false,
       index: true,
     },
     policyNumber: {
       type: String,
       required: true,
-      unique: true,
     },
     policyType: {
       type: String,
