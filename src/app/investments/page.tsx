@@ -222,6 +222,20 @@ export default function InvestmentsPage() {
     }
   };
 
+  const removeFromWatchlist = async (symbol: string) => {
+    try {
+      const response = await fetch(`/api/investments/watchlist?symbol=${symbol}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await loadWatchlist();
+      }
+    } catch (error) {
+      console.error('Failed to remove from watchlist:', error);
+    }
+  };
+
   const addTransaction = async () => {
     if (!selectedPortfolio || !newTransaction.symbol || !newTransaction.shares || !newTransaction.price) return;
 
@@ -862,11 +876,11 @@ export default function InvestmentsPage() {
                     <div className="space-y-3">
                       {watchlist.map((item) => (
                         <div key={item._id} className="flex justify-between items-center p-4 border rounded-lg">
-                          <div>
+                          <div className="flex-1">
                             <h3 className="font-semibold">{item.name}</h3>
                             <p className="text-sm text-gray-600">{item.symbol}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right mr-4">
                             <p className="font-bold">
                               ${item.currentPrice?.toFixed(2) || 'N/A'}
                             </p>
@@ -881,6 +895,14 @@ export default function InvestmentsPage() {
                               </span>
                             </div>
                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeFromWatchlist(item.symbol)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            Remove
+                          </Button>
                         </div>
                       ))}
                     </div>
