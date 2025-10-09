@@ -219,7 +219,9 @@ export default function InvestmentsPage() {
     portfolios: portfolios.length,
     selectedPortfolio: selectedPortfolio?.name,
     holdings: holdings.length,
-    loading
+    loading,
+    portfolioTotals,
+    holdingsData: holdings
   });
 
   const totalGainLossPercent = portfolioTotals.totalCost > 0 
@@ -340,6 +342,9 @@ export default function InvestmentsPage() {
                       ${portfolioTotals.totalValue.toLocaleString()}
                     </div>
                     <p className="text-sm text-gray-500">Current market value</p>
+                    <div className="text-xs text-gray-400 mt-1">
+                      Debug: holdings={holdings.length}, selected={selectedPortfolio?.name}
+                    </div>
                   </CardContent>
                 </Card>
 
