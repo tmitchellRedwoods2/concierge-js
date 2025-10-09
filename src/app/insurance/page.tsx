@@ -37,6 +37,16 @@ export default function InsurancePage() {
   // Form states
   const [showAddPolicy, setShowAddPolicy] = useState(false);
   const [showAddClaim, setShowAddClaim] = useState(false);
+  const [newClaim, setNewClaim] = useState({
+    policyId: "",
+    claimNumber: "",
+    dateOfIncident: "",
+    description: "",
+    status: "SUBMITTED",
+    amountClaimed: "",
+    amountApproved: "",
+    notes: ""
+  });
   const [newPolicy, setNewPolicy] = useState({
     providerId: "",
     policyNumber: "",
@@ -59,6 +69,7 @@ export default function InsurancePage() {
   useEffect(() => {
     loadPolicies();
     loadProviders();
+    loadClaims();
   }, []);
 
   const loadPolicies = async () => {
@@ -84,6 +95,18 @@ export default function InsurancePage() {
       console.error('Failed to load providers:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadClaims = async () => {
+    try {
+      const response = await fetch('/api/insurance/claims');
+      if (response.ok) {
+        const data = await response.json();
+        setClaims(data.claims || []);
+      }
+    } catch (error) {
+      console.error('Failed to load claims:', error);
     }
   };
 
@@ -150,6 +173,54 @@ export default function InsurancePage() {
     }
   };
 
+  const addClaim = async () => {
+    if (!newClaim.policyId || !newClaim.dateOfIncident || !newClaim.description) {
+      alert('Please fill in Policy, Date of Incident, and Description');
+      return;
+    }
+
+    try {
+      const claimData = {
+        ...newClaim,
+        policyId: newClaim.policyId && newClaim.policyId.trim() !== '' ? newClaim.policyId : undefined,
+        amountClaimed: newClaim.amountClaimed || 0,
+        amountApproved: newClaim.amountApproved || 0,
+        notes: newClaim.notes || undefined
+      };
+      
+      console.log('Submitting claim:', claimData);
+      const response = await fetch('/api/insurance/claims', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(claimData),
+      });
+
+      const data = await response.json();
+      console.log('API response:', data);
+
+      if (response.ok) {
+        alert('Claim filed successfully!');
+        await loadClaims();
+        setShowAddClaim(false);
+        setNewClaim({
+          policyId: "",
+          claimNumber: "",
+          dateOfIncident: "",
+          description: "",
+          status: "SUBMITTED",
+          amountClaimed: "",
+          amountApproved: "",
+          notes: ""
+        });
+      } else {
+        alert(`Error: ${data.error || 'Failed to file claim'}`);
+      }
+    } catch (error) {
+      console.error('Failed to file claim:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
   const getPolicyTypeIcon = (type: string) => {
     switch (type) {
       case 'AUTO': return '🚗';
@@ -171,6 +242,18 @@ export default function InsurancePage() {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800';
       case 'CANCELLED': return 'bg-gray-100 text-gray-800';
       default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getClaimStatusColor = (status: string) => {
+    switch (status) {
+      case 'SUBMITTED': return 'bg-blue-100 text-blue-800';
+      case 'UNDER_REVIEW': return 'bg-yellow-100 text-yellow-800';
+      case 'APPROVED': return 'bg-green-100 text-green-800';
+      case 'DENIED': return 'bg-red-100 text-red-800';
+      case 'PAID': return 'bg-green-100 text-green-800';
+      case 'CLOSED': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -447,15 +530,71 @@ export default function InsurancePage() {
               </Button>
             </div>
 
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Claims management coming soon</h3>
-                <p className="text-gray-500 text-center">
-                  File and track insurance claims with full document management.
-                </p>
-              </CardContent>
-            </Card>
+            {claims.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No claims yet</h3>
+                  <p className="text-gray-500 mb-4">File your first insurance claim to get started.</p>
+                  <Button onClick={() => setShowAddClaim(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    File First Claim
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {claims.map((claim) => (
+                  <Card key={claim._id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center">
+                            <FileText className="h-5 w-5 mr-2" />
+                            {claim.claimNumber}
+                          </CardTitle>
+                          <CardDescription>
+                            {claim.policyId?.policyName || 'Unknown Policy'} • {new Date(claim.dateOfIncident).toLocaleDateString()}
+                          </CardDescription>
+                        </div>
+                        <Badge className={getClaimStatusColor(claim.status)}>
+                          {claim.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div>
+                          <span className="text-sm text-gray-600">Description:</span>
+                          <p className="text-sm mt-1">{claim.description}</p>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Amount Claimed:</span>
+                          <span className="font-medium">${claim.amountClaimed?.toLocaleString()}</span>
+                        </div>
+                        {claim.amountApproved > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Amount Approved:</span>
+                            <span className="font-medium text-green-600">${claim.amountApproved?.toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Date Filed:</span>
+                          <span className="font-medium">
+                            {new Date(claim.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {claim.notes && (
+                          <div className="pt-2 border-t">
+                            <p className="text-sm text-gray-600">Notes: {claim.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Providers Tab */}
@@ -547,6 +686,113 @@ export default function InsurancePage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Add Claim Modal */}
+        {showAddClaim && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>File New Insurance Claim</CardTitle>
+                <CardDescription>Submit a new insurance claim</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Policy</label>
+                  <select
+                    className="w-full mt-1 p-2 border rounded-md"
+                    value={newClaim.policyId}
+                    onChange={(e) => setNewClaim({ ...newClaim, policyId: e.target.value })}
+                  >
+                    <option value="">Select a policy</option>
+                    {policies.map((policy) => (
+                      <option key={policy._id} value={policy._id}>
+                        {policy.policyName} - {policy.policyNumber}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Claim Number (optional)"
+                    value={newClaim.claimNumber}
+                    onChange={(e) => setNewClaim({ ...newClaim, claimNumber: e.target.value })}
+                  />
+                  
+                  <div>
+                    <label className="text-sm font-medium">Date of Incident</label>
+                    <Input
+                      type="date"
+                      value={newClaim.dateOfIncident}
+                      onChange={(e) => setNewClaim({ ...newClaim, dateOfIncident: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-20"
+                    placeholder="Describe what happened..."
+                    value={newClaim.description}
+                    onChange={(e) => setNewClaim({ ...newClaim, description: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Amount Claimed"
+                    type="number"
+                    value={newClaim.amountClaimed}
+                    onChange={(e) => setNewClaim({ ...newClaim, amountClaimed: e.target.value })}
+                  />
+                  
+                  <div>
+                    <label className="text-sm font-medium">Status</label>
+                    <select
+                      className="w-full mt-1 p-2 border rounded-md"
+                      value={newClaim.status}
+                      onChange={(e) => setNewClaim({ ...newClaim, status: e.target.value })}
+                    >
+                      <option value="SUBMITTED">Submitted</option>
+                      <option value="UNDER_REVIEW">Under Review</option>
+                      <option value="APPROVED">Approved</option>
+                      <option value="DENIED">Denied</option>
+                      <option value="PAID">Paid</option>
+                      <option value="CLOSED">Closed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <Input
+                  placeholder="Amount Approved (optional)"
+                  type="number"
+                  value={newClaim.amountApproved}
+                  onChange={(e) => setNewClaim({ ...newClaim, amountApproved: e.target.value })}
+                />
+
+                <div>
+                  <label className="text-sm font-medium">Notes (optional)</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-16"
+                    placeholder="Additional notes..."
+                    value={newClaim.notes}
+                    onChange={(e) => setNewClaim({ ...newClaim, notes: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={addClaim} className="flex-1">
+                    File Claim
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddClaim(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Add Policy Modal */}
         {showAddPolicy && (
