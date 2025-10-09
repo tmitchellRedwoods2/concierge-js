@@ -524,7 +524,10 @@ export default function InsurancePage() {
                 <h2 className="text-2xl font-bold">Insurance Claims</h2>
                 <p className="text-gray-600">Track your insurance claims</p>
               </div>
-              <Button onClick={() => setShowAddClaim(true)}>
+              <Button onClick={() => {
+                console.log('File Claim button clicked');
+                setShowAddClaim(true);
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
                 File Claim
               </Button>
@@ -688,6 +691,7 @@ export default function InsurancePage() {
         </Tabs>
 
         {/* Add Claim Modal */}
+        {console.log('showAddClaim state:', showAddClaim)}
         {showAddClaim && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
