@@ -524,6 +524,7 @@ export default function InvestmentsPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  </div>
                 </div>
               )}
 
