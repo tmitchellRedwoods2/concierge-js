@@ -1,46 +1,170 @@
 /**
- * Insurance page
+ * Insurance Management page
  */
 "use client";
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Shield, 
+  FileText, 
+  DollarSign, 
+  Calendar,
+  Plus,
+  Eye,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Building2
+} from "lucide-react";
 
 export default function InsurancePage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [policies, setPolicies] = useState([
-    { id: 1, type: "Auto Insurance", provider: "State Farm", policyNumber: "SF-123456", premium: 120, dueDate: "2024-02-15", status: "Active" },
-    { id: 2, type: "Home Insurance", provider: "Allstate", policyNumber: "AL-789012", premium: 85, dueDate: "2024-03-01", status: "Active" },
-    { id: 3, type: "Health Insurance", provider: "Blue Cross", policyNumber: "BC-345678", premium: 450, dueDate: "2024-01-30", status: "Active" },
-  ]);
-  const [claims, setClaims] = useState([
-    { id: 1, policy: "Auto Insurance", claimNumber: "CL-001", amount: 2500, status: "Approved", date: "2024-01-10" },
-    { id: 2, policy: "Home Insurance", claimNumber: "CL-002", amount: 1200, status: "Pending", date: "2024-01-15" },
-  ]);
-  const [newPolicy, setNewPolicy] = useState({ type: "", provider: "", policyNumber: "", premium: "", dueDate: "" });
+  
+  // State management
+  const [policies, setPolicies] = useState<any[]>([]);
+  const [claims, setClaims] = useState<any[]>([]);
+  const [providers, setProviders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Form states
+  const [showAddPolicy, setShowAddPolicy] = useState(false);
+  const [showAddClaim, setShowAddClaim] = useState(false);
+  const [newPolicy, setNewPolicy] = useState({
+    providerId: "",
+    policyNumber: "",
+    policyType: "AUTO",
+    policyName: "",
+    description: "",
+    coverageAmount: "",
+    deductible: "",
+    premiumAmount: "",
+    premiumFrequency: "ANNUAL",
+    effectiveDate: "",
+    expirationDate: "",
+    agentName: "",
+    agentPhone: "",
+    agentEmail: "",
+    notes: ""
+  });
 
-  const addPolicy = () => {
-    if (newPolicy.type && newPolicy.provider && newPolicy.policyNumber && newPolicy.premium) {
-      const policy = {
-        id: policies.length + 1,
-        type: newPolicy.type,
-        provider: newPolicy.provider,
-        policyNumber: newPolicy.policyNumber,
-        premium: parseFloat(newPolicy.premium),
-        dueDate: newPolicy.dueDate,
-        status: "Active"
-      };
-      setPolicies([...policies, policy]);
-      setNewPolicy({ type: "", provider: "", policyNumber: "", premium: "", dueDate: "" });
+  // Load data on component mount
+  useEffect(() => {
+    loadPolicies();
+    loadProviders();
+  }, []);
+
+  const loadPolicies = async () => {
+    try {
+      const response = await fetch('/api/insurance/policies');
+      if (response.ok) {
+        const data = await response.json();
+        setPolicies(data.policies || []);
+      }
+    } catch (error) {
+      console.error('Failed to load policies:', error);
     }
   };
 
-  const totalPremium = policies.reduce((sum, policy) => sum + policy.premium, 0);
+  const loadProviders = async () => {
+    try {
+      const response = await fetch('/api/insurance/providers');
+      if (response.ok) {
+        const data = await response.json();
+        setProviders(data.providers || []);
+      }
+    } catch (error) {
+      console.error('Failed to load providers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addPolicy = async () => {
+    if (!newPolicy.policyNumber || !newPolicy.policyName || !newPolicy.coverageAmount) return;
+
+    try {
+      const response = await fetch('/api/insurance/policies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPolicy),
+      });
+
+      if (response.ok) {
+        await loadPolicies();
+        setShowAddPolicy(false);
+        setNewPolicy({
+          providerId: "",
+          policyNumber: "",
+          policyType: "AUTO",
+          policyName: "",
+          description: "",
+          coverageAmount: "",
+          deductible: "",
+          premiumAmount: "",
+          premiumFrequency: "ANNUAL",
+          effectiveDate: "",
+          expirationDate: "",
+          agentName: "",
+          agentPhone: "",
+          agentEmail: "",
+          notes: ""
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add policy:', error);
+    }
+  };
+
+  const getPolicyTypeIcon = (type: string) => {
+    switch (type) {
+      case 'AUTO': return '🚗';
+      case 'HOME': return '🏠';
+      case 'HEALTH': return '🏥';
+      case 'LIFE': return '👤';
+      case 'DISABILITY': return '♿';
+      case 'RENTERS': return '🏢';
+      case 'UMBRELLA': return '☂️';
+      case 'BUSINESS': return '🏢';
+      default: return '🛡️';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'bg-green-100 text-green-800';
+      case 'EXPIRED': return 'bg-red-100 text-red-800';
+      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+      case 'CANCELLED': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  // Calculate summary statistics
+  const activePolicies = policies.filter(p => p.status === 'ACTIVE');
+  const totalCoverage = activePolicies.reduce((sum, p) => sum + (p.coverageAmount || 0), 0);
+  const totalPremiums = activePolicies.reduce((sum, p) => {
+    const annualPremium = p.premiumFrequency === 'MONTHLY' ? (p.premiumAmount || 0) * 12 :
+                         p.premiumFrequency === 'QUARTERLY' ? (p.premiumAmount || 0) * 4 :
+                         p.premiumFrequency === 'SEMI_ANNUAL' ? (p.premiumAmount || 0) * 2 :
+                         (p.premiumAmount || 0);
+    return sum + annualPremium;
+  }, 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -57,7 +181,7 @@ export default function InsurancePage() {
                 Welcome, {session?.user?.name}
               </span>
               <Button
-                onClick={() => router.push("/")}
+                onClick={() => signOut()}
                 variant="outline"
                 size="sm"
               >
@@ -115,140 +239,418 @@ export default function InsurancePage() {
             🛡️ Insurance Management
           </h1>
           <p className="text-gray-600">
-            Manage your insurance policies and claims
+            Manage your insurance policies, track claims, and monitor coverage
           </p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Total Policies</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <Shield className="h-5 w-5 mr-2" />
+                Total Policies
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
                 {policies.length}
               </div>
+              <p className="text-sm text-gray-500">{activePolicies.length} active</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Monthly Premium</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                Total Coverage
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                ${totalPremium}
+                ${totalCoverage.toLocaleString()}
               </div>
+              <p className="text-sm text-gray-500">Coverage amount</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Active Claims</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <Calendar className="h-5 w-5 mr-2" />
+                Annual Premiums
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {claims.filter(c => c.status === 'Pending').length}
+                ${totalPremiums.toLocaleString()}
               </div>
+              <p className="text-sm text-gray-500">Per year</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Active Claims
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">
+                {claims.filter(c => c.status === 'PENDING' || c.status === 'UNDER_REVIEW').length}
+              </div>
+              <p className="text-sm text-gray-500">In progress</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Add Policy Form */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Add New Policy</CardTitle>
-            <CardDescription>Track a new insurance policy</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <Input
-                placeholder="Policy Type"
-                value={newPolicy.type}
-                onChange={(e) => setNewPolicy({ ...newPolicy, type: e.target.value })}
-              />
-              <Input
-                placeholder="Provider"
-                value={newPolicy.provider}
-                onChange={(e) => setNewPolicy({ ...newPolicy, provider: e.target.value })}
-              />
-              <Input
-                placeholder="Policy Number"
-                value={newPolicy.policyNumber}
-                onChange={(e) => setNewPolicy({ ...newPolicy, policyNumber: e.target.value })}
-              />
-              <Input
-                placeholder="Monthly Premium"
-                type="number"
-                value={newPolicy.premium}
-                onChange={(e) => setNewPolicy({ ...newPolicy, premium: e.target.value })}
-              />
-              <Input
-                type="date"
-                value={newPolicy.dueDate}
-                onChange={(e) => setNewPolicy({ ...newPolicy, dueDate: e.target.value })}
-              />
-              <Button onClick={addPolicy} className="w-full md:col-span-1">
+        <Tabs defaultValue="policies" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="policies" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Policies
+            </TabsTrigger>
+            <TabsTrigger value="claims" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Claims
+            </TabsTrigger>
+            <TabsTrigger value="providers" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Providers
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Policies Tab */}
+          <TabsContent value="policies" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Insurance Policies</h2>
+                <p className="text-gray-600">Manage your insurance coverage</p>
+              </div>
+              <Button onClick={() => setShowAddPolicy(true)}>
+                <Plus className="h-4 w-4 mr-2" />
                 Add Policy
               </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Policies List */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Insurance Policies</CardTitle>
-            <CardDescription>Your active insurance policies</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {policies.map((policy) => (
-                <div key={policy.id} className="flex justify-between items-center p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-semibold">{policy.type}</h3>
-                    <p className="text-sm text-gray-600">{policy.provider} • {policy.policyNumber}</p>
-                    <p className="text-sm text-gray-500">Due: {policy.dueDate}</p>
+            {policies.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Shield className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No policies yet</h3>
+                  <p className="text-gray-500 mb-4">Add your first insurance policy to get started.</p>
+                  <Button onClick={() => setShowAddPolicy(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Policy
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {policies.map((policy) => (
+                  <Card key={policy._id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center">
+                            <span className="mr-2">{getPolicyTypeIcon(policy.policyType)}</span>
+                            {policy.policyName}
+                          </CardTitle>
+                          <CardDescription>
+                            {policy.providerId?.name || 'Unknown Provider'} • {policy.policyNumber}
+                          </CardDescription>
+                        </div>
+                        <Badge className={getStatusColor(policy.status)}>
+                          {policy.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Coverage:</span>
+                          <span className="font-medium">${policy.coverageAmount?.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Deductible:</span>
+                          <span className="font-medium">${policy.deductible?.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Premium:</span>
+                          <span className="font-medium">
+                            ${policy.premiumAmount?.toLocaleString()}/{policy.premiumFrequency?.toLowerCase()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Expires:</span>
+                          <span className="font-medium">
+                            {new Date(policy.expirationDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {policy.agentName && (
+                          <div className="pt-2 border-t">
+                            <p className="text-sm text-gray-600">Agent: {policy.agentName}</p>
+                            {policy.agentPhone && <p className="text-sm text-gray-600">{policy.agentPhone}</p>}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Claims Tab */}
+          <TabsContent value="claims" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Insurance Claims</h2>
+                <p className="text-gray-600">Track your insurance claims</p>
+              </div>
+              <Button onClick={() => setShowAddClaim(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                File Claim
+              </Button>
+            </div>
+
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Claims management coming soon</h3>
+                <p className="text-gray-500 text-center">
+                  File and track insurance claims with full document management.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Providers Tab */}
+          <TabsContent value="providers" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Insurance Providers</h2>
+                <p className="text-gray-600">Browse insurance companies and get quotes</p>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Building2 className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Provider directory coming soon</h3>
+                <p className="text-gray-500 text-center">
+                  Compare insurance providers, get quotes, and find the best coverage.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Coverage Analytics</h2>
+                <p className="text-gray-600">Analyze your insurance coverage and identify gaps</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Coverage Breakdown</CardTitle>
+                  <CardDescription>Your insurance coverage by type</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {['AUTO', 'HOME', 'HEALTH', 'LIFE'].map((type) => {
+                      const typePolicies = policies.filter(p => p.policyType === type);
+                      const typeCoverage = typePolicies.reduce((sum, p) => sum + (p.coverageAmount || 0), 0);
+                      return (
+                        <div key={type} className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <span className="mr-2">{getPolicyTypeIcon(type)}</span>
+                            <span className="capitalize">{type.toLowerCase()}</span>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">${typeCoverage.toLocaleString()}</p>
+                            <p className="text-sm text-gray-600">{typePolicies.length} policies</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-blue-600">${policy.premium}/month</p>
-                    <p className={`text-sm ${policy.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
-                      {policy.status}
-                    </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Coverage Recommendations</CardTitle>
+                  <CardDescription>Suggested improvements to your coverage</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center">
+                        <AlertTriangle className="h-5 w-5 text-blue-600 mr-2" />
+                        <h4 className="font-semibold text-blue-900">Consider Umbrella Insurance</h4>
+                      </div>
+                      <p className="text-sm text-blue-800 mt-1">
+                        Additional liability coverage beyond your existing policies.
+                      </p>
+                    </div>
+                    
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+                        <h4 className="font-semibold text-green-900">Good Coverage</h4>
+                      </div>
+                      <p className="text-sm text-green-800 mt-1">
+                        Your current policies provide solid protection.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Add Policy Modal */}
+        {showAddPolicy && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Add New Insurance Policy</CardTitle>
+                <CardDescription>Track a new insurance policy</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Policy Type</label>
+                    <select
+                      className="w-full mt-1 p-2 border rounded-md"
+                      value={newPolicy.policyType}
+                      onChange={(e) => setNewPolicy({ ...newPolicy, policyType: e.target.value })}
+                    >
+                      <option value="AUTO">Auto Insurance</option>
+                      <option value="HOME">Home Insurance</option>
+                      <option value="HEALTH">Health Insurance</option>
+                      <option value="LIFE">Life Insurance</option>
+                      <option value="DISABILITY">Disability Insurance</option>
+                      <option value="RENTERS">Renters Insurance</option>
+                      <option value="UMBRELLA">Umbrella Insurance</option>
+                      <option value="BUSINESS">Business Insurance</option>
+                    </select>
+                  </div>
+                  
+                  <Input
+                    placeholder="Policy Number"
+                    value={newPolicy.policyNumber}
+                    onChange={(e) => setNewPolicy({ ...newPolicy, policyNumber: e.target.value })}
+                  />
+                </div>
+
+                <Input
+                  placeholder="Policy Name"
+                  value={newPolicy.policyName}
+                  onChange={(e) => setNewPolicy({ ...newPolicy, policyName: e.target.value })}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Coverage Amount"
+                    type="number"
+                    value={newPolicy.coverageAmount}
+                    onChange={(e) => setNewPolicy({ ...newPolicy, coverageAmount: e.target.value })}
+                  />
+                  
+                  <Input
+                    placeholder="Deductible"
+                    type="number"
+                    value={newPolicy.deductible}
+                    onChange={(e) => setNewPolicy({ ...newPolicy, deductible: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Premium Amount"
+                    type="number"
+                    value={newPolicy.premiumAmount}
+                    onChange={(e) => setNewPolicy({ ...newPolicy, premiumAmount: e.target.value })}
+                  />
+                  
+                  <select
+                    className="w-full p-2 border rounded-md"
+                    value={newPolicy.premiumFrequency}
+                    onChange={(e) => setNewPolicy({ ...newPolicy, premiumFrequency: e.target.value })}
+                  >
+                    <option value="MONTHLY">Monthly</option>
+                    <option value="QUARTERLY">Quarterly</option>
+                    <option value="SEMI_ANNUAL">Semi-Annual</option>
+                    <option value="ANNUAL">Annual</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Effective Date</label>
+                    <Input
+                      type="date"
+                      value={newPolicy.effectiveDate}
+                      onChange={(e) => setNewPolicy({ ...newPolicy, effectiveDate: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">Expiration Date</label>
+                    <Input
+                      type="date"
+                      value={newPolicy.expirationDate}
+                      onChange={(e) => setNewPolicy({ ...newPolicy, expirationDate: e.target.value })}
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Claims List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Claims</CardTitle>
-            <CardDescription>Your insurance claims history</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {claims.map((claim) => (
-                <div key={claim.id} className="flex justify-between items-center p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-semibold">{claim.policy}</h3>
-                    <p className="text-sm text-gray-600">Claim #{claim.claimNumber}</p>
-                    <p className="text-sm text-gray-500">{claim.date}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">${claim.amount}</p>
-                    <p className={`text-sm ${claim.status === 'Approved' ? 'text-green-600' : 'text-orange-600'}`}>
-                      {claim.status}
-                    </p>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input
+                    placeholder="Agent Name"
+                    value={newPolicy.agentName}
+                    onChange={(e) => setNewPolicy({ ...newPolicy, agentName: e.target.value })}
+                  />
+                  
+                  <Input
+                    placeholder="Agent Phone"
+                    value={newPolicy.agentPhone}
+                    onChange={(e) => setNewPolicy({ ...newPolicy, agentPhone: e.target.value })}
+                  />
+                  
+                  <Input
+                    placeholder="Agent Email"
+                    type="email"
+                    value={newPolicy.agentEmail}
+                    onChange={(e) => setNewPolicy({ ...newPolicy, agentEmail: e.target.value })}
+                  />
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={addPolicy} className="flex-1">
+                    Add Policy
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddPolicy(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
