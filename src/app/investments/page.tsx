@@ -49,6 +49,7 @@ export default function InvestmentsPage() {
   const [holdings, setHoldings] = useState<any[]>([]);
   const [watchlist, setWatchlist] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [dividends, setDividends] = useState<any[]>([]);
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -141,6 +142,19 @@ export default function InvestmentsPage() {
       }
     } catch (error) {
       console.error('Failed to load transactions:', error);
+    }
+  };
+
+  const loadDividends = async () => {
+    if (!selectedPortfolio) return;
+    try {
+      const response = await fetch(`/api/investments/dividends?portfolioId=${selectedPortfolio._id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setDividends(data.dividends || []);
+      }
+    } catch (error) {
+      console.error('Failed to load dividends:', error);
     }
   };
 
@@ -266,13 +280,47 @@ export default function InvestmentsPage() {
     }
   };
 
-  // Load holdings, transactions, and historical data when portfolio changes
+  // Load holdings, transactions, dividends, and historical data when portfolio changes
   useEffect(() => {
     if (selectedPortfolio) {
       loadHoldings(selectedPortfolio._id);
       loadTransactions();
+      loadDividends();
     }
   }, [selectedPortfolio]);
+
+  // Add sample dividend for testing (remove this in production)
+  const addSampleDividend = async () => {
+    if (!selectedPortfolio || holdings.length === 0) return;
+    
+    try {
+      const holding = holdings[0]; // Use first holding
+      const response = await fetch('/api/investments/dividends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          portfolioId: selectedPortfolio._id,
+          holdingId: holding._id,
+          symbol: holding.symbol,
+          amount: 12.50, // Sample dividend amount
+          shares: holding.shares,
+          dividendPerShare: 0.24, // Sample dividend per share
+          exDate: new Date().toISOString(),
+          recordDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
+          payDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks from now
+          status: 'PAID',
+          type: 'REGULAR',
+          notes: 'Sample dividend for testing'
+        }),
+      });
+
+      if (response.ok) {
+        await loadDividends();
+      }
+    } catch (error) {
+      console.error('Failed to add sample dividend:', error);
+    }
+  };
 
   // Load historical data when holdings change
   useEffect(() => {
@@ -387,7 +435,7 @@ export default function InvestmentsPage() {
           </div>
         ) : (
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <PieChart className="h-4 w-4" />
                 Overview
@@ -403,6 +451,10 @@ export default function InvestmentsPage() {
               <TabsTrigger value="watchlist" className="flex items-center gap-2">
                 <Star className="h-4 w-4" />
                 Watchlist
+              </TabsTrigger>
+              <TabsTrigger value="dividends" className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Dividends
               </TabsTrigger>
               <TabsTrigger value="rebalance" className="flex items-center gap-2">
                 <Target className="h-4 w-4" />
@@ -909,6 +961,142 @@ export default function InvestmentsPage() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Dividends Tab */}
+            <TabsContent value="dividends" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Dividend Tracking</h2>
+                  <p className="text-gray-600">Track dividend payments and yields</p>
+                </div>
+                {selectedPortfolio && holdings.length > 0 && (
+                  <Button onClick={addSampleDividend} variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Sample Dividend
+                  </Button>
+                )}
+              </div>
+
+              {!selectedPortfolio ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <TrendingUp className="h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a portfolio</h3>
+                    <p className="text-gray-500 text-center">
+                      Choose a portfolio from the Overview tab to view dividend information.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Dividend Summary */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <DollarSign className="h-5 w-5 mr-2" />
+                        Dividend Summary
+                      </CardTitle>
+                      <CardDescription>Total dividend income for {selectedPortfolio.name}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {dividends.length === 0 ? (
+                        <div className="text-center py-8">
+                          <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">No dividends recorded</h3>
+                          <p className="text-gray-500">Dividend payments will appear here when received.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                              <p className="text-2xl font-bold text-green-600">
+                                ${dividends.reduce((sum, div) => sum + div.amount, 0).toFixed(2)}
+                              </p>
+                              <p className="text-sm text-green-600">Total Received</p>
+                            </div>
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                              <p className="text-2xl font-bold text-blue-600">
+                                {dividends.filter(div => div.status === 'PAID').length}
+                              </p>
+                              <p className="text-sm text-blue-600">Payments</p>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <h4 className="font-semibold">Recent Dividends</h4>
+                            {dividends.slice(0, 3).map((dividend) => (
+                              <div key={dividend._id} className="flex justify-between items-center p-3 border rounded-lg">
+                                <div>
+                                  <p className="font-medium">{dividend.symbol}</p>
+                                  <p className="text-sm text-gray-600">
+                                    {new Date(dividend.payDate).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-green-600">
+                                    ${dividend.amount.toFixed(2)}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    ${dividend.dividendPerShare.toFixed(3)}/share
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Dividend Calendar */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <BarChart3 className="h-5 w-5 mr-2" />
+                        Dividend Calendar
+                      </CardTitle>
+                      <CardDescription>Upcoming and recent dividend payments</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {dividends.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          No dividend history to display
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {dividends
+                            .sort((a, b) => new Date(b.payDate).getTime() - new Date(a.payDate).getTime())
+                            .slice(0, 5)
+                            .map((dividend) => (
+                            <div key={dividend._id} className="flex justify-between items-center p-3 border rounded-lg">
+                              <div>
+                                <h4 className="font-semibold">{dividend.symbol}</h4>
+                                <p className="text-sm text-gray-600">
+                                  Pay Date: {new Date(dividend.payDate).toLocaleDateString()}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Ex-Date: {new Date(dividend.exDate).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold">${dividend.amount.toFixed(2)}</p>
+                                <div className={`px-2 py-1 rounded-full text-xs ${
+                                  dividend.status === 'PAID' ? 'bg-green-100 text-green-800' :
+                                  dividend.status === 'EX_DIVIDEND' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {dividend.status}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </TabsContent>
 
             {/* Rebalance Tab */}
