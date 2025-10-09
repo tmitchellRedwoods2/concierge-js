@@ -434,7 +434,14 @@ export default function InvestmentsPage() {
 
               {/* Performance Charts */}
               {selectedPortfolio && holdings.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  {/* Debug info */}
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+                    <strong>Chart Debug:</strong> holdings={holdings.length}, historicalData={historicalData.length}, 
+                    portfolioValue=${portfolioTotals.totalValue.toFixed(2)}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Portfolio Performance Chart */}
                   <Card>
                     <CardHeader>
@@ -446,33 +453,13 @@ export default function InvestmentsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="h-64">
-                        {historicalData.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <RechartsLineChart data={historicalData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis 
-                                dataKey="date" 
-                                tickFormatter={(date) => new Date(date).toLocaleDateString()}
-                              />
-                              <YAxis tickFormatter={(value) => `$${value.toFixed(0)}`} />
-                              <Tooltip 
-                                labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                                formatter={(value: any) => [`$${value.toFixed(2)}`, 'Portfolio Value']}
-                              />
-                              <Line 
-                                type="monotone" 
-                                dataKey="portfolioValue" 
-                                stroke="#2563eb" 
-                                strokeWidth={2}
-                                dot={false}
-                              />
-                            </RechartsLineChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-gray-500">
-                            Loading chart data...
+                        <div className="flex items-center justify-center h-full">
+                          <div className="text-center">
+                            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500">Performance charts coming soon</p>
+                            <p className="text-xs text-gray-400 mt-2">Historical data: {historicalData.length} points</p>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -489,27 +476,36 @@ export default function InvestmentsPage() {
                     <CardContent>
                       <div className="h-64">
                         {holdings.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <RechartsPieChart>
-                              <RechartsPieChart
-                                data={holdings.map(holding => ({
-                                  name: holding.symbol,
-                                  value: holding.marketValue || 0
-                                }))}
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="value"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                              >
-                                {holdings.map((_, index) => (
-                                  <Cell key={`cell-${index}`} fill={`hsl(${index * 137.5}, 70%, 50%)`} />
-                                ))}
-                              </RechartsPieChart>
-                              <Tooltip formatter={(value: any) => [`$${value.toFixed(2)}`, 'Value']} />
-                            </RechartsPieChart>
-                          </ResponsiveContainer>
+                          <div className="space-y-3">
+                            {holdings.map((holding, index) => {
+                              const percentage = portfolioTotals.totalValue > 0 
+                                ? (holding.marketValue / portfolioTotals.totalValue) * 100 
+                                : 0;
+                              return (
+                                <div key={holding._id} className="flex items-center gap-3">
+                                  <div 
+                                    className="w-4 h-4 rounded-full"
+                                    style={{ backgroundColor: `hsl(${index * 137.5}, 70%, 50%)` }}
+                                  />
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-center">
+                                      <span className="font-medium">{holding.symbol}</span>
+                                      <span className="text-sm text-gray-600">{percentage.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                      <div 
+                                        className="h-2 rounded-full"
+                                        style={{ 
+                                          width: `${percentage}%`,
+                                          backgroundColor: `hsl(${index * 137.5}, 70%, 50%)`
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         ) : (
                           <div className="flex items-center justify-center h-full text-gray-500">
                             No holdings to display
