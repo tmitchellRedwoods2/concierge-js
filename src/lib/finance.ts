@@ -1,4 +1,4 @@
-const yahooFinance = require('yahoo-finance2');
+const alpha = require('alphavantage')({ key: process.env.ALPHA_VANTAGE_API_KEY || 'demo' });
 
 export interface StockQuote {
   symbol: string;
@@ -59,30 +59,40 @@ export async function getStockQuote(symbol: string): Promise<StockQuote | null> 
     // Check cache first
     const cached = quoteCache.get(symbol);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log(`Using cached quote for ${symbol}`);
       return cached.data;
     }
 
-    const result = await yahooFinance.quote(symbol);
+    console.log(`Fetching quote for ${symbol} from Alpha Vantage...`);
     
-    if (!result) {
-      return null;
+    // Use Alpha Vantage GLOBAL_QUOTE endpoint
+    const data = await alpha.data.quote(symbol);
+    
+    console.log('Alpha Vantage response:', data);
+    
+    if (!data || !data['Global Quote'] || !data['Global Quote']['05. price']) {
+      console.log(`No data returned from Alpha Vantage for ${symbol}`);
+      throw new Error('No data returned from Alpha Vantage');
     }
 
+    const result = data['Global Quote'];
+    const price = parseFloat(result['05. price']);
+    const change = parseFloat(result['09. change']);
+    const changePercent = parseFloat(result['10. change percent'].replace('%', ''));
+
     const quote: StockQuote = {
-      symbol: result.symbol || symbol,
-      name: result.longName || result.shortName || symbol,
-      price: result.regularMarketPrice || 0,
-      change: result.regularMarketChange || 0,
-      changePercent: result.regularMarketChangePercent || 0,
-      volume: result.regularMarketVolume || 0,
-      marketCap: result.marketCap,
-      pe: result.trailingPE,
-      dividend: result.dividendRate,
-      dividendYield: result.dividendYield,
-      high52Week: result.fiftyTwoWeekHigh,
-      low52Week: result.fiftyTwoWeekLow,
+      symbol: result['01. symbol'] || symbol.toUpperCase(),
+      name: symbol.toUpperCase(), // Alpha Vantage doesn't provide company name in quote
+      price,
+      change,
+      changePercent,
+      volume: parseInt(result['06. volume']) || 0,
+      high52Week: parseFloat(result['03. high']) || undefined,
+      low52Week: parseFloat(result['04. low']) || undefined,
       lastUpdated: new Date(),
     };
+
+    console.log(`Successfully fetched quote for ${symbol}:`, quote);
 
     // Cache the result
     quoteCache.set(symbol, { data: quote, timestamp: Date.now() });
@@ -132,20 +142,33 @@ export async function getHistoricalData(
   period: '1d' | '5d' | '1mo' | '3mo' | '6mo' | '1y' | '2y' | '5y' | '10y' | 'ytd' | 'max' = '1mo'
 ): Promise<HistoricalData[]> {
   try {
-    const result = await yahooFinance.historical(symbol, {
-      period1: getPeriodStartDate(period),
-      period2: new Date(),
-      interval: getInterval(period),
-    });
+    // Alpha Vantage uses outputsize: 'compact' (100 days) or 'full' (20 years)
+    const outputsize = ['1y', '2y', '5y', '10y', 'max'].includes(period) ? 'full' : 'compact';
+    
+    const data = await alpha.data.daily(symbol, outputsize);
+    
+    if (!data || !data['Time Series (Daily)']) {
+      return [];
+    }
 
-    return result.map(item => ({
-      date: item.date.toISOString().split('T')[0],
-      open: item.open || 0,
-      high: item.high || 0,
-      low: item.low || 0,
-      close: item.close || 0,
-      volume: item.volume || 0,
-    }));
+    const timeSeries = data['Time Series (Daily)'];
+    const results: HistoricalData[] = [];
+    
+    for (const [date, values] of Object.entries(timeSeries)) {
+      results.push({
+        date,
+        open: parseFloat(values['1. open'] as string),
+        high: parseFloat(values['2. high'] as string),
+        low: parseFloat(values['3. low'] as string),
+        close: parseFloat(values['4. close'] as string),
+        volume: parseInt(values['5. volume'] as string),
+      });
+    }
+    
+    // Sort by date descending (most recent first)
+    results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    return results;
   } catch (error) {
     console.error(`Error fetching historical data for ${symbol}:`, error);
     return [];
@@ -156,21 +179,21 @@ export async function searchStocks(query: string): Promise<Array<{ symbol: strin
   try {
     console.log('Searching for:', query);
     
-    // Use Yahoo Finance search
-    const searchResult = await yahooFinance.search(query);
-    console.log('Search result:', searchResult);
+    // Alpha Vantage search endpoint
+    const data = await alpha.data.search(query);
     
-    if (!searchResult || !searchResult.quotes) {
-      console.log('No quotes in search result');
-      return [];
+    console.log('Alpha Vantage search result:', data);
+    
+    if (!data || !data.bestMatches || data.bestMatches.length === 0) {
+      console.log('No matches in search result');
+      throw new Error('No results from Alpha Vantage');
     }
     
-    const results = searchResult.quotes
-      .filter(quote => quote && quote.symbol && (quote.longname || quote.shortname))
+    const results = data.bestMatches
       .slice(0, 10)
-      .map(quote => ({
-        symbol: quote.symbol,
-        name: quote.longname || quote.shortname || quote.symbol,
+      .map((match: any) => ({
+        symbol: match['1. symbol'],
+        name: match['2. name'],
       }));
     
     console.log('Filtered results:', results);
