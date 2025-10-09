@@ -52,11 +52,16 @@ export async function GET(request: NextRequest) {
     const updatedHoldings = await Promise.all(
       holdings.map(async (holding) => {
         try {
+          console.log(`Fetching price for ${holding.symbol}...`);
           const quote = await getStockQuote(holding.symbol);
-          if (quote) {
+          console.log(`Quote for ${holding.symbol}:`, quote);
+          
+          if (quote && quote.price > 0) {
             const marketValue = holding.shares * quote.price;
             const gainLoss = marketValue - holding.totalCost;
             const gainLossPercent = holding.totalCost > 0 ? (gainLoss / holding.totalCost) * 100 : 0;
+
+            console.log(`Updating ${holding.symbol}: price=${quote.price}, marketValue=${marketValue}, gainLoss=${gainLoss}`);
 
             await Holding.findByIdAndUpdate(holding._id, {
               currentPrice: quote.price,
@@ -74,6 +79,8 @@ export async function GET(request: NextRequest) {
               gainLossPercent,
               lastUpdated: new Date(),
             };
+          } else {
+            console.log(`No valid quote for ${holding.symbol}:`, quote);
           }
         } catch (error) {
           console.error(`Error updating price for ${holding.symbol}:`, error);
