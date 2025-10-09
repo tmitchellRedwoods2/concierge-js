@@ -274,7 +274,8 @@ export default function InvestmentsPage() {
     holdings: holdings.length,
     loading,
     portfolioTotals,
-    holdingsData: holdings
+    holdingsData: holdings,
+    holdingsMarketValues: holdings.map(h => ({ symbol: h.symbol, marketValue: h.marketValue, totalCost: h.totalCost }))
   });
 
   const totalGainLossPercent = portfolioTotals.totalCost > 0 
@@ -476,7 +477,10 @@ export default function InvestmentsPage() {
                     <CardContent>
                       <div className="h-64">
                         {holdings.length > 0 ? (
-                          <div className="space-y-3">
+                          <div className="space-y-4 p-4">
+                            <div className="text-sm text-gray-600 mb-3">
+                              Debug: {holdings.length} holdings, Total Value: ${portfolioTotals.totalValue.toFixed(2)}
+                            </div>
                             {holdings.map((holding, index) => {
                               const percentage = portfolioTotals.totalValue > 0 
                                 ? (holding.marketValue / portfolioTotals.totalValue) * 100 
@@ -490,7 +494,9 @@ export default function InvestmentsPage() {
                                   <div className="flex-1">
                                     <div className="flex justify-between items-center">
                                       <span className="font-medium">{holding.symbol}</span>
-                                      <span className="text-sm text-gray-600">{percentage.toFixed(1)}%</span>
+                                      <span className="text-sm text-gray-600">
+                                        ${holding.marketValue?.toFixed(2) || '0.00'} ({percentage.toFixed(1)}%)
+                                      </span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                                       <div 
@@ -508,7 +514,11 @@ export default function InvestmentsPage() {
                           </div>
                         ) : (
                           <div className="flex items-center justify-center h-full text-gray-500">
-                            No holdings to display
+                            <div className="text-center">
+                              <PieChart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                              <p>No holdings to display</p>
+                              <p className="text-xs mt-2">Holdings count: {holdings.length}</p>
+                            </div>
                           </div>
                         )}
                       </div>
