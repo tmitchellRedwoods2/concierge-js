@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     await connectToDatabase();
     
     const claims = await InsuranceClaim.find({ userId: session.user.id })
-      .populate('policyId')
       .sort({ incidentDate: -1 }); // Fixed: should be incidentDate, not dateOfIncident
 
     console.log('Found claims:', claims.length);
@@ -28,10 +27,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching insurance claims:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { 
         status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
