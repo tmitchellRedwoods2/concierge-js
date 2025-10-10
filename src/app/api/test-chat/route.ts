@@ -16,7 +16,14 @@ export async function POST(req: NextRequest) {
     
     console.log('🧪 About to call generateAIResponse');
     
-    const aiResponse = await generateAIResponse(testMessages, agentType as any);
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+    );
+    
+    const aiResponsePromise = generateAIResponse(testMessages, agentType as any);
+    
+    const aiResponse = await Promise.race([aiResponsePromise, timeoutPromise]);
     
     console.log('🧪 AI Response received:', {
       model: aiResponse.model,
@@ -35,7 +42,8 @@ export async function POST(req: NextRequest) {
     console.error('🧪 Test chat error:', error);
     return NextResponse.json({
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }
