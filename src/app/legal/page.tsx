@@ -94,12 +94,23 @@ export default function LegalPage() {
     notes: ""
   });
 
+  // Law firm search and filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");
+  const [minRating, setMinRating] = useState("");
+
   // Load data on component mount
   useEffect(() => {
     loadCases();
     loadDocuments();
     loadAppointments();
+    loadLawFirms();
   }, []);
+
+  // Reload law firms when search/filter parameters change
+  useEffect(() => {
+    loadLawFirms();
+  }, [searchTerm, selectedSpecialty, minRating]);
 
   const loadCases = async () => {
     try {
@@ -307,6 +318,23 @@ export default function LegalPage() {
     } catch (error) {
       console.error('Failed to update appointment status:', error);
       alert('Network error. Please try again.');
+    }
+  };
+
+  const loadLawFirms = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (selectedSpecialty) params.append('specialty', selectedSpecialty);
+      if (minRating) params.append('minRating', minRating);
+      
+      const response = await fetch(`/api/legal/firms?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setLawFirms(data.firms || []);
+      }
+    } catch (error) {
+      console.error('Failed to load law firms:', error);
     }
   };
 
@@ -924,20 +952,165 @@ export default function LegalPage() {
           <TabsContent value="firms" className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold">Law Firms</h2>
-                <p className="text-gray-600">Find and connect with law firms</p>
+                <h2 className="text-2xl font-bold">Law Firm Directory</h2>
+                <p className="text-gray-600">Find and connect with experienced law firms</p>
               </div>
             </div>
 
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Building2 className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Law firm directory coming soon</h3>
-                <p className="text-gray-500 text-center">
-                  Browse law firms, compare services, and find the right legal representation.
-                </p>
-              </CardContent>
-            </Card>
+            {/* Search and Filter Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                placeholder="Search law firms..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <select
+                className="p-2 border rounded-md"
+                value={selectedSpecialty}
+                onChange={(e) => setSelectedSpecialty(e.target.value)}
+              >
+                <option value="">All Practice Areas</option>
+                <option value="Personal Injury">Personal Injury</option>
+                <option value="Family Law">Family Law</option>
+                <option value="Criminal">Criminal Defense</option>
+                <option value="Business">Business Law</option>
+                <option value="Estate Planning">Estate Planning</option>
+                <option value="Immigration">Immigration</option>
+                <option value="Real Estate">Real Estate</option>
+                <option value="Employment">Employment Law</option>
+              </select>
+              <select
+                className="p-2 border rounded-md"
+                value={minRating}
+                onChange={(e) => setMinRating(e.target.value)}
+              >
+                <option value="">Any Rating</option>
+                <option value="4.5">4.5+ Stars</option>
+                <option value="4.0">4.0+ Stars</option>
+                <option value="3.5">3.5+ Stars</option>
+                <option value="3.0">3.0+ Stars</option>
+              </select>
+            </div>
+
+            {/* Law Firm Cards */}
+            {lawFirms.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Building2 className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No law firms found</h3>
+                  <p className="text-gray-500 text-center">
+                    Try adjusting your search criteria or filters.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {lawFirms.map((firm, index) => (
+                  <Card key={firm._id || index} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <div className="text-3xl">{firm.logo}</div>
+                          <div>
+                            <CardTitle className="text-lg">{firm.name}</CardTitle>
+                            <CardDescription>
+                              {firm.address?.city}, {firm.address?.state}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-500">⭐</span>
+                            <span className="font-semibold">{firm.rating}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">{firm.totalReviews} reviews</p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600 mb-4">{firm.description}</p>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Founded:</span>
+                          <span>{firm.foundedYear}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Attorneys:</span>
+                          <span>{firm.numberOfAttorneys}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Phone:</span>
+                          <span>{firm.phone}</span>
+                        </div>
+                        {firm.consultationFee !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Consultation:</span>
+                            <span className={firm.consultationFee === 0 ? 'text-green-600 font-medium' : ''}>
+                              {firm.consultationFee === 0 ? 'Free' : `$${firm.consultationFee}`}
+                            </span>
+                          </div>
+                        )}
+                        {firm.acceptsContingency && (
+                          <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+                            Accepts contingency cases ({firm.contingencyPercentage}%)
+                          </div>
+                        )}
+                        {firm.virtualConsultations && (
+                          <div className="flex items-center gap-1 text-xs text-blue-600">
+                            <span>🎥</span>
+                            <span>Virtual consultations available</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Practice Areas:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {firm.specialties?.slice(0, 3).map((specialty: string) => (
+                            <Badge key={specialty} variant="secondary" className="text-xs">
+                              {specialty}
+                            </Badge>
+                          ))}
+                          {firm.specialties?.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{firm.specialties.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => window.open(firm.website, '_blank')}
+                        >
+                          Visit Website
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.open(`tel:${firm.phone}`, '_self')}
+                        >
+                          Call
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Results Summary */}
+            {lawFirms.length > 0 && (
+              <div className="text-center text-sm text-gray-600">
+                Showing {lawFirms.length} law firm{lawFirms.length !== 1 ? 's' : ''}
+                {(searchTerm || selectedSpecialty || minRating) && (
+                  <span> (filtered results)</span>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
