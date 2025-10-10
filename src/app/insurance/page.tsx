@@ -307,6 +307,8 @@ export default function InsurancePage() {
 
   // Calculate active claims
   const activeClaims = claims.filter(c => c.status === 'FILED' || c.status === 'UNDER_REVIEW');
+  console.log('Claims for active calculation:', claims);
+  console.log('Active claims:', activeClaims);
 
   if (loading) {
     return (
@@ -452,6 +454,7 @@ export default function InsurancePage() {
                 {activeClaims.length}
               </div>
               <p className="text-sm text-gray-500">In progress</p>
+              <p className="text-xs text-gray-400 mt-1">Debug: Total claims: {claims.length}</p>
             </CardContent>
           </Card>
         </div>
