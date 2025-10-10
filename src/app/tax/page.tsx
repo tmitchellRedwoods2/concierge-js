@@ -19,7 +19,8 @@ import {
   Plus,
   Calendar,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from "lucide-react";
 
 export default function TaxPage() {
@@ -51,9 +52,25 @@ export default function TaxPage() {
     notes: ""
   });
 
+  // Deduction form state
+  const [showAddDeduction, setShowAddDeduction] = useState(false);
+  const [newDeduction, setNewDeduction] = useState({
+    taxYear: new Date().getFullYear().toString(),
+    category: "BUSINESS_EXPENSE",
+    description: "",
+    amount: "",
+    date: "",
+    vendor: "",
+    paymentMethod: "",
+    businessPurpose: "",
+    mileage: "",
+    notes: ""
+  });
+
   // Load data on component mount
   useEffect(() => {
     loadTaxReturns();
+    loadDeductions();
   }, []);
 
   const loadTaxReturns = async () => {
@@ -149,6 +166,110 @@ export default function TaxPage() {
       case 'QUALIFYING_WIDOW': return 'Qualifying Widow(er)';
       default: return status;
     }
+  };
+
+  const loadDeductions = async () => {
+    try {
+      const response = await fetch('/api/tax/deductions');
+      if (response.ok) {
+        const data = await response.json();
+        setDeductions(data.deductions || []);
+      }
+    } catch (error) {
+      console.error('Failed to load deductions:', error);
+    }
+  };
+
+  const addDeduction = async () => {
+    if (!newDeduction.description || !newDeduction.amount || !newDeduction.date) {
+      alert('Please fill in Description, Amount, and Date');
+      return;
+    }
+
+    try {
+      const deductionData = {
+        ...newDeduction,
+        amount: parseFloat(newDeduction.amount),
+        mileage: newDeduction.mileage ? parseFloat(newDeduction.mileage) : undefined,
+        vendor: newDeduction.vendor || undefined,
+        paymentMethod: newDeduction.paymentMethod || undefined,
+        businessPurpose: newDeduction.businessPurpose || undefined,
+        notes: newDeduction.notes || undefined
+      };
+      
+      const response = await fetch('/api/tax/deductions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(deductionData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Deduction added successfully!');
+        await loadDeductions();
+        setShowAddDeduction(false);
+        setNewDeduction({
+          taxYear: new Date().getFullYear().toString(),
+          category: "BUSINESS_EXPENSE",
+          description: "",
+          amount: "",
+          date: "",
+          vendor: "",
+          paymentMethod: "",
+          businessPurpose: "",
+          mileage: "",
+          notes: ""
+        });
+      } else {
+        alert(`Error: ${data.error || 'Failed to add deduction'}`);
+      }
+    } catch (error) {
+      console.error('Failed to add deduction:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const deleteDeduction = async (deductionId: string) => {
+    if (!confirm('Are you sure you want to delete this deduction?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tax/deductions?id=${deductionId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('Deduction deleted successfully!');
+        await loadDeductions();
+      } else {
+        alert('Failed to delete deduction');
+      }
+    } catch (error) {
+      console.error('Failed to delete deduction:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'MORTGAGE_INTEREST': return '🏠';
+      case 'PROPERTY_TAX': return '🏛️';
+      case 'CHARITABLE': return '❤️';
+      case 'MEDICAL': return '🏥';
+      case 'STATE_LOCAL_TAX': return '📊';
+      case 'BUSINESS_EXPENSE': return '💼';
+      case 'HOME_OFFICE': return '🖥️';
+      case 'VEHICLE': return '🚗';
+      case 'EDUCATION': return '📚';
+      case 'RETIREMENT': return '💰';
+      default: return '📝';
+    }
+  };
+
+  const getCategoryLabel = (category: string) => {
+    return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   // Calculate summary statistics
@@ -427,17 +548,141 @@ export default function TaxPage() {
                 <h2 className="text-2xl font-bold">Tax Deductions</h2>
                 <p className="text-gray-600">Track deductible expenses throughout the year</p>
               </div>
+              <Button onClick={() => setShowAddDeduction(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Deduction
+              </Button>
             </div>
 
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <DollarSign className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Deduction tracking coming soon</h3>
-                <p className="text-gray-500 text-center">
-                  Track and categorize your tax-deductible expenses.
-                </p>
-              </CardContent>
-            </Card>
+            {deductions.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <DollarSign className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No deductions yet</h3>
+                  <p className="text-gray-500 mb-4">Start tracking your tax-deductible expenses.</p>
+                  <Button onClick={() => setShowAddDeduction(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Deduction
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Summary Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Deduction Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Deductions</p>
+                        <p className="text-2xl font-bold">{deductions.length}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Total Amount</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          ${deductions.reduce((sum, d) => sum + (d.amount || 0), 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Current Year</p>
+                        <p className="text-2xl font-bold">
+                          {deductions.filter(d => d.taxYear === currentYear).length}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Categories</p>
+                        <p className="text-2xl font-bold">
+                          {new Set(deductions.map(d => d.category)).size}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Deduction Cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {deductions.map((deduction) => (
+                    <Card key={deduction._id}>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <CardTitle className="flex items-center">
+                              <span className="mr-2">{getCategoryIcon(deduction.category)}</span>
+                              {deduction.description}
+                            </CardTitle>
+                            <CardDescription>
+                              {getCategoryLabel(deduction.category)} • Tax Year {deduction.taxYear}
+                            </CardDescription>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-green-600">
+                              ${deduction.amount.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Date:</span>
+                            <span>{new Date(deduction.date).toLocaleDateString()}</span>
+                          </div>
+                          
+                          {deduction.vendor && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Vendor:</span>
+                              <span>{deduction.vendor}</span>
+                            </div>
+                          )}
+                          
+                          {deduction.paymentMethod && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Payment Method:</span>
+                              <span>{deduction.paymentMethod}</span>
+                            </div>
+                          )}
+                          
+                          {deduction.mileage && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Mileage:</span>
+                              <span>{deduction.mileage} miles</span>
+                            </div>
+                          )}
+                          
+                          {deduction.businessPurpose && (
+                            <div className="pt-2 border-t">
+                              <p className="text-sm text-gray-600">Business Purpose:</p>
+                              <p className="text-sm">{deduction.businessPurpose}</p>
+                            </div>
+                          )}
+                          
+                          {deduction.notes && (
+                            <div className="pt-2 border-t">
+                              <p className="text-sm text-gray-600">Notes:</p>
+                              <p className="text-sm">{deduction.notes}</p>
+                            </div>
+                          )}
+                          
+                          <div className="pt-2 border-t">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="w-full"
+                              onClick={() => deleteDeduction(deduction._id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2 text-red-600" />
+                              Delete Deduction
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
           </TabsContent>
 
           {/* Calculator Tab */}
@@ -609,6 +854,144 @@ export default function TaxPage() {
                     Create Tax Return
                   </Button>
                   <Button variant="outline" onClick={() => setShowAddReturn(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Add Deduction Modal */}
+        {showAddDeduction && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Add Tax Deduction</CardTitle>
+                <CardDescription>Track a tax-deductible expense</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Tax Year *</label>
+                    <Input
+                      type="number"
+                      placeholder="2024"
+                      value={newDeduction.taxYear}
+                      onChange={(e) => setNewDeduction({ ...newDeduction, taxYear: e.target.value })}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">Category *</label>
+                    <select
+                      className="w-full mt-1 p-2 border rounded-md"
+                      value={newDeduction.category}
+                      onChange={(e) => setNewDeduction({ ...newDeduction, category: e.target.value })}
+                    >
+                      <option value="BUSINESS_EXPENSE">Business Expense</option>
+                      <option value="HOME_OFFICE">Home Office</option>
+                      <option value="VEHICLE">Vehicle Expense</option>
+                      <option value="MORTGAGE_INTEREST">Mortgage Interest</option>
+                      <option value="PROPERTY_TAX">Property Tax</option>
+                      <option value="CHARITABLE">Charitable Donation</option>
+                      <option value="MEDICAL">Medical Expense</option>
+                      <option value="STATE_LOCAL_TAX">State/Local Tax</option>
+                      <option value="EDUCATION">Education Expense</option>
+                      <option value="RETIREMENT">Retirement Contribution</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Description *</label>
+                  <Input
+                    placeholder="e.g., Office supplies for business"
+                    value={newDeduction.description}
+                    onChange={(e) => setNewDeduction({ ...newDeduction, description: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Amount *</label>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={newDeduction.amount}
+                      onChange={(e) => setNewDeduction({ ...newDeduction, amount: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Date *</label>
+                    <Input
+                      type="date"
+                      value={newDeduction.date}
+                      onChange={(e) => setNewDeduction({ ...newDeduction, date: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Vendor (optional)"
+                    value={newDeduction.vendor}
+                    onChange={(e) => setNewDeduction({ ...newDeduction, vendor: e.target.value })}
+                  />
+
+                  <Input
+                    placeholder="Payment Method (optional)"
+                    value={newDeduction.paymentMethod}
+                    onChange={(e) => setNewDeduction({ ...newDeduction, paymentMethod: e.target.value })}
+                  />
+                </div>
+
+                {(newDeduction.category === 'BUSINESS_EXPENSE' || newDeduction.category === 'VEHICLE') && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium">Business Purpose</label>
+                      <Input
+                        placeholder="Explain the business purpose..."
+                        value={newDeduction.businessPurpose}
+                        onChange={(e) => setNewDeduction({ ...newDeduction, businessPurpose: e.target.value })}
+                      />
+                    </div>
+
+                    {newDeduction.category === 'VEHICLE' && (
+                      <div>
+                        <label className="text-sm font-medium">Mileage</label>
+                        <Input
+                          type="number"
+                          placeholder="Miles driven"
+                          value={newDeduction.mileage}
+                          onChange={(e) => setNewDeduction({ ...newDeduction, mileage: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <div>
+                  <label className="text-sm font-medium">Notes (optional)</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-16"
+                    placeholder="Additional notes..."
+                    value={newDeduction.notes}
+                    onChange={(e) => setNewDeduction({ ...newDeduction, notes: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={addDeduction} className="flex-1">
+                    Add Deduction
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddDeduction(false)}>
                     Cancel
                   </Button>
                 </div>
