@@ -292,8 +292,33 @@ export default function MessagesPage() {
         </div>
       </div>
 
+      {/* AI Advisor Selector Bar */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex overflow-x-auto gap-2">
+            {Object.entries(AI_AGENTS).map(([key, agent]) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setSelectedAgent(key as keyof typeof AI_AGENTS);
+                  startNewChat();
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all whitespace-nowrap ${
+                  selectedAgent === key
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-lg">{agent.icon}</span>
+                <span className="text-sm font-medium">{agent.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-120px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-220px)]">
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <Card className="h-full p-4">
@@ -305,33 +330,15 @@ export default function MessagesPage() {
                   </p>
                 </div>
 
-                {/* Agent Selector */}
-                <div>
-                  <label className="text-sm font-medium mb-3 block">Choose Your Assistant</label>
-                  <div className="space-y-2">
-                    {Object.entries(AI_AGENTS).map(([key, agent]) => (
-                      <button
-                        key={key}
-                        onClick={() => {
-                          setSelectedAgent(key as keyof typeof AI_AGENTS);
-                          startNewChat();
-                        }}
-                        className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
-                          selectedAgent === key
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-2xl">{agent.icon}</span>
-                          <span className="font-medium text-sm">{agent.name}</span>
-                        </div>
-                        <p className="text-xs text-gray-600 line-clamp-2">
-                          {agent.systemPrompt.split('\n')[0]}
-                        </p>
-                      </button>
-                    ))}
+                {/* Current Agent Display */}
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">{AI_AGENTS[selectedAgent].icon}</span>
+                    <span className="font-medium">{AI_AGENTS[selectedAgent].name}</span>
                   </div>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    {AI_AGENTS[selectedAgent].systemPrompt.split('\n')[0]}
+                  </p>
                 </div>
 
                 <Button onClick={startNewChat} className="w-full" size="sm">
