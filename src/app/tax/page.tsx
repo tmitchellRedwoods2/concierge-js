@@ -79,11 +79,22 @@ export default function TaxPage() {
   });
   const [calculatorResult, setCalculatorResult] = useState<any>(null);
 
+  // Tax professional search and filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");
+  const [minRating, setMinRating] = useState("");
+
   // Load data on component mount
   useEffect(() => {
     loadTaxReturns();
     loadDeductions();
+    loadTaxProfessionals();
   }, []);
+
+  // Reload tax professionals when search/filter parameters change
+  useEffect(() => {
+    loadTaxProfessionals();
+  }, [searchTerm, selectedSpecialty, minRating]);
 
   const loadTaxReturns = async () => {
     try {
@@ -282,6 +293,23 @@ export default function TaxPage() {
 
   const getCategoryLabel = (category: string) => {
     return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const loadTaxProfessionals = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (selectedSpecialty) params.append('specialty', selectedSpecialty);
+      if (minRating) params.append('minRating', minRating);
+      
+      const response = await fetch(`/api/tax/professionals?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTaxProfessionals(data.professionals || []);
+      }
+    } catch (error) {
+      console.error('Failed to load tax professionals:', error);
+    }
   };
 
   const saveEstimateAsReturn = async () => {
@@ -1038,20 +1066,186 @@ export default function TaxPage() {
           <TabsContent value="professionals" className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold">Tax Professionals</h2>
-                <p className="text-gray-600">Find CPAs and tax preparers</p>
+                <h2 className="text-2xl font-bold">Tax Professional Directory</h2>
+                <p className="text-gray-600">Find CPAs, Enrolled Agents, and tax preparation services</p>
               </div>
             </div>
 
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tax professional directory coming soon</h3>
-                <p className="text-gray-500 text-center">
-                  Browse CPAs, EAs, and tax attorneys to help with your taxes.
-                </p>
-              </CardContent>
-            </Card>
+            {/* Search and Filter Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                placeholder="Search tax professionals..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <select
+                className="p-2 border rounded-md"
+                value={selectedSpecialty}
+                onChange={(e) => setSelectedSpecialty(e.target.value)}
+              >
+                <option value="">All Specialties</option>
+                <option value="Individual">Individual Tax Returns</option>
+                <option value="Small Business">Small Business</option>
+                <option value="Self-Employed">Self-Employed</option>
+                <option value="Corporate">Corporate Tax</option>
+                <option value="Estate">Estate Planning</option>
+                <option value="International">International Tax</option>
+                <option value="Audit">Audit Support</option>
+              </select>
+              <select
+                className="p-2 border rounded-md"
+                value={minRating}
+                onChange={(e) => setMinRating(e.target.value)}
+              >
+                <option value="">Any Rating</option>
+                <option value="4.5">4.5+ Stars</option>
+                <option value="4.0">4.0+ Stars</option>
+                <option value="3.5">3.5+ Stars</option>
+                <option value="3.0">3.0+ Stars</option>
+              </select>
+            </div>
+
+            {/* Tax Professional Cards */}
+            {taxProfessionals.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Users className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No tax professionals found</h3>
+                  <p className="text-gray-500 text-center">
+                    Try adjusting your search criteria or filters.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {taxProfessionals.map((prof, index) => (
+                  <Card key={prof._id || index} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <div className="text-3xl">{prof.logo}</div>
+                          <div>
+                            <CardTitle className="text-lg">{prof.name}</CardTitle>
+                            <CardDescription>
+                              {prof.address?.city}, {prof.address?.state}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-500">⭐</span>
+                            <span className="font-semibold">{prof.rating}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">{prof.totalReviews?.toLocaleString()} reviews</p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600 mb-4">{prof.description}</p>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Experience:</span>
+                          <span>{prof.yearsExperience} years</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Phone:</span>
+                          <span>{prof.phone}</span>
+                        </div>
+                        {prof.consultationFee !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Consultation:</span>
+                            <span className={prof.consultationFee === 0 ? 'text-green-600 font-medium' : ''}>
+                              {prof.consultationFee === 0 ? 'Free' : `$${prof.consultationFee}`}
+                            </span>
+                          </div>
+                        )}
+                        {prof.hourlyRate > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Hourly Rate:</span>
+                            <span>${prof.hourlyRate}/hr</span>
+                          </div>
+                        )}
+                        {prof.virtualConsultations && (
+                          <div className="flex items-center gap-1 text-xs text-blue-600">
+                            <span>🎥</span>
+                            <span>Virtual consultations available</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Credentials:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {prof.credentials?.map((cred: string) => (
+                            <Badge key={cred} variant="secondary" className="text-xs">
+                              {cred}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Specialties:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {prof.specialties?.slice(0, 3).map((specialty: string) => (
+                            <Badge key={specialty} variant="outline" className="text-xs">
+                              {specialty}
+                            </Badge>
+                          ))}
+                          {prof.specialties?.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{prof.specialties.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {prof.flatFeeServices && prof.flatFeeServices.length > 0 && (
+                        <div className="mb-4 bg-gray-50 p-3 rounded">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Flat Fee Services:</p>
+                          <div className="space-y-1">
+                            {prof.flatFeeServices.slice(0, 3).map((service: any, idx: number) => (
+                              <div key={idx} className="flex justify-between text-xs">
+                                <span>{service.service}</span>
+                                <span className="font-medium">${service.price}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => window.open(prof.website, '_blank')}
+                        >
+                          Visit Website
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.open(`tel:${prof.phone}`, '_self')}
+                        >
+                          Call
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Results Summary */}
+            {taxProfessionals.length > 0 && (
+              <div className="text-center text-sm text-gray-600">
+                Showing {taxProfessionals.length} tax professional{taxProfessionals.length !== 1 ? 's' : ''}
+                {(searchTerm || selectedSpecialty || minRating) && (
+                  <span> (filtered results)</span>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
