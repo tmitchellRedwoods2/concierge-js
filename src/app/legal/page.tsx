@@ -75,8 +75,8 @@ export default function LegalPage() {
   };
 
   const addCase = async () => {
-    if (!newCase.title || !newCase.description || !newCase.jurisdiction) {
-      alert('Please fill in Title, Description, and Jurisdiction');
+    if (!newCase.title || !newCase.description || !newCase.jurisdiction || !newCase.startDate) {
+      alert('Please fill in Title, Description, Jurisdiction, and Start Date');
       return;
     }
 
@@ -85,6 +85,8 @@ export default function LegalPage() {
         ...newCase,
         estimatedCost: newCase.estimatedCost || 0,
         retainerAmount: newCase.retainerAmount || 0,
+        courtName: newCase.courtName || undefined,
+        primaryAttorney: newCase.primaryAttorney || undefined,
         notes: newCase.notes || undefined
       };
       
@@ -498,17 +500,24 @@ export default function LegalPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    placeholder="Case Title"
-                    value={newCase.title}
-                    onChange={(e) => setNewCase({ ...newCase, title: e.target.value })}
-                  />
+                  <div>
+                    <label className="text-sm font-medium">Case Title *</label>
+                    <Input
+                      placeholder="Case Title"
+                      value={newCase.title}
+                      onChange={(e) => setNewCase({ ...newCase, title: e.target.value })}
+                      required
+                    />
+                  </div>
                   
-                  <Input
-                    placeholder="Case Number (optional)"
-                    value={newCase.caseNumber}
-                    onChange={(e) => setNewCase({ ...newCase, caseNumber: e.target.value })}
-                  />
+                  <div>
+                    <label className="text-sm font-medium">Case Number (optional)</label>
+                    <Input
+                      placeholder="Case Number (auto-generated if blank)"
+                      value={newCase.caseNumber}
+                      onChange={(e) => setNewCase({ ...newCase, caseNumber: e.target.value })}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -532,30 +541,36 @@ export default function LegalPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium">Description</label>
+                  <label className="text-sm font-medium">Description *</label>
                   <textarea
                     className="w-full mt-1 p-2 border rounded-md h-20"
                     placeholder="Describe the case details..."
                     value={newCase.description}
                     onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
+                    required
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Start Date</label>
+                    <label className="text-sm font-medium">Start Date *</label>
                     <Input
                       type="date"
                       value={newCase.startDate}
                       onChange={(e) => setNewCase({ ...newCase, startDate: e.target.value })}
+                      required
                     />
                   </div>
                   
-                  <Input
-                    placeholder="Jurisdiction"
-                    value={newCase.jurisdiction}
-                    onChange={(e) => setNewCase({ ...newCase, jurisdiction: e.target.value })}
-                  />
+                  <div>
+                    <label className="text-sm font-medium">Jurisdiction *</label>
+                    <Input
+                      placeholder="e.g., California Superior Court"
+                      value={newCase.jurisdiction}
+                      onChange={(e) => setNewCase({ ...newCase, jurisdiction: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
