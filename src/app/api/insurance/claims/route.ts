@@ -8,14 +8,19 @@ export async function GET(request: NextRequest) {
     const session = await auth();
     
     if (!session?.user?.id) {
+      console.log('No session or user ID found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('Loading claims for user:', session.user.id);
     await connectToDatabase();
     
     const claims = await InsuranceClaim.find({ userId: session.user.id })
       .populate('policyId')
-      .sort({ dateOfIncident: -1 });
+      .sort({ incidentDate: -1 }); // Fixed: should be incidentDate, not dateOfIncident
+
+    console.log('Found claims:', claims.length);
+    console.log('Claims data:', claims);
 
     return NextResponse.json({ 
       status: 'ok',
