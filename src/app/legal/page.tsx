@@ -1,53 +1,183 @@
 /**
- * Legal page
+ * Legal Services Management page
  */
 "use client";
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Scale, 
+  FileText, 
+  Calendar,
+  Building2,
+  Plus,
+  Eye,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Users,
+  Gavel
+} from "lucide-react";
 
 export default function LegalPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [cases, setCases] = useState([
-    { id: 1, title: "Estate Planning", attorney: "Smith & Associates", status: "In Progress", priority: "High", nextMeeting: "2024-02-15" },
-    { id: 2, title: "Business Contract Review", attorney: "Johnson Legal", status: "Completed", priority: "Medium", nextMeeting: "2024-01-30" },
-    { id: 3, title: "Real Estate Transaction", attorney: "Davis Law Firm", status: "Pending", priority: "Low", nextMeeting: "2024-03-01" },
-  ]);
-  const [documents, setDocuments] = useState([
-    { id: 1, name: "Will and Testament", type: "Estate", date: "2024-01-10", status: "Signed" },
-    { id: 2, name: "Business Partnership Agreement", type: "Contract", date: "2024-01-15", status: "Draft" },
-    { id: 3, name: "Property Deed", type: "Real Estate", date: "2024-01-20", status: "Pending Review" },
-  ]);
-  const [newCase, setNewCase] = useState({ title: "", attorney: "", priority: "", nextMeeting: "" });
+  
+  // State management
+  const [cases, setCases] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [lawFirms, setLawFirms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Form states
+  const [showAddCase, setShowAddCase] = useState(false);
+  const [newCase, setNewCase] = useState({
+    caseNumber: "",
+    title: "",
+    description: "",
+    caseType: "PERSONAL_INJURY",
+    status: "ACTIVE",
+    priority: "MEDIUM",
+    startDate: "",
+    jurisdiction: "",
+    courtName: "",
+    estimatedCost: "",
+    retainerAmount: "",
+    primaryAttorney: "",
+    notes: ""
+  });
 
-  const addCase = () => {
-    if (newCase.title && newCase.attorney && newCase.priority) {
-      const caseItem = {
-        id: cases.length + 1,
-        title: newCase.title,
-        attorney: newCase.attorney,
-        status: "Pending",
-        priority: newCase.priority,
-        nextMeeting: newCase.nextMeeting
+  // Load data on component mount
+  useEffect(() => {
+    loadCases();
+  }, []);
+
+  const loadCases = async () => {
+    try {
+      const response = await fetch('/api/legal/cases');
+      if (response.ok) {
+        const data = await response.json();
+        setCases(data.cases || []);
+      }
+    } catch (error) {
+      console.error('Failed to load cases:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addCase = async () => {
+    if (!newCase.title || !newCase.description || !newCase.jurisdiction) {
+      alert('Please fill in Title, Description, and Jurisdiction');
+      return;
+    }
+
+    try {
+      const caseData = {
+        ...newCase,
+        estimatedCost: newCase.estimatedCost || 0,
+        retainerAmount: newCase.retainerAmount || 0,
+        notes: newCase.notes || undefined
       };
-      setCases([...cases, caseItem]);
-      setNewCase({ title: "", attorney: "", priority: "", nextMeeting: "" });
+      
+      console.log('Submitting case:', caseData);
+      const response = await fetch('/api/legal/cases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(caseData),
+      });
+
+      const data = await response.json();
+      console.log('API response:', data);
+
+      if (response.ok) {
+        alert('Legal case created successfully!');
+        await loadCases();
+        setShowAddCase(false);
+        setNewCase({
+          caseNumber: "",
+          title: "",
+          description: "",
+          caseType: "PERSONAL_INJURY",
+          status: "ACTIVE",
+          priority: "MEDIUM",
+          startDate: "",
+          jurisdiction: "",
+          courtName: "",
+          estimatedCost: "",
+          retainerAmount: "",
+          primaryAttorney: "",
+          notes: ""
+        });
+      } else {
+        alert(`Error: ${data.error || 'Failed to create case'}`);
+      }
+    } catch (error) {
+      console.error('Failed to create case:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const getCaseTypeIcon = (type: string) => {
+    switch (type) {
+      case 'PERSONAL_INJURY': return '🏥';
+      case 'FAMILY_LAW': return '👨‍👩‍👧‍👦';
+      case 'CRIMINAL': return '⚖️';
+      case 'BUSINESS': return '🏢';
+      case 'REAL_ESTATE': return '🏠';
+      case 'ESTATE_PLANNING': return '📜';
+      case 'IMMIGRATION': return '🌍';
+      case 'EMPLOYMENT': return '💼';
+      case 'CONTRACT': return '📋';
+      default: return '⚖️';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'bg-green-100 text-green-800';
+      case 'CLOSED': return 'bg-gray-100 text-gray-800';
+      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+      case 'ON_HOLD': return 'bg-orange-100 text-orange-800';
+      case 'SETTLED': return 'bg-blue-100 text-blue-800';
+      case 'DISMISSED': return 'bg-red-100 text-red-800';
+      default: return 'bg-blue-100 text-blue-800';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'High': return 'text-red-600 bg-red-50';
-      case 'Medium': return 'text-yellow-600 bg-yellow-50';
-      case 'Low': return 'text-green-600 bg-green-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'LOW': return 'bg-gray-100 text-gray-800';
+      case 'MEDIUM': return 'bg-blue-100 text-blue-800';
+      case 'HIGH': return 'bg-orange-100 text-orange-800';
+      case 'URGENT': return 'bg-red-100 text-red-800';
+      default: return 'bg-blue-100 text-blue-800';
     }
   };
+
+  // Calculate summary statistics
+  const activeCases = cases.filter(c => c.status === 'ACTIVE');
+  const totalEstimatedCost = cases.reduce((sum, c) => sum + (c.estimatedCost || 0), 0);
+  const totalActualCost = cases.reduce((sum, c) => sum + (c.actualCost || 0), 0);
+  const upcomingDeadlines = cases.filter(c => 
+    c.nextDeadline && new Date(c.nextDeadline) > new Date() && new Date(c.nextDeadline) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -64,7 +194,7 @@ export default function LegalPage() {
                 Welcome, {session?.user?.name}
               </span>
               <Button
-                onClick={() => router.push("/")}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 variant="outline"
                 size="sm"
               >
@@ -119,145 +249,367 @@ export default function LegalPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            ⚖️ Legal Services
+            ⚖️ Legal Services Management
           </h1>
           <p className="text-gray-600">
-            Manage your legal cases and documents
+            Manage your legal cases, documents, appointments, and law firm relationships
           </p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Active Cases</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <Scale className="h-5 w-5 mr-2" />
+                Total Cases
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {cases.filter(c => c.status === 'In Progress').length}
+                {cases.length}
               </div>
+              <p className="text-sm text-gray-500">{activeCases.length} active</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Documents</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                Estimated Cost
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {documents.length}
+                ${totalEstimatedCost.toLocaleString()}
               </div>
+              <p className="text-sm text-gray-500">Total estimated</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Upcoming Meetings</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <Clock className="h-5 w-5 mr-2" />
+                Upcoming Deadlines
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                {cases.filter(c => c.nextMeeting && new Date(c.nextMeeting) > new Date()).length}
+                {upcomingDeadlines.length}
               </div>
+              <p className="text-sm text-gray-500">Next 30 days</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">
+                {documents.length}
+              </div>
+              <p className="text-sm text-gray-500">Total documents</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Add Case Form */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Add New Legal Case</CardTitle>
-            <CardDescription>Track a new legal matter</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <Input
-                placeholder="Case Title"
-                value={newCase.title}
-                onChange={(e) => setNewCase({ ...newCase, title: e.target.value })}
-              />
-              <Input
-                placeholder="Attorney/Law Firm"
-                value={newCase.attorney}
-                onChange={(e) => setNewCase({ ...newCase, attorney: e.target.value })}
-              />
-              <select
-                value={newCase.priority}
-                onChange={(e) => setNewCase({ ...newCase, priority: e.target.value })}
-                className="p-2 border rounded-md"
-              >
-                <option value="">Select Priority</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-              <Input
-                type="date"
-                value={newCase.nextMeeting}
-                onChange={(e) => setNewCase({ ...newCase, nextMeeting: e.target.value })}
-              />
-              <Button onClick={addCase} className="w-full md:col-span-1">
+        <Tabs defaultValue="cases" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="cases" className="flex items-center gap-2">
+              <Scale className="h-4 w-4" />
+              Cases
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Documents
+            </TabsTrigger>
+            <TabsTrigger value="appointments" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Appointments
+            </TabsTrigger>
+            <TabsTrigger value="firms" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Law Firms
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Cases Tab */}
+          <TabsContent value="cases" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Legal Cases</h2>
+                <p className="text-gray-600">Manage your legal cases and track progress</p>
+              </div>
+              <Button onClick={() => setShowAddCase(true)}>
+                <Plus className="h-4 w-4 mr-2" />
                 Add Case
               </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Cases List */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Legal Cases</CardTitle>
-            <CardDescription>Your active and completed legal matters</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {cases.map((caseItem) => (
-                <div key={caseItem.id} className="flex justify-between items-center p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-semibold">{caseItem.title}</h3>
-                    <p className="text-sm text-gray-600">{caseItem.attorney}</p>
-                    <p className="text-sm text-gray-500">Next Meeting: {caseItem.nextMeeting}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(caseItem.priority)}`}>
-                      {caseItem.priority}
-                    </span>
-                    <p className={`text-sm mt-1 ${caseItem.status === 'Completed' ? 'text-green-600' : caseItem.status === 'In Progress' ? 'text-blue-600' : 'text-orange-600'}`}>
-                      {caseItem.status}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            {cases.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Scale className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No cases yet</h3>
+                  <p className="text-gray-500 mb-4">Add your first legal case to get started.</p>
+                  <Button onClick={() => setShowAddCase(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Case
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {cases.map((caseItem) => (
+                  <Card key={caseItem._id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center">
+                            <span className="mr-2">{getCaseTypeIcon(caseItem.caseType)}</span>
+                            {caseItem.title}
+                          </CardTitle>
+                          <CardDescription>
+                            {caseItem.caseNumber} • {caseItem.jurisdiction}
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge className={getStatusColor(caseItem.status)}>
+                            {caseItem.status}
+                          </Badge>
+                          <Badge className={getPriorityColor(caseItem.priority)}>
+                            {caseItem.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <p className="text-sm text-gray-600">{caseItem.description}</p>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Estimated Cost:</span>
+                          <span className="font-medium">${caseItem.estimatedCost?.toLocaleString()}</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Start Date:</span>
+                          <span className="font-medium">
+                            {new Date(caseItem.startDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        
+                        {caseItem.nextDeadline && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Next Deadline:</span>
+                            <span className="font-medium text-orange-600">
+                              {new Date(caseItem.nextDeadline).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {caseItem.primaryAttorney && (
+                          <div className="pt-2 border-t">
+                            <p className="text-sm text-gray-600">Attorney: {caseItem.primaryAttorney}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
-        {/* Documents List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Legal Documents</CardTitle>
-            <CardDescription>Your legal documents and contracts</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex justify-between items-center p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-semibold">{doc.name}</h3>
-                    <p className="text-sm text-gray-600">{doc.type} • {doc.date}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-medium ${doc.status === 'Signed' ? 'text-green-600' : doc.status === 'Draft' ? 'text-yellow-600' : 'text-orange-600'}`}>
-                      {doc.status}
-                    </p>
-                    <Button variant="outline" size="sm" className="mt-1">
-                      View
-                    </Button>
-                  </div>
-                </div>
-              ))}
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Legal Documents</h2>
+                <p className="text-gray-600">Manage your legal documents and files</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Document management coming soon</h3>
+                <p className="text-gray-500 text-center">
+                  Upload, organize, and manage your legal documents with secure storage.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Appointments Tab */}
+          <TabsContent value="appointments" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Appointments</h2>
+                <p className="text-gray-600">Schedule and manage legal appointments</p>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Calendar className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Appointment scheduling coming soon</h3>
+                <p className="text-gray-500 text-center">
+                  Schedule consultations, court hearings, and meetings with your legal team.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Law Firms Tab */}
+          <TabsContent value="firms" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Law Firms</h2>
+                <p className="text-gray-600">Find and connect with law firms</p>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Building2 className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Law firm directory coming soon</h3>
+                <p className="text-gray-500 text-center">
+                  Browse law firms, compare services, and find the right legal representation.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Add Case Modal */}
+        {showAddCase && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Add New Legal Case</CardTitle>
+                <CardDescription>Create a new legal case to track</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Case Title"
+                    value={newCase.title}
+                    onChange={(e) => setNewCase({ ...newCase, title: e.target.value })}
+                  />
+                  
+                  <Input
+                    placeholder="Case Number (optional)"
+                    value={newCase.caseNumber}
+                    onChange={(e) => setNewCase({ ...newCase, caseNumber: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Case Type</label>
+                  <select
+                    className="w-full mt-1 p-2 border rounded-md"
+                    value={newCase.caseType}
+                    onChange={(e) => setNewCase({ ...newCase, caseType: e.target.value })}
+                  >
+                    <option value="PERSONAL_INJURY">Personal Injury</option>
+                    <option value="FAMILY_LAW">Family Law</option>
+                    <option value="CRIMINAL">Criminal</option>
+                    <option value="BUSINESS">Business</option>
+                    <option value="REAL_ESTATE">Real Estate</option>
+                    <option value="ESTATE_PLANNING">Estate Planning</option>
+                    <option value="IMMIGRATION">Immigration</option>
+                    <option value="EMPLOYMENT">Employment</option>
+                    <option value="CONTRACT">Contract</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-20"
+                    placeholder="Describe the case details..."
+                    value={newCase.description}
+                    onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Start Date</label>
+                    <Input
+                      type="date"
+                      value={newCase.startDate}
+                      onChange={(e) => setNewCase({ ...newCase, startDate: e.target.value })}
+                    />
+                  </div>
+                  
+                  <Input
+                    placeholder="Jurisdiction"
+                    value={newCase.jurisdiction}
+                    onChange={(e) => setNewCase({ ...newCase, jurisdiction: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Court Name (optional)"
+                    value={newCase.courtName}
+                    onChange={(e) => setNewCase({ ...newCase, courtName: e.target.value })}
+                  />
+                  
+                  <Input
+                    placeholder="Primary Attorney (optional)"
+                    value={newCase.primaryAttorney}
+                    onChange={(e) => setNewCase({ ...newCase, primaryAttorney: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    placeholder="Estimated Cost"
+                    type="number"
+                    value={newCase.estimatedCost}
+                    onChange={(e) => setNewCase({ ...newCase, estimatedCost: e.target.value })}
+                  />
+                  
+                  <Input
+                    placeholder="Retainer Amount"
+                    type="number"
+                    value={newCase.retainerAmount}
+                    onChange={(e) => setNewCase({ ...newCase, retainerAmount: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Notes (optional)</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-16"
+                    placeholder="Additional notes..."
+                    value={newCase.notes}
+                    onChange={(e) => setNewCase({ ...newCase, notes: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={addCase} className="flex-1">
+                    Create Case
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddCase(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
