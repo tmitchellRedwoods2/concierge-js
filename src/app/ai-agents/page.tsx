@@ -62,10 +62,40 @@ export default function AIAgentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      {/* Top Navigation */}
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="flex gap-2 items-center justify-center bg-white p-2 rounded-lg shadow-sm">
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-2">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold text-gray-900">🏆 Concierge.com</h1>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                Welcome, {session?.user?.name}
+              </span>
+              <Button
+                onClick={() => {
+                  // Use dynamic import to avoid SSR issues
+                  import('next-auth/react').then(({ signOut }) => {
+                    signOut({ callbackUrl: '/' });
+                  });
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Sign Out
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Navigation Tabs */}
+      <div className="bg-gray-50 border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex overflow-x-auto gap-1 py-3">
           <Button
             variant="ghost"
             size="sm"
@@ -154,9 +184,10 @@ export default function AIAgentsPage() {
             ⚙️ Settings
           </Button>
         </div>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto p-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">🤖 AI Agents</h1>
           <p className="text-gray-600">
