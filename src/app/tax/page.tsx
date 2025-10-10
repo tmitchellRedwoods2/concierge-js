@@ -67,6 +67,17 @@ export default function TaxPage() {
     notes: ""
   });
 
+  // Calculator state
+  const [calculator, setCalculator] = useState({
+    filingStatus: "SINGLE",
+    income: "",
+    deductions: "",
+    credits: "",
+    withheld: "",
+    estimatedPayments: ""
+  });
+  const [calculatorResult, setCalculatorResult] = useState<any>(null);
+
   // Load data on component mount
   useEffect(() => {
     loadTaxReturns();
@@ -270,6 +281,103 @@ export default function TaxPage() {
 
   const getCategoryLabel = (category: string) => {
     return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const calculateTax = () => {
+    const income = parseFloat(calculator.income) || 0;
+    const deductions = parseFloat(calculator.deductions) || 0;
+    const credits = parseFloat(calculator.credits) || 0;
+    const withheld = parseFloat(calculator.withheld) || 0;
+    const estimatedPayments = parseFloat(calculator.estimatedPayments) || 0;
+
+    // 2024 Standard Deductions
+    const standardDeductions: any = {
+      'SINGLE': 14600,
+      'MARRIED_FILING_JOINTLY': 29200,
+      'MARRIED_FILING_SEPARATELY': 14600,
+      'HEAD_OF_HOUSEHOLD': 21900,
+      'QUALIFYING_WIDOW': 29200
+    };
+
+    const standardDeduction = standardDeductions[calculator.filingStatus] || 14600;
+    const totalDeductions = deductions > 0 ? deductions : standardDeduction;
+    const taxableIncome = Math.max(0, income - totalDeductions);
+
+    // 2024 Tax Brackets (simplified)
+    let taxLiability = 0;
+    
+    if (calculator.filingStatus === 'SINGLE') {
+      if (taxableIncome <= 11600) {
+        taxLiability = taxableIncome * 0.10;
+      } else if (taxableIncome <= 47150) {
+        taxLiability = 1160 + (taxableIncome - 11600) * 0.12;
+      } else if (taxableIncome <= 100525) {
+        taxLiability = 5426 + (taxableIncome - 47150) * 0.22;
+      } else if (taxableIncome <= 191950) {
+        taxLiability = 17168.50 + (taxableIncome - 100525) * 0.24;
+      } else if (taxableIncome <= 243725) {
+        taxLiability = 39110.50 + (taxableIncome - 191950) * 0.32;
+      } else if (taxableIncome <= 609350) {
+        taxLiability = 55678.50 + (taxableIncome - 243725) * 0.35;
+      } else {
+        taxLiability = 183647.25 + (taxableIncome - 609350) * 0.37;
+      }
+    } else if (calculator.filingStatus === 'MARRIED_FILING_JOINTLY' || calculator.filingStatus === 'QUALIFYING_WIDOW') {
+      if (taxableIncome <= 23200) {
+        taxLiability = taxableIncome * 0.10;
+      } else if (taxableIncome <= 94300) {
+        taxLiability = 2320 + (taxableIncome - 23200) * 0.12;
+      } else if (taxableIncome <= 201050) {
+        taxLiability = 10852 + (taxableIncome - 94300) * 0.22;
+      } else if (taxableIncome <= 383900) {
+        taxLiability = 34337 + (taxableIncome - 201050) * 0.24;
+      } else if (taxableIncome <= 487450) {
+        taxLiability = 78221 + (taxableIncome - 383900) * 0.32;
+      } else if (taxableIncome <= 731200) {
+        taxLiability = 111357 + (taxableIncome - 487450) * 0.35;
+      } else {
+        taxLiability = 196669.50 + (taxableIncome - 731200) * 0.37;
+      }
+    } else {
+      // HEAD_OF_HOUSEHOLD or MARRIED_FILING_SEPARATELY (simplified)
+      if (taxableIncome <= 16550) {
+        taxLiability = taxableIncome * 0.10;
+      } else if (taxableIncome <= 63100) {
+        taxLiability = 1655 + (taxableIncome - 16550) * 0.12;
+      } else if (taxableIncome <= 100500) {
+        taxLiability = 7241 + (taxableIncome - 63100) * 0.22;
+      } else if (taxableIncome <= 191950) {
+        taxLiability = 15469 + (taxableIncome - 100500) * 0.24;
+      } else if (taxableIncome <= 243700) {
+        taxLiability = 37417 + (taxableIncome - 191950) * 0.32;
+      } else if (taxableIncome <= 609350) {
+        taxLiability = 53977 + (taxableIncome - 243700) * 0.35;
+      } else {
+        taxLiability = 181954.50 + (taxableIncome - 609350) * 0.37;
+      }
+    }
+
+    // Apply credits
+    const taxAfterCredits = Math.max(0, taxLiability - credits);
+    
+    // Calculate refund or amount owed
+    const totalPayments = withheld + estimatedPayments;
+    const refundOrOwed = totalPayments - taxAfterCredits;
+
+    setCalculatorResult({
+      income,
+      standardDeduction,
+      totalDeductions,
+      taxableIncome,
+      taxLiability,
+      credits,
+      taxAfterCredits,
+      withheld,
+      estimatedPayments,
+      totalPayments,
+      refundOrOwed,
+      effectiveTaxRate: income > 0 ? (taxAfterCredits / income * 100).toFixed(2) : 0
+    });
   };
 
   // Calculate summary statistics
@@ -690,19 +798,178 @@ export default function TaxPage() {
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">Tax Calculator</h2>
-                <p className="text-gray-600">Estimate your tax liability and refund</p>
+                <p className="text-gray-600">Estimate your tax liability and refund for 2024</p>
               </div>
             </div>
 
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Calculator className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Tax calculator coming soon</h3>
-                <p className="text-gray-500 text-center">
-                  Estimate your taxes and plan for the year ahead.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Input Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tax Information</CardTitle>
+                  <CardDescription>Enter your income and deduction details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Filing Status</label>
+                    <select
+                      className="w-full mt-1 p-2 border rounded-md"
+                      value={calculator.filingStatus}
+                      onChange={(e) => setCalculator({ ...calculator, filingStatus: e.target.value })}
+                    >
+                      <option value="SINGLE">Single</option>
+                      <option value="MARRIED_FILING_JOINTLY">Married Filing Jointly</option>
+                      <option value="MARRIED_FILING_SEPARATELY">Married Filing Separately</option>
+                      <option value="HEAD_OF_HOUSEHOLD">Head of Household</option>
+                      <option value="QUALIFYING_WIDOW">Qualifying Widow(er)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Total Income</label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={calculator.income}
+                      onChange={(e) => setCalculator({ ...calculator, income: e.target.value })}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Wages, self-employment, investments, etc.</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Itemized Deductions (optional)</label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={calculator.deductions}
+                      onChange={(e) => setCalculator({ ...calculator, deductions: e.target.value })}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Leave blank to use standard deduction</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Tax Credits</label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={calculator.credits}
+                      onChange={(e) => setCalculator({ ...calculator, credits: e.target.value })}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Child tax credit, education credits, etc.</p>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h3 className="font-medium mb-3">Tax Payments</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm font-medium">Federal Tax Withheld</label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={calculator.withheld}
+                          onChange={(e) => setCalculator({ ...calculator, withheld: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Estimated Tax Payments</label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={calculator.estimatedPayments}
+                          onChange={(e) => setCalculator({ ...calculator, estimatedPayments: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button onClick={calculateTax} className="w-full">
+                    <Calculator className="h-4 w-4 mr-2" />
+                    Calculate Tax
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Results Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tax Estimate</CardTitle>
+                  <CardDescription>Based on 2024 tax brackets and standard deductions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!calculatorResult ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <Calculator className="h-12 w-12 text-gray-400 mb-4" />
+                      <p className="text-gray-500 text-center">
+                        Enter your information and click Calculate Tax to see your estimate
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-1">Total Income</p>
+                        <p className="text-2xl font-bold">${calculatorResult.income.toLocaleString()}</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Standard/Itemized Deduction:</span>
+                          <span className="font-medium">-${calculatorResult.totalDeductions.toLocaleString()}</span>
+                        </div>
+                        
+                        <div className="flex justify-between text-sm pt-2 border-t">
+                          <span className="text-gray-600">Taxable Income:</span>
+                          <span className="font-medium">${calculatorResult.taxableIncome.toLocaleString()}</span>
+                        </div>
+
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Tax Liability:</span>
+                          <span className="font-medium">${calculatorResult.taxLiability.toLocaleString()}</span>
+                        </div>
+
+                        {calculatorResult.credits > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Tax Credits:</span>
+                            <span className="font-medium text-green-600">-${calculatorResult.credits.toLocaleString()}</span>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between text-sm pt-2 border-t">
+                          <span className="text-gray-600">Tax After Credits:</span>
+                          <span className="font-medium">${calculatorResult.taxAfterCredits.toLocaleString()}</span>
+                        </div>
+
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Total Payments:</span>
+                          <span className="font-medium">${calculatorResult.totalPayments.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className={`p-4 rounded-lg ${calculatorResult.refundOrOwed >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                        <p className="text-sm text-gray-600 mb-1">
+                          {calculatorResult.refundOrOwed >= 0 ? 'Estimated Refund' : 'Estimated Amount Owed'}
+                        </p>
+                        <p className={`text-3xl font-bold ${calculatorResult.refundOrOwed >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          ${Math.abs(calculatorResult.refundOrOwed).toLocaleString()}
+                        </p>
+                      </div>
+
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Effective Tax Rate:</span>
+                          <span className="text-lg font-bold">{calculatorResult.effectiveTaxRate}%</span>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-gray-500 pt-2 border-t">
+                        <p>* This is an estimate based on 2024 federal tax brackets and standard deductions.</p>
+                        <p>* Actual tax liability may vary. Consult a tax professional for accurate calculations.</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Tax Professionals Tab */}
