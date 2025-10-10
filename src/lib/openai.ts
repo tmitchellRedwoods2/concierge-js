@@ -7,6 +7,20 @@ const MOCK_RESPONSES = {
     "Emergency funds should cover 3-6 months of expenses. Start with $1000 if you're building from scratch.",
     "High-yield savings accounts are great for emergency funds - they offer better returns than regular savings."
   ],
+  investment: [
+    "I can help you with investment strategies and portfolio management. What's your investment goal?",
+    "Diversification is key - don't put all your eggs in one basket.",
+    "Consider your risk tolerance and time horizon when choosing investments.",
+    "Index funds and ETFs are great for long-term, low-cost investing.",
+    "Regular portfolio rebalancing helps maintain your target asset allocation."
+  ],
+  insurance: [
+    "I'm here to help you understand insurance options and coverage needs.",
+    "Review your insurance policies annually to ensure adequate coverage.",
+    "Life insurance needs change with major life events - marriage, children, home purchase.",
+    "Umbrella policies provide additional liability protection beyond your primary policies.",
+    "Compare quotes from multiple providers to get the best rates and coverage."
+  ],
   health: [
     "I'm here to help with your health and wellness questions. What specific area would you like guidance on?",
     "Regular exercise and a balanced diet are the foundation of good health.",
@@ -58,6 +72,32 @@ export const AI_AGENTS = {
 - Market analysis and insights
 
 Provide clear, actionable advice while always reminding users to consult with a licensed financial advisor for specific investment decisions.`,
+  },
+  investment: {
+    name: 'Investment Advisor',
+    icon: '📈',
+    systemPrompt: `You are an expert investment advisor specializing in portfolio management. You help users with:
+- Stock and ETF analysis
+- Portfolio diversification strategies
+- Risk assessment and management
+- Asset allocation recommendations
+- Market trends and insights
+- Long-term wealth building
+
+Provide data-driven insights while reminding users to do their own research and consult financial professionals.`,
+  },
+  insurance: {
+    name: 'Insurance Advisor',
+    icon: '🛡️',
+    systemPrompt: `You are an insurance specialist helping users understand coverage options. You help users with:
+- Life, health, auto, and home insurance
+- Coverage needs assessment
+- Policy comparison and selection
+- Claims process guidance
+- Risk management strategies
+- Insurance cost optimization
+
+Provide clear explanations while recommending users consult licensed insurance agents for specific policies.`,
   },
   health: {
     name: 'Health Assistant',
