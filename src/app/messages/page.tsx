@@ -178,7 +178,7 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation Bar */}
       <nav className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-2">
+        <div className="w-full px-4 py-2">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-bold text-gray-900">🏆 Concierge.com</h1>
@@ -207,7 +207,7 @@ export default function MessagesPage() {
 
       {/* Navigation Tabs */}
       <div className="bg-gray-50 border-b">
-        <div className="container mx-auto px-4">
+        <div className="w-full px-4">
           <div className="flex overflow-x-auto gap-1 py-3">
           <Button
             variant="ghost"
@@ -294,7 +294,7 @@ export default function MessagesPage() {
 
       {/* AI Advisor Selector Bar */}
       <div className="bg-blue-600 border-b">
-        <div className="container mx-auto px-4 py-2">
+        <div className="w-full px-4 py-2">
           <div className="flex overflow-x-auto gap-2">
             {Object.entries(AI_AGENTS).map(([key, agent]) => (
               <button
@@ -317,7 +317,7 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4">
+      <div className="w-full px-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-200px)]">
           {/* Sidebar */}
           <div className="lg:col-span-3">
