@@ -278,7 +278,7 @@ export default function MessagesPage() {
             size="sm"
             className="text-xs px-3 py-2"
           >
-            💬 Messages
+            🤖 AI Agents
           </Button>
           <Button
             variant="ghost"
