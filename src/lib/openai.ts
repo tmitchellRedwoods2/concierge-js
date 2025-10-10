@@ -1,7 +1,9 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Initialize Claude AI
+const anthropic = new Anthropic({
+  apiKey: process.env.CLAUDE_API_KEY || '',
+});
 
 // Mock AI responses for fallback - no API costs!
 const MOCK_RESPONSES = {
@@ -184,31 +186,22 @@ export async function generateAIResponse(
     console.log('Generating AI response:', { 
       agentType, 
       messageCount: messages.length,
-      hasApiKey: !!process.env.GEMINI_API_KEY,
-      apiKeyLength: process.env.GEMINI_API_KEY?.length || 0,
-      apiKeyPrefix: process.env.GEMINI_API_KEY?.substring(0, 10) || 'none'
+      hasApiKey: !!process.env.CLAUDE_API_KEY,
+      apiKeyLength: process.env.CLAUDE_API_KEY?.length || 0,
+      apiKeyPrefix: process.env.CLAUDE_API_KEY?.substring(0, 10) || 'none'
     });
     
-    // Check if we have a Gemini API key
-    if (!process.env.GEMINI_API_KEY) {
-      console.log('❌ No Gemini API key found, using mock responses');
-      console.log('Environment variables available:', Object.keys(process.env).filter(key => key.includes('GEMINI') || key.includes('API')));
+    // Check if we have a Claude API key
+    if (!process.env.CLAUDE_API_KEY) {
+      console.log('❌ No Claude API key found, using mock responses');
+      console.log('Environment variables available:', Object.keys(process.env).filter(key => key.includes('CLAUDE') || key.includes('API')));
       return await generateMockResponse(messages, agentType);
     }
     
-    console.log('✅ Gemini API key found, attempting real AI response');
+    console.log('✅ Claude API key found, attempting real AI response');
     
     // Get the agent configuration
     const agent = AI_AGENTS[agentType];
-    
-    // Get the model - try gemini-pro which is more stable
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-pro',
-      generationConfig: {
-        maxOutputTokens: 1024,
-        temperature: 0.7,
-      }
-    });
     
     // Get the last user message
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
@@ -216,33 +209,42 @@ export async function generateAIResponse(
       throw new Error('No user message found');
     }
     
-    console.log('Sending to Gemini:', {
+    console.log('Sending to Claude:', {
       agentType,
       userMessage: lastUserMessage.content.substring(0, 100) + '...'
     });
     
-    // Create a simple prompt instead of chat history
-    const fullPrompt = `${agent.systemPrompt}\n\nUser: ${lastUserMessage.content}\n\nAssistant:`;
+    // Create the full prompt with system message
+    const fullPrompt = `${agent.systemPrompt}\n\nHuman: ${lastUserMessage.content}\n\nAssistant:`;
     
-    // Use generateContent instead of chat for better reliability
     console.log('Attempting to generate content with prompt length:', fullPrompt.length);
-    const result = await model.generateContent(fullPrompt);
-    console.log('Content generation successful');
-    const response = await result.response;
-    console.log('Response received');
-    const text = response.text();
+    
+    // Use Claude Haiku (cheapest model)
+    const response = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: fullPrompt
+        }
+      ]
+    });
+    
+    console.log('Claude response received');
+    const text = response.content[0].type === 'text' ? response.content[0].text : '';
     console.log('Text extracted, length:', text.length);
     
-    console.log('Gemini response received:', text.substring(0, 100) + '...');
+    console.log('Claude response received:', text.substring(0, 100) + '...');
     
     return {
       response: text,
-      tokens: Math.floor(text.length / 4), // Rough token estimate
-      model: 'gemini-pro',
+      tokens: response.usage?.output_tokens || Math.floor(text.length / 4),
+      model: 'claude-3-haiku-20240307',
     };
     
   } catch (error) {
-    console.error('❌ Gemini AI error:', error);
+    console.error('❌ Claude AI error:', error);
     console.log('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       name: error instanceof Error ? error.name : 'Unknown',
