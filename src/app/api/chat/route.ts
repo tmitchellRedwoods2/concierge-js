@@ -71,10 +71,23 @@ export async function POST(req: NextRequest) {
     }));
 
     // Generate AI response
+    console.log('🚀 About to call generateAIResponse with:', {
+      messageCount: aiMessages.length,
+      agentType,
+      lastMessage: aiMessages[aiMessages.length - 1]?.content?.substring(0, 50) + '...'
+    });
+    
     const { response, tokens, model } = await generateAIResponse(
       aiMessages,
       agentType as any
     );
+    
+    console.log('✅ AI Response received:', {
+      model,
+      responseLength: response.length,
+      tokens,
+      responsePreview: response.substring(0, 100) + '...'
+    });
 
     // Save AI response
     const assistantMessage = await Message.create({
