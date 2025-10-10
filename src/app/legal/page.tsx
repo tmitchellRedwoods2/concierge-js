@@ -77,10 +77,28 @@ export default function LegalPage() {
     notes: ""
   });
 
+  // Appointment form state
+  const [showAddAppointment, setShowAddAppointment] = useState(false);
+  const [newAppointment, setNewAppointment] = useState({
+    caseId: "",
+    title: "",
+    description: "",
+    appointmentType: "CONSULTATION",
+    startDateTime: "",
+    endDateTime: "",
+    duration: "60",
+    locationType: "IN_PERSON",
+    locationAddress: "",
+    locationPhone: "",
+    locationVideoLink: "",
+    notes: ""
+  });
+
   // Load data on component mount
   useEffect(() => {
     loadCases();
     loadDocuments();
+    loadAppointments();
   }, []);
 
   const loadCases = async () => {
@@ -182,6 +200,116 @@ export default function LegalPage() {
     }
   };
 
+  const loadAppointments = async () => {
+    try {
+      const response = await fetch('/api/legal/appointments');
+      if (response.ok) {
+        const data = await response.json();
+        setAppointments(data.appointments || []);
+      }
+    } catch (error) {
+      console.error('Failed to load appointments:', error);
+    }
+  };
+
+  const addAppointment = async () => {
+    if (!newAppointment.title || !newAppointment.startDateTime || !newAppointment.endDateTime) {
+      alert('Please fill in Title, Start Date/Time, and End Date/Time');
+      return;
+    }
+
+    try {
+      const appointmentData = {
+        ...newAppointment,
+        caseId: newAppointment.caseId || undefined,
+        description: newAppointment.description || undefined,
+        duration: parseInt(newAppointment.duration) || 60,
+        location: {
+          type: newAppointment.locationType,
+          address: newAppointment.locationAddress || undefined,
+          phoneNumber: newAppointment.locationPhone || undefined,
+          videoLink: newAppointment.locationVideoLink || undefined
+        },
+        notes: newAppointment.notes || undefined
+      };
+      
+      const response = await fetch('/api/legal/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appointmentData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Appointment scheduled successfully!');
+        await loadAppointments();
+        setShowAddAppointment(false);
+        setNewAppointment({
+          caseId: "",
+          title: "",
+          description: "",
+          appointmentType: "CONSULTATION",
+          startDateTime: "",
+          endDateTime: "",
+          duration: "60",
+          locationType: "IN_PERSON",
+          locationAddress: "",
+          locationPhone: "",
+          locationVideoLink: "",
+          notes: ""
+        });
+      } else {
+        alert(`Error: ${data.error || 'Failed to schedule appointment'}`);
+      }
+    } catch (error) {
+      console.error('Failed to schedule appointment:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const deleteAppointment = async (appointmentId: string) => {
+    if (!confirm('Are you sure you want to delete this appointment?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/legal/appointments?id=${appointmentId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('Appointment deleted successfully!');
+        await loadAppointments();
+      } else {
+        alert('Failed to delete appointment');
+      }
+    } catch (error) {
+      console.error('Failed to delete appointment:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const updateAppointmentStatus = async (appointmentId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/legal/appointments?id=${appointmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        alert('Appointment status updated!');
+        await loadAppointments();
+      } else {
+        alert('Failed to update appointment status');
+      }
+    } catch (error) {
+      console.error('Failed to update appointment status:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
   const addCase = async () => {
     if (!newCase.title || !newCase.description || !newCase.jurisdiction || !newCase.startDate) {
       alert('Please fill in Title, Description, Jurisdiction, and Start Date');
@@ -270,6 +398,43 @@ export default function LegalPage() {
       case 'HIGH': return 'bg-orange-100 text-orange-800';
       case 'URGENT': return 'bg-red-100 text-red-800';
       default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getAppointmentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'CONSULTATION': return '💼';
+      case 'COURT_HEARING': return '⚖️';
+      case 'DEPOSITION': return '📝';
+      case 'MEDIATION': return '🤝';
+      case 'SETTLEMENT_CONFERENCE': return '💰';
+      case 'TRIAL': return '🏛️';
+      case 'CLIENT_MEETING': return '👥';
+      case 'PHONE_CALL': return '📞';
+      case 'VIDEO_CALL': return '🎥';
+      default: return '📅';
+    }
+  };
+
+  const getAppointmentStatusColor = (status: string) => {
+    switch (status) {
+      case 'SCHEDULED': return 'bg-blue-100 text-blue-800';
+      case 'CONFIRMED': return 'bg-green-100 text-green-800';
+      case 'CANCELLED': return 'bg-red-100 text-red-800';
+      case 'RESCHEDULED': return 'bg-yellow-100 text-yellow-800';
+      case 'COMPLETED': return 'bg-gray-100 text-gray-800';
+      case 'NO_SHOW': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getLocationIcon = (type: string) => {
+    switch (type) {
+      case 'IN_PERSON': return '📍';
+      case 'PHONE': return '📞';
+      case 'VIDEO': return '🎥';
+      case 'COURT': return '⚖️';
+      default: return '📍';
     }
   };
 
@@ -656,17 +821,103 @@ export default function LegalPage() {
                 <h2 className="text-2xl font-bold">Appointments</h2>
                 <p className="text-gray-600">Schedule and manage legal appointments</p>
               </div>
+              <Button onClick={() => setShowAddAppointment(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Schedule Appointment
+              </Button>
             </div>
 
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Calendar className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Appointment scheduling coming soon</h3>
-                <p className="text-gray-500 text-center">
-                  Schedule consultations, court hearings, and meetings with your legal team.
-                </p>
-              </CardContent>
-            </Card>
+            {appointments.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Calendar className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No appointments yet</h3>
+                  <p className="text-gray-500 mb-4">Schedule your first appointment to get started.</p>
+                  <Button onClick={() => setShowAddAppointment(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Schedule First Appointment
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {appointments.map((appointment) => (
+                  <Card key={appointment._id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center">
+                            <span className="mr-2">{getAppointmentTypeIcon(appointment.appointmentType)}</span>
+                            {appointment.title}
+                          </CardTitle>
+                          <CardDescription>
+                            {new Date(appointment.startDateTime).toLocaleString()} • {appointment.duration} min
+                          </CardDescription>
+                        </div>
+                        <Badge className={getAppointmentStatusColor(appointment.status)}>
+                          {appointment.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {appointment.description && (
+                          <p className="text-sm text-gray-600">{appointment.description}</p>
+                        )}
+                        
+                        <div className="flex items-center gap-2 text-sm">
+                          <span>{getLocationIcon(appointment.location?.type)}</span>
+                          <span className="text-gray-600">
+                            {appointment.location?.type === 'IN_PERSON' && appointment.location?.address}
+                            {appointment.location?.type === 'PHONE' && appointment.location?.phoneNumber}
+                            {appointment.location?.type === 'VIDEO' && 'Video Call'}
+                            {appointment.location?.type === 'COURT' && appointment.location?.courtName}
+                          </span>
+                        </div>
+                        
+                        {appointment.caseId && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Related Case:</span>
+                            <span className="font-medium text-sm">
+                              {appointment.caseId.title || appointment.caseId.caseNumber}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Type:</span>
+                          <Badge variant="outline" className="text-xs">
+                            {appointment.appointmentType.replace(/_/g, ' ')}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex gap-2 pt-2 border-t">
+                          <select
+                            className="flex-1 p-2 border rounded-md text-sm"
+                            value={appointment.status}
+                            onChange={(e) => updateAppointmentStatus(appointment._id, e.target.value)}
+                          >
+                            <option value="SCHEDULED">Scheduled</option>
+                            <option value="CONFIRMED">Confirmed</option>
+                            <option value="CANCELLED">Cancelled</option>
+                            <option value="RESCHEDULED">Rescheduled</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="NO_SHOW">No Show</option>
+                          </select>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => deleteAppointment(appointment._id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Law Firms Tab */}
@@ -996,6 +1247,175 @@ export default function LegalPage() {
                     Add Document
                   </Button>
                   <Button variant="outline" onClick={() => setShowAddDocument(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Add Appointment Modal */}
+        {showAddAppointment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Schedule Appointment</CardTitle>
+                <CardDescription>Schedule a new legal appointment</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Appointment Title *</label>
+                    <Input
+                      placeholder="e.g., Initial Consultation"
+                      value={newAppointment.title}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, title: e.target.value })}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">Appointment Type</label>
+                    <select
+                      className="w-full mt-1 p-2 border rounded-md"
+                      value={newAppointment.appointmentType}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, appointmentType: e.target.value })}
+                    >
+                      <option value="CONSULTATION">Consultation</option>
+                      <option value="COURT_HEARING">Court Hearing</option>
+                      <option value="DEPOSITION">Deposition</option>
+                      <option value="MEDIATION">Mediation</option>
+                      <option value="SETTLEMENT_CONFERENCE">Settlement Conference</option>
+                      <option value="TRIAL">Trial</option>
+                      <option value="CLIENT_MEETING">Client Meeting</option>
+                      <option value="PHONE_CALL">Phone Call</option>
+                      <option value="VIDEO_CALL">Video Call</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-20"
+                    placeholder="Describe the appointment..."
+                    value={newAppointment.description}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, description: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Start Date/Time *</label>
+                    <Input
+                      type="datetime-local"
+                      value={newAppointment.startDateTime}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, startDateTime: e.target.value })}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">End Date/Time *</label>
+                    <Input
+                      type="datetime-local"
+                      value={newAppointment.endDateTime}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, endDateTime: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Duration (minutes)</label>
+                    <Input
+                      type="number"
+                      placeholder="60"
+                      value={newAppointment.duration}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, duration: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Related Case (optional)</label>
+                  <select
+                    className="w-full mt-1 p-2 border rounded-md"
+                    value={newAppointment.caseId}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, caseId: e.target.value })}
+                  >
+                    <option value="">No case association</option>
+                    {cases.map((caseItem) => (
+                      <option key={caseItem._id} value={caseItem._id}>
+                        {caseItem.title} - {caseItem.caseNumber}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Location Type</label>
+                  <select
+                    className="w-full mt-1 p-2 border rounded-md"
+                    value={newAppointment.locationType}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, locationType: e.target.value })}
+                  >
+                    <option value="IN_PERSON">In Person</option>
+                    <option value="PHONE">Phone Call</option>
+                    <option value="VIDEO">Video Call</option>
+                    <option value="COURT">Court</option>
+                  </select>
+                </div>
+
+                {newAppointment.locationType === 'IN_PERSON' && (
+                  <div>
+                    <label className="text-sm font-medium">Address</label>
+                    <Input
+                      placeholder="123 Main St, City, State"
+                      value={newAppointment.locationAddress}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, locationAddress: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                {newAppointment.locationType === 'PHONE' && (
+                  <div>
+                    <label className="text-sm font-medium">Phone Number</label>
+                    <Input
+                      placeholder="(555) 123-4567"
+                      value={newAppointment.locationPhone}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, locationPhone: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                {newAppointment.locationType === 'VIDEO' && (
+                  <div>
+                    <label className="text-sm font-medium">Video Link</label>
+                    <Input
+                      placeholder="https://zoom.us/j/..."
+                      value={newAppointment.locationVideoLink}
+                      onChange={(e) => setNewAppointment({ ...newAppointment, locationVideoLink: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-sm font-medium">Notes (optional)</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-16"
+                    placeholder="Additional notes..."
+                    value={newAppointment.notes}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={addAppointment} className="flex-1">
+                    Schedule Appointment
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddAppointment(false)}>
                     Cancel
                   </Button>
                 </div>
