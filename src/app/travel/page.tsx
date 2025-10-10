@@ -31,6 +31,7 @@ export default function TravelPage() {
   // State management
   const [trips, setTrips] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [itineraries, setItineraries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Form states
@@ -82,10 +83,27 @@ export default function TravelPage() {
     notes: ""
   });
 
+  // Itinerary form state
+  const [showAddItinerary, setShowAddItinerary] = useState(false);
+  const [newItinerary, setNewItinerary] = useState({
+    tripId: "",
+    dayNumber: "1",
+    date: "",
+    title: "",
+    description: "",
+    activityTitle: "",
+    activityTime: "",
+    activityLocation: "",
+    activityDescription: "",
+    activityCost: "",
+    notes: ""
+  });
+
   // Load data on component mount
   useEffect(() => {
     loadTrips();
     loadBookings();
+    loadItineraries();
   }, []);
 
   // Debug showAddTrip state
@@ -292,6 +310,106 @@ export default function TravelPage() {
       }
     } catch (error) {
       console.error('Failed to delete booking:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const loadItineraries = async () => {
+    try {
+      const response = await fetch('/api/travel/itinerary');
+      if (response.ok) {
+        const data = await response.json();
+        setItineraries(data.itineraries || []);
+      }
+    } catch (error) {
+      console.error('Failed to load itineraries:', error);
+    }
+  };
+
+  const addItinerary = async () => {
+    if (!newItinerary.tripId || !newItinerary.date || !newItinerary.title) {
+      alert('Please fill in Trip, Date, and Title');
+      return;
+    }
+
+    try {
+      const activities = [];
+      if (newItinerary.activityTitle && newItinerary.activityTime && newItinerary.activityLocation) {
+        activities.push({
+          time: newItinerary.activityTime,
+          title: newItinerary.activityTitle,
+          description: newItinerary.activityDescription || '',
+          location: newItinerary.activityLocation,
+          duration: 60,
+          cost: parseFloat(newItinerary.activityCost) || 0,
+          category: 'ACTIVITY',
+          completed: false
+        });
+      }
+
+      const itineraryData = {
+        tripId: newItinerary.tripId,
+        dayNumber: parseInt(newItinerary.dayNumber),
+        date: newItinerary.date,
+        title: newItinerary.title,
+        description: newItinerary.description || undefined,
+        activities,
+        estimatedCost: parseFloat(newItinerary.activityCost) || 0,
+        notes: newItinerary.notes || undefined
+      };
+      
+      const response = await fetch('/api/travel/itinerary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itineraryData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Itinerary day added successfully!');
+        await loadItineraries();
+        setShowAddItinerary(false);
+        setNewItinerary({
+          tripId: "",
+          dayNumber: "1",
+          date: "",
+          title: "",
+          description: "",
+          activityTitle: "",
+          activityTime: "",
+          activityLocation: "",
+          activityDescription: "",
+          activityCost: "",
+          notes: ""
+        });
+      } else {
+        alert(`Error: ${data.error || 'Failed to add itinerary'}`);
+      }
+    } catch (error) {
+      console.error('Failed to add itinerary:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const deleteItinerary = async (itineraryId: string) => {
+    if (!confirm('Are you sure you want to delete this itinerary day?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/travel/itinerary?id=${itineraryId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('Itinerary day deleted successfully!');
+        await loadItineraries();
+      } else {
+        alert('Failed to delete itinerary');
+      }
+    } catch (error) {
+      console.error('Failed to delete itinerary:', error);
       alert('Network error. Please try again.');
     }
   };
@@ -751,17 +869,98 @@ export default function TravelPage() {
                 <h2 className="text-2xl font-bold">Trip Itinerary</h2>
                 <p className="text-gray-600">Day-by-day schedule and activities</p>
               </div>
+              <Button onClick={() => setShowAddItinerary(true)} disabled={trips.length === 0}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Day
+              </Button>
             </div>
 
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Calendar className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Itinerary builder coming soon</h3>
-                <p className="text-gray-500 text-center">
-                  Create detailed day-by-day itineraries for your trips.
-                </p>
-              </CardContent>
-            </Card>
+            {trips.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Calendar className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Create a trip first</h3>
+                  <p className="text-gray-500 text-center">
+                    You need to create a trip before building an itinerary.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : itineraries.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Calendar className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No itinerary yet</h3>
+                  <p className="text-gray-500 mb-4">Build a day-by-day schedule for your trip.</p>
+                  <Button onClick={() => setShowAddItinerary(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Day
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {itineraries.map((day) => (
+                  <Card key={day._id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center">
+                            <Calendar className="h-5 w-5 mr-2" />
+                            Day {day.dayNumber}: {day.title}
+                          </CardTitle>
+                          <CardDescription>
+                            {new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          </CardDescription>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => deleteItinerary(day._id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {day.description && (
+                          <p className="text-sm text-gray-600">{day.description}</p>
+                        )}
+                        
+                        {day.activities && day.activities.length > 0 && (
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-sm">Activities:</h4>
+                            {day.activities.map((activity: any, idx: number) => (
+                              <div key={idx} className="bg-gray-50 p-3 rounded-lg">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                    <p className="font-medium">{activity.time} - {activity.title}</p>
+                                    <p className="text-sm text-gray-600">{activity.location}</p>
+                                  </div>
+                                  {activity.cost > 0 && (
+                                    <Badge variant="outline">${activity.cost}</Badge>
+                                  )}
+                                </div>
+                                {activity.description && (
+                                  <p className="text-sm text-gray-600">{activity.description}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {day.estimatedCost > 0 && (
+                          <div className="flex justify-between pt-3 border-t">
+                            <span className="text-sm text-gray-600">Estimated Cost:</span>
+                            <span className="font-medium">${day.estimatedCost.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Providers Tab */}
@@ -1131,6 +1330,134 @@ export default function TravelPage() {
                     Add Booking
                   </Button>
                   <Button variant="outline" onClick={() => setShowAddBooking(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Add Itinerary Modal */}
+        {showAddItinerary && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Add Itinerary Day</CardTitle>
+                <CardDescription>Plan activities for a day of your trip</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Trip *</label>
+                    <select
+                      className="w-full mt-1 p-2 border rounded-md"
+                      value={newItinerary.tripId}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, tripId: e.target.value })}
+                    >
+                      <option value="">Select a trip</option>
+                      {trips.map((trip) => (
+                        <option key={trip._id} value={trip._id}>
+                          {trip.tripName} - {trip.destination}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Day Number *</label>
+                    <Input
+                      type="number"
+                      placeholder="1"
+                      value={newItinerary.dayNumber}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, dayNumber: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Date *</label>
+                    <Input
+                      type="date"
+                      value={newItinerary.date}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, date: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Day Title *</label>
+                    <Input
+                      placeholder="e.g., Explore the Louvre"
+                      value={newItinerary.title}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, title: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-20"
+                    placeholder="Describe the day's plan..."
+                    value={newItinerary.description}
+                    onChange={(e) => setNewItinerary({ ...newItinerary, description: e.target.value })}
+                  />
+                </div>
+
+                <div className="border-t pt-4">
+                  <h3 className="font-medium mb-3">Add Activity (optional)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      placeholder="Activity Title"
+                      value={newItinerary.activityTitle}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, activityTitle: e.target.value })}
+                    />
+                    <Input
+                      type="time"
+                      placeholder="Time"
+                      value={newItinerary.activityTime}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, activityTime: e.target.value })}
+                    />
+                    <Input
+                      placeholder="Location"
+                      value={newItinerary.activityLocation}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, activityLocation: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Cost"
+                      value={newItinerary.activityCost}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, activityCost: e.target.value })}
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <Input
+                      placeholder="Activity Description"
+                      value={newItinerary.activityDescription}
+                      onChange={(e) => setNewItinerary({ ...newItinerary, activityDescription: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Notes (optional)</label>
+                  <textarea
+                    className="w-full mt-1 p-2 border rounded-md h-16"
+                    placeholder="Additional notes..."
+                    value={newItinerary.notes}
+                    onChange={(e) => setNewItinerary({ ...newItinerary, notes: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={addItinerary} className="flex-1">
+                    Add Itinerary Day
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddItinerary(false)}>
                     Cancel
                   </Button>
                 </div>
