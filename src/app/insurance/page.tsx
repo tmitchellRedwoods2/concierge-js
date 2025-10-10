@@ -331,7 +331,7 @@ export default function InsurancePage() {
                 Welcome, {session?.user?.name}
               </span>
               <Button
-                onClick={() => signOut()}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 variant="outline"
                 size="sm"
               >
