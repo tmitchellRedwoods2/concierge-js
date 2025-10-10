@@ -103,16 +103,10 @@ export default function InsurancePage() {
 
   const loadClaims = async () => {
     try {
-      console.log('Loading claims...');
       const response = await fetch('/api/insurance/claims');
-      console.log('Claims response status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('Claims data:', data);
         setClaims(data.claims || []);
-        console.log('Claims set to state:', data.claims || []);
-      } else {
-        console.error('Failed to load claims - response not ok:', response.status);
       }
     } catch (error) {
       console.error('Failed to load claims:', error);
@@ -307,8 +301,6 @@ export default function InsurancePage() {
 
   // Calculate active claims
   const activeClaims = claims.filter(c => c.status === 'FILED' || c.status === 'UNDER_REVIEW');
-  console.log('Claims for active calculation:', claims);
-  console.log('Active claims:', activeClaims);
 
   if (loading) {
     return (
@@ -454,7 +446,6 @@ export default function InsurancePage() {
                 {activeClaims.length}
               </div>
               <p className="text-sm text-gray-500">In progress</p>
-              <p className="text-xs text-gray-400 mt-1">Debug: Total claims: {claims.length}</p>
             </CardContent>
           </Card>
         </div>
@@ -516,7 +507,7 @@ export default function InsurancePage() {
                             {policy.policyName}
                           </CardTitle>
                           <CardDescription>
-                            {policy.providerId?.name || 'Unknown Provider'} • {policy.policyNumber}
+                            {policy.policyType} • {policy.providerId?.name || 'Unknown Provider'} • {policy.policyNumber}
                           </CardDescription>
                         </div>
                         <Badge className={getStatusColor(policy.status)}>
@@ -576,7 +567,6 @@ export default function InsurancePage() {
               </Button>
             </div>
 
-            {console.log('Claims in UI render:', claims)}
             {claims.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
@@ -602,7 +592,7 @@ export default function InsurancePage() {
                             {claim.claimNumber}
                           </CardTitle>
                           <CardDescription>
-                            {claim.policyId?.policyName || 'Unknown Policy'} • {new Date(claim.incidentDate).toLocaleDateString()}
+                            {claim.policyId?.policyType ? getPolicyTypeIcon(claim.policyId.policyType) + ' ' : ''}{claim.policyId?.policyName || 'Unknown Policy'} • {new Date(claim.incidentDate).toLocaleDateString()}
                           </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
@@ -769,7 +759,7 @@ export default function InsurancePage() {
                     <option value="">Select a policy</option>
                     {policies.map((policy) => (
                       <option key={policy._id} value={policy._id}>
-                        {policy.policyName} - {policy.policyNumber}
+                        {getPolicyTypeIcon(policy.policyType)} {policy.policyName} - {policy.policyNumber}
                       </option>
                     ))}
                   </select>
