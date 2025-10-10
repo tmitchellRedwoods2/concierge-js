@@ -40,11 +40,13 @@ export default function InsurancePage() {
   const [newClaim, setNewClaim] = useState({
     policyId: "",
     claimNumber: "",
-    dateOfIncident: "",
+    incidentDate: "",
     description: "",
-    status: "SUBMITTED",
-    amountClaimed: "",
-    amountApproved: "",
+    status: "FILED",
+    claimAmount: "",
+    deductibleAmount: "",
+    claimType: "OTHER",
+    location: "",
     notes: ""
   });
   const [newPolicy, setNewPolicy] = useState({
@@ -174,8 +176,8 @@ export default function InsurancePage() {
   };
 
   const addClaim = async () => {
-    if (!newClaim.policyId || !newClaim.dateOfIncident || !newClaim.description) {
-      alert('Please fill in Policy, Date of Incident, and Description');
+    if (!newClaim.policyId || !newClaim.incidentDate || !newClaim.description || !newClaim.claimAmount || !newClaim.deductibleAmount) {
+      alert('Please fill in Policy, Date of Incident, Description, Claim Amount, and Deductible Amount');
       return;
     }
 
@@ -183,9 +185,10 @@ export default function InsurancePage() {
       const claimData = {
         ...newClaim,
         policyId: newClaim.policyId && newClaim.policyId.trim() !== '' ? newClaim.policyId : undefined,
-        amountClaimed: newClaim.amountClaimed || 0,
-        amountApproved: newClaim.amountApproved || 0,
-        notes: newClaim.notes || undefined
+        claimAmount: newClaim.claimAmount || 0,
+        deductibleAmount: newClaim.deductibleAmount || 0,
+        notes: newClaim.notes || undefined,
+        location: newClaim.location || undefined
       };
       
       console.log('Submitting claim:', claimData);
@@ -205,11 +208,13 @@ export default function InsurancePage() {
         setNewClaim({
           policyId: "",
           claimNumber: "",
-          dateOfIncident: "",
+          incidentDate: "",
           description: "",
-          status: "SUBMITTED",
-          amountClaimed: "",
-          amountApproved: "",
+          status: "FILED",
+          claimAmount: "",
+          deductibleAmount: "",
+          claimType: "OTHER",
+          location: "",
           notes: ""
         });
       } else {
@@ -557,7 +562,7 @@ export default function InsurancePage() {
                             {claim.claimNumber}
                           </CardTitle>
                           <CardDescription>
-                            {claim.policyId?.policyName || 'Unknown Policy'} • {new Date(claim.dateOfIncident).toLocaleDateString()}
+                            {claim.policyId?.policyName || 'Unknown Policy'} • {new Date(claim.incidentDate).toLocaleDateString()}
                           </CardDescription>
                         </div>
                         <Badge className={getClaimStatusColor(claim.status)}>
@@ -572,13 +577,17 @@ export default function InsurancePage() {
                           <p className="text-sm mt-1">{claim.description}</p>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Amount Claimed:</span>
-                          <span className="font-medium">${claim.amountClaimed?.toLocaleString()}</span>
+                          <span className="text-sm text-gray-600">Claim Amount:</span>
+                          <span className="font-medium">${claim.claimAmount?.toLocaleString()}</span>
                         </div>
-                        {claim.amountApproved > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Deductible:</span>
+                          <span className="font-medium">${claim.deductibleAmount?.toLocaleString()}</span>
+                        </div>
+                        {claim.approvedAmount > 0 && (
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Amount Approved:</span>
-                            <span className="font-medium text-green-600">${claim.amountApproved?.toLocaleString()}</span>
+                            <span className="font-medium text-green-600">${claim.approvedAmount?.toLocaleString()}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
@@ -727,8 +736,8 @@ export default function InsurancePage() {
                     <label className="text-sm font-medium">Date of Incident</label>
                     <Input
                       type="date"
-                      value={newClaim.dateOfIncident}
-                      onChange={(e) => setNewClaim({ ...newClaim, dateOfIncident: e.target.value })}
+                      value={newClaim.incidentDate}
+                      onChange={(e) => setNewClaim({ ...newClaim, incidentDate: e.target.value })}
                     />
                   </div>
                 </div>
@@ -745,11 +754,36 @@ export default function InsurancePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
-                    placeholder="Amount Claimed"
+                    placeholder="Claim Amount"
                     type="number"
-                    value={newClaim.amountClaimed}
-                    onChange={(e) => setNewClaim({ ...newClaim, amountClaimed: e.target.value })}
+                    value={newClaim.claimAmount}
+                    onChange={(e) => setNewClaim({ ...newClaim, claimAmount: e.target.value })}
                   />
+                  
+                  <Input
+                    placeholder="Deductible Amount"
+                    type="number"
+                    value={newClaim.deductibleAmount}
+                    onChange={(e) => setNewClaim({ ...newClaim, deductibleAmount: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Claim Type</label>
+                    <select
+                      className="w-full mt-1 p-2 border rounded-md"
+                      value={newClaim.claimType}
+                      onChange={(e) => setNewClaim({ ...newClaim, claimType: e.target.value })}
+                    >
+                      <option value="AUTO_ACCIDENT">Auto Accident</option>
+                      <option value="HOME_DAMAGE">Home Damage</option>
+                      <option value="HEALTH_MEDICAL">Health Medical</option>
+                      <option value="THEFT">Theft</option>
+                      <option value="LIABILITY">Liability</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
                   
                   <div>
                     <label className="text-sm font-medium">Status</label>
@@ -758,7 +792,7 @@ export default function InsurancePage() {
                       value={newClaim.status}
                       onChange={(e) => setNewClaim({ ...newClaim, status: e.target.value })}
                     >
-                      <option value="SUBMITTED">Submitted</option>
+                      <option value="FILED">Filed</option>
                       <option value="UNDER_REVIEW">Under Review</option>
                       <option value="APPROVED">Approved</option>
                       <option value="DENIED">Denied</option>
@@ -769,10 +803,9 @@ export default function InsurancePage() {
                 </div>
 
                 <Input
-                  placeholder="Amount Approved (optional)"
-                  type="number"
-                  value={newClaim.amountApproved}
-                  onChange={(e) => setNewClaim({ ...newClaim, amountApproved: e.target.value })}
+                  placeholder="Location (optional)"
+                  value={newClaim.location}
+                  onChange={(e) => setNewClaim({ ...newClaim, location: e.target.value })}
                 />
 
                 <div>

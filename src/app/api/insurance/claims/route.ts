@@ -47,11 +47,14 @@ export async function POST(request: NextRequest) {
     const {
       policyId,
       claimNumber,
-      dateOfIncident,
+      incidentDate,
+      filingDate,
       description,
       status,
-      amountClaimed,
-      amountApproved,
+      claimAmount,
+      deductibleAmount,
+      claimType,
+      location,
       notes
     } = body;
 
@@ -60,11 +63,14 @@ export async function POST(request: NextRequest) {
       userId: session.user.id,
       policyId,
       claimNumber: claimNumber || `CLM-${Date.now()}`,
-      dateOfIncident: new Date(dateOfIncident),
+      incidentDate: new Date(incidentDate),
+      filingDate: new Date(filingDate || new Date()),
       description,
-      status: status || 'SUBMITTED',
-      amountClaimed: parseFloat(amountClaimed) || 0,
-      amountApproved: parseFloat(amountApproved) || 0,
+      status: status || 'FILED',
+      claimAmount: parseFloat(claimAmount) || 0,
+      deductibleAmount: parseFloat(deductibleAmount) || 0,
+      claimType: claimType || 'OTHER',
+      location: location || '',
       notes: notes || ''
     });
 
