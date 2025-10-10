@@ -69,6 +69,7 @@ export default function TaxPage() {
 
   // Calculator state
   const [calculator, setCalculator] = useState({
+    taxYear: new Date().getFullYear().toString(),
     filingStatus: "SINGLE",
     income: "",
     deductions: "",
@@ -281,6 +282,50 @@ export default function TaxPage() {
 
   const getCategoryLabel = (category: string) => {
     return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const saveEstimateAsReturn = async () => {
+    if (!calculatorResult) {
+      alert('Please calculate your tax estimate first');
+      return;
+    }
+
+    try {
+      const returnData = {
+        taxYear: parseInt(calculator.taxYear),
+        filingStatus: calculator.filingStatus,
+        status: 'IN_PROGRESS',
+        filingMethod: 'E_FILE',
+        dueDate: `${calculator.taxYear}-04-15`,
+        wages: calculatorResult.income,
+        selfEmploymentIncome: 0,
+        investmentIncome: 0,
+        rentalIncome: 0,
+        retirementIncome: 0,
+        otherIncome: 0,
+        federalTaxWithheld: calculatorResult.withheld,
+        estimatedTaxPaid: calculatorResult.estimatedPayments,
+        notes: `Estimate created from calculator on ${new Date().toLocaleDateString()}`
+      };
+      
+      const response = await fetch('/api/tax/returns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(returnData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Tax estimate saved as a return!');
+        await loadTaxReturns();
+      } else {
+        alert(`Error: ${data.error || 'Failed to save estimate'}`);
+      }
+    } catch (error) {
+      console.error('Failed to save estimate:', error);
+      alert('Network error. Please try again.');
+    }
   };
 
   const calculateTax = () => {
@@ -810,19 +855,31 @@ export default function TaxPage() {
                   <CardDescription>Enter your income and deduction details</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Filing Status</label>
-                    <select
-                      className="w-full mt-1 p-2 border rounded-md"
-                      value={calculator.filingStatus}
-                      onChange={(e) => setCalculator({ ...calculator, filingStatus: e.target.value })}
-                    >
-                      <option value="SINGLE">Single</option>
-                      <option value="MARRIED_FILING_JOINTLY">Married Filing Jointly</option>
-                      <option value="MARRIED_FILING_SEPARATELY">Married Filing Separately</option>
-                      <option value="HEAD_OF_HOUSEHOLD">Head of Household</option>
-                      <option value="QUALIFYING_WIDOW">Qualifying Widow(er)</option>
-                    </select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Tax Year</label>
+                      <Input
+                        type="number"
+                        placeholder="2024"
+                        value={calculator.taxYear}
+                        onChange={(e) => setCalculator({ ...calculator, taxYear: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Filing Status</label>
+                      <select
+                        className="w-full mt-1 p-2 border rounded-md"
+                        value={calculator.filingStatus}
+                        onChange={(e) => setCalculator({ ...calculator, filingStatus: e.target.value })}
+                      >
+                        <option value="SINGLE">Single</option>
+                        <option value="MARRIED_FILING_JOINTLY">Married Filing Jointly</option>
+                        <option value="MARRIED_FILING_SEPARATELY">Married Filing Separately</option>
+                        <option value="HEAD_OF_HOUSEHOLD">Head of Household</option>
+                        <option value="QUALIFYING_WIDOW">Qualifying Widow(er)</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div>
@@ -965,6 +1022,11 @@ export default function TaxPage() {
                         <p>* This is an estimate based on 2024 federal tax brackets and standard deductions.</p>
                         <p>* Actual tax liability may vary. Consult a tax professional for accurate calculations.</p>
                       </div>
+
+                      <Button onClick={saveEstimateAsReturn} className="w-full mt-4" variant="outline">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Save as Tax Return
+                      </Button>
                     </div>
                   )}
                 </CardContent>
