@@ -58,11 +58,25 @@ export async function POST(request: NextRequest) {
       notes
     } = body;
 
+    // Generate unique claim number
+    const generateUniqueClaimNumber = async () => {
+      let uniqueClaimNumber = claimNumber || `CLM-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      
+      // Check if claim number already exists and generate new one if needed
+      while (await InsuranceClaim.findOne({ claimNumber: uniqueClaimNumber })) {
+        uniqueClaimNumber = `CLM-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      }
+      
+      return uniqueClaimNumber;
+    };
+
+    const finalClaimNumber = await generateUniqueClaimNumber();
+
     // Create new insurance claim
     const claim = new InsuranceClaim({
       userId: session.user.id,
       policyId,
-      claimNumber: claimNumber || `CLM-${Date.now()}`,
+      claimNumber: finalClaimNumber,
       incidentDate: new Date(incidentDate),
       filingDate: new Date(filingDate || new Date()),
       description,
