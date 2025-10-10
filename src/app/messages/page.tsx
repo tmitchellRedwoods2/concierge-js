@@ -293,8 +293,8 @@ export default function MessagesPage() {
       </div>
 
       {/* AI Advisor Selector Bar */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-3">
+      <div className="bg-blue-600 border-b">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex overflow-x-auto gap-2">
             {Object.entries(AI_AGENTS).map(([key, agent]) => (
               <button
@@ -303,14 +303,14 @@ export default function MessagesPage() {
                   setSelectedAgent(key as keyof typeof AI_AGENTS);
                   startNewChat();
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                   selectedAgent === key
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                    ? 'bg-white text-blue-600 shadow-md'
+                    : 'bg-blue-500 hover:bg-blue-400 text-white'
                 }`}
               >
-                <span className="text-lg">{agent.icon}</span>
-                <span className="text-sm font-medium">{agent.name}</span>
+                <span className="text-sm">{agent.icon}</span>
+                <span className="text-xs font-medium">{agent.name}</span>
               </button>
             ))}
           </div>
@@ -318,25 +318,25 @@ export default function MessagesPage() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[calc(100vh-220px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-200px)]">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="h-full p-4">
-              <div className="space-y-4">
+          <div className="lg:col-span-3">
+            <Card className="h-full p-3">
+              <div className="space-y-3">
                 <div>
-                  <h2 className="text-lg font-semibold mb-2">💬 Messages</h2>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <h2 className="text-base font-semibold mb-1">💬 Messages</h2>
+                  <p className="text-xs text-gray-600 mb-2">
                     Chat with AI assistants
                   </p>
                 </div>
 
                 {/* Current Agent Display */}
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">{AI_AGENTS[selectedAgent].icon}</span>
-                    <span className="font-medium">{AI_AGENTS[selectedAgent].name}</span>
+                <div className="bg-blue-50 p-2 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">{AI_AGENTS[selectedAgent].icon}</span>
+                    <span className="font-medium text-sm">{AI_AGENTS[selectedAgent].name}</span>
                   </div>
-                  <p className="text-xs text-gray-700 leading-relaxed">
+                  <p className="text-xs text-gray-700 leading-tight">
                     {AI_AGENTS[selectedAgent].systemPrompt.split('\n')[0]}
                   </p>
                 </div>
@@ -387,7 +387,7 @@ export default function MessagesPage() {
           </div>
 
           {/* Chat Area */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-9">
             <Card className="h-full flex flex-col">
               {/* Chat Header */}
               <div className="p-4 border-b">
