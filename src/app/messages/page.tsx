@@ -305,8 +305,8 @@ export default function MessagesPage() {
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                   selectedAgent === key
-                    ? 'bg-blue-500 text-white shadow-md'
-                    : 'bg-gray-600 hover:bg-gray-500 text-white'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-blue-500 hover:bg-blue-400 text-white'
                 }`}
               >
                 <span className="text-sm">{agent.icon}</span>
