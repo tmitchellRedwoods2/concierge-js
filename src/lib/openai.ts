@@ -184,14 +184,19 @@ export async function generateAIResponse(
     console.log('Generating AI response:', { 
       agentType, 
       messageCount: messages.length,
-      hasApiKey: !!process.env.GEMINI_API_KEY
+      hasApiKey: !!process.env.GEMINI_API_KEY,
+      apiKeyLength: process.env.GEMINI_API_KEY?.length || 0,
+      apiKeyPrefix: process.env.GEMINI_API_KEY?.substring(0, 10) || 'none'
     });
     
     // Check if we have a Gemini API key
     if (!process.env.GEMINI_API_KEY) {
-      console.log('No Gemini API key found, using mock responses');
+      console.log('❌ No Gemini API key found, using mock responses');
+      console.log('Environment variables available:', Object.keys(process.env).filter(key => key.includes('GEMINI') || key.includes('API')));
       return await generateMockResponse(messages, agentType);
     }
+    
+    console.log('✅ Gemini API key found, attempting real AI response');
     
     // Get the agent configuration
     const agent = AI_AGENTS[agentType];
@@ -241,8 +246,13 @@ export async function generateAIResponse(
     };
     
   } catch (error) {
-    console.error('Gemini AI error:', error);
-    console.log('Falling back to mock response');
+    console.error('❌ Gemini AI error:', error);
+    console.log('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    });
+    console.log('🔄 Falling back to mock response');
     return await generateMockResponse(messages, agentType);
   }
 }
