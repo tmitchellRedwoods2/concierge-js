@@ -201,24 +201,12 @@ export async function generateAIResponse(
     // Get the agent configuration
     const agent = AI_AGENTS[agentType];
     
-    // Convert messages to Gemini format
-    const geminiMessages = messages.map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : msg.role,
-      parts: [{ text: msg.content }]
-    }));
-    
-    // Add system prompt as first message
-    geminiMessages.unshift({
-      role: 'user',
-      parts: [{ text: agent.systemPrompt }]
-    });
-    
     // Get the model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    
-    // Start a chat session
-    const chat = model.startChat({
-      history: geminiMessages.slice(0, -1), // All except the last message
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        maxOutputTokens: 1024,
+      }
     });
     
     // Get the last user message
@@ -232,8 +220,11 @@ export async function generateAIResponse(
       userMessage: lastUserMessage.content.substring(0, 100) + '...'
     });
     
-    // Send the message to Gemini
-    const result = await chat.sendMessage(lastUserMessage.content);
+    // Create a simple prompt instead of chat history
+    const fullPrompt = `${agent.systemPrompt}\n\nUser: ${lastUserMessage.content}\n\nAssistant:`;
+    
+    // Use generateContent instead of chat for better reliability
+    const result = await model.generateContent(fullPrompt);
     const response = await result.response;
     const text = response.text();
     
