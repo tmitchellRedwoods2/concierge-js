@@ -293,7 +293,7 @@ export default function MessagesPage() {
       </div>
 
       {/* AI Advisor Selector Bar */}
-      <div className="bg-blue-600 border-b">
+      <div className="bg-gray-800 border-b">
         <div className="w-full px-4 py-2">
           <div className="flex overflow-x-auto gap-2">
             {Object.entries(AI_AGENTS).map(([key, agent]) => (
@@ -305,8 +305,8 @@ export default function MessagesPage() {
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
                   selectedAgent === key
-                    ? 'bg-white text-blue-600 shadow-md'
-                    : 'bg-blue-500 hover:bg-blue-400 text-white'
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'bg-gray-600 hover:bg-gray-500 text-white'
                 }`}
               >
                 <span className="text-sm">{agent.icon}</span>
