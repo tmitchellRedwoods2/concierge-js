@@ -201,11 +201,12 @@ export async function generateAIResponse(
     // Get the agent configuration
     const agent = AI_AGENTS[agentType];
     
-    // Get the model
+    // Get the model - try gemini-pro which is more stable
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash',
+      model: 'gemini-pro',
       generationConfig: {
         maxOutputTokens: 1024,
+        temperature: 0.7,
       }
     });
     
@@ -224,16 +225,20 @@ export async function generateAIResponse(
     const fullPrompt = `${agent.systemPrompt}\n\nUser: ${lastUserMessage.content}\n\nAssistant:`;
     
     // Use generateContent instead of chat for better reliability
+    console.log('Attempting to generate content with prompt length:', fullPrompt.length);
     const result = await model.generateContent(fullPrompt);
+    console.log('Content generation successful');
     const response = await result.response;
+    console.log('Response received');
     const text = response.text();
+    console.log('Text extracted, length:', text.length);
     
     console.log('Gemini response received:', text.substring(0, 100) + '...');
     
     return {
       response: text,
       tokens: Math.floor(text.length / 4), // Rough token estimate
-      model: 'gemini-1.5-flash',
+      model: 'gemini-pro',
     };
     
   } catch (error) {
