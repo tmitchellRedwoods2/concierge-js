@@ -307,27 +307,30 @@ export default function MessagesPage() {
 
                 {/* Agent Selector */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Select Assistant</label>
-                  <select
-                    value={selectedAgent}
-                    onChange={(e) => {
-                      setSelectedAgent(e.target.value as keyof typeof AI_AGENTS);
-                      startNewChat();
-                    }}
-                    className="w-full p-2 border rounded-md text-sm"
-                  >
+                  <label className="text-sm font-medium mb-3 block">Choose Your Assistant</label>
+                  <div className="space-y-2">
                     {Object.entries(AI_AGENTS).map(([key, agent]) => (
-                      <option key={key} value={key}>
-                        {agent.icon} {agent.name}
-                      </option>
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setSelectedAgent(key as keyof typeof AI_AGENTS);
+                          startNewChat();
+                        }}
+                        className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
+                          selectedAgent === key
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-2xl">{agent.icon}</span>
+                          <span className="font-medium text-sm">{agent.name}</span>
+                        </div>
+                        <p className="text-xs text-gray-600 line-clamp-2">
+                          {agent.systemPrompt.split('\n')[0]}
+                        </p>
+                      </button>
                     ))}
-                  </select>
-                  
-                  {/* Agent Description */}
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-gray-700 leading-relaxed">
-                      {AI_AGENTS[selectedAgent].systemPrompt.split('\n')[0]}
-                    </p>
                   </div>
                 </div>
 
