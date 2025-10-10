@@ -1,4 +1,9 @@
-// Mock AI responses for demo purposes - no API costs!
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+// Mock AI responses for fallback - no API costs!
 const MOCK_RESPONSES = {
   financial: [
     "I'd be happy to help you create a monthly budget! Let's start by listing your income sources and fixed expenses.",
@@ -176,21 +181,84 @@ export async function generateAIResponse(
   agentType: keyof typeof AI_AGENTS = 'general'
 ): Promise<{ response: string; tokens: number; model: string }> {
   try {
-    console.log('Generating mock AI response:', { 
+    console.log('Generating AI response:', { 
       agentType, 
       messageCount: messages.length,
-      messages: messages.map(m => ({ role: m.role, contentLength: m.content.length }))
+      hasApiKey: !!process.env.GEMINI_API_KEY
+    });
+    
+    // Check if we have a Gemini API key
+    if (!process.env.GEMINI_API_KEY) {
+      console.log('No Gemini API key found, using mock responses');
+      return await generateMockResponse(messages, agentType);
+    }
+    
+    // Get the agent configuration
+    const agent = AI_AGENTS[agentType];
+    
+    // Convert messages to Gemini format
+    const geminiMessages = messages.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : msg.role,
+      parts: [{ text: msg.content }]
+    }));
+    
+    // Add system prompt as first message
+    geminiMessages.unshift({
+      role: 'user',
+      parts: [{ text: agent.systemPrompt }]
+    });
+    
+    // Get the model
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    // Start a chat session
+    const chat = model.startChat({
+      history: geminiMessages.slice(0, -1), // All except the last message
     });
     
     // Get the last user message
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-    const userMessage = lastUserMessage?.content || '';
+    if (!lastUserMessage) {
+      throw new Error('No user message found');
+    }
     
-    console.log('Last user message:', userMessage);
+    console.log('Sending to Gemini:', {
+      agentType,
+      userMessage: lastUserMessage.content.substring(0, 100) + '...'
+    });
+    
+    // Send the message to Gemini
+    const result = await chat.sendMessage(lastUserMessage.content);
+    const response = await result.response;
+    const text = response.text();
+    
+    console.log('Gemini response received:', text.substring(0, 100) + '...');
+    
+    return {
+      response: text,
+      tokens: Math.floor(text.length / 4), // Rough token estimate
+      model: 'gemini-1.5-flash',
+    };
+    
+  } catch (error) {
+    console.error('Gemini AI error:', error);
+    console.log('Falling back to mock response');
+    return await generateMockResponse(messages, agentType);
+  }
+}
+
+// Fallback mock response function
+async function generateMockResponse(
+  messages: ChatMessage[],
+  agentType: keyof typeof AI_AGENTS
+): Promise<{ response: string; tokens: number; model: string }> {
+  try {
+    // Get the last user message
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    const userMessage = lastUserMessage?.content || '';
     
     // Get appropriate responses for this agent type
     const responses = MOCK_RESPONSES[agentType];
-    console.log('Available responses for', agentType, ':', responses.length);
     
     // Simple keyword matching for more relevant responses
     let selectedResponse = responses[Math.floor(Math.random() * responses.length)];
@@ -198,32 +266,23 @@ export async function generateAIResponse(
     // Customize response based on user message
     if (userMessage.toLowerCase().includes('budget') || userMessage.toLowerCase().includes('money')) {
       selectedResponse = responses[0]; // Usually budget-related
-      console.log('Selected budget response');
     } else if (userMessage.toLowerCase().includes('help') || userMessage.toLowerCase().includes('how')) {
       selectedResponse = responses[1] || responses[0];
-      console.log('Selected help response');
     } else if (userMessage.toLowerCase().includes('plan') || userMessage.toLowerCase().includes('planning')) {
       selectedResponse = responses[2] || responses[0];
-      console.log('Selected planning response');
-    } else {
-      console.log('Selected random response');
     }
     
-    console.log('Selected response:', selectedResponse);
-    
-    // Simulate API delay
+    // Simulate typing delay
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-    
-    console.log('Mock AI response generated:', { agentType, responseLength: selectedResponse.length });
     
     return {
       response: selectedResponse,
-      tokens: Math.floor(selectedResponse.length / 4), // Rough token estimate
+      tokens: Math.floor(selectedResponse.length / 4),
       model: 'mock-ai-v1',
     };
   } catch (error) {
     console.error('Mock AI error:', error);
-    throw new Error(`Mock AI failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`AI failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

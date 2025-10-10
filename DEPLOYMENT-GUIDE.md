@@ -127,7 +127,21 @@ mongosh --eval "db.runCommand('ping')"
 4. Get connection string
 5. Add to GitHub secrets
 
-### **Step 4: Test the Pipeline**
+### **Step 4: Set up Gemini AI (Optional)**
+
+**For Real AI Responses:**
+1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Create a free API key
+3. Add to Vercel environment variables as `GEMINI_API_KEY`
+4. Without this, the app will use mock responses (still works great!)
+
+**Environment Variables Needed:**
+- `MONGODB_URI` - MongoDB connection string
+- `NEXTAUTH_SECRET` - Random secret for authentication
+- `NEXTAUTH_URL` - Your production URL
+- `GEMINI_API_KEY` - (Optional) Google Gemini API key
+
+### **Step 5: Test the Pipeline**
 
 1. **Make a small change** to trigger the pipeline:
    ```bash
@@ -191,7 +205,7 @@ mongosh --eval "db.runCommand('ping')"
 - View all workflow runs
 - Monitor build status
 - Check test results
-
+L
 ### **Vercel Dashboard:**
 - Monitor deployments
 - View performance metrics
