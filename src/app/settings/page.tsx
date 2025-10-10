@@ -84,7 +84,7 @@ export default function SettingsPage() {
               ✈️ Travel
             </Button>
             <Button variant="ghost" size="sm" onClick={() => router.push("/messages")} className="whitespace-nowrap text-xs px-3 py-2">
-              💬 Messages
+              🤖 AI Agents
             </Button>
             <Button variant="ghost" size="sm" className="bg-blue-100 text-blue-800 whitespace-nowrap text-xs px-3 py-2">
               ⚙️ Settings
