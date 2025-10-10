@@ -88,6 +88,11 @@ export default function TravelPage() {
     loadBookings();
   }, []);
 
+  // Debug showAddTrip state
+  useEffect(() => {
+    console.log('showAddTrip state changed:', showAddTrip);
+  }, [showAddTrip]);
+
   const loadTrips = async () => {
     try {
       const response = await fetch('/api/travel/trips');
@@ -515,7 +520,10 @@ export default function TravelPage() {
                 <h2 className="text-2xl font-bold">My Trips</h2>
                 <p className="text-gray-600">Plan and manage your travel adventures</p>
               </div>
-              <Button onClick={() => setShowAddTrip(true)}>
+              <Button onClick={() => {
+                console.log('Plan Trip button clicked');
+                setShowAddTrip(true);
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Plan Trip
               </Button>
@@ -777,9 +785,21 @@ export default function TravelPage() {
           </TabsContent>
         </Tabs>
 
+        {/* Debug Display */}
+        {showAddTrip && (
+          <div className="fixed top-4 right-4 bg-yellow-200 p-2 rounded z-50 text-xs">
+            Modal should be visible
+          </div>
+        )}
+
         {/* Add Trip Modal */}
         {showAddTrip && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+               onClick={(e) => {
+                 if (e.target === e.currentTarget) {
+                   console.log('Backdrop clicked');
+                 }
+               }}>
             <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <CardHeader>
                 <CardTitle>Plan New Trip</CardTitle>
