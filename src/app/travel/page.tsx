@@ -553,9 +553,6 @@ export default function TravelPage() {
             <Button variant="ghost" size="sm" onClick={() => router.push("/messages")} className="whitespace-nowrap text-xs px-3 py-2">
               💬 Messages
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/ai-agents")} className="whitespace-nowrap text-xs px-3 py-2">
-              🤖 AI Agents
-            </Button>
             <Button variant="ghost" size="sm" onClick={() => router.push("/settings")} className="whitespace-nowrap text-xs px-3 py-2">
               ⚙️ Settings
             </Button>

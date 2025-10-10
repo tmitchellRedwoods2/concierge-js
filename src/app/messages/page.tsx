@@ -284,14 +284,6 @@ export default function MessagesPage() {
             variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
-            onClick={() => router.push('/ai-agents')}
-          >
-            🤖 AI Agents
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs px-3 py-2"
             onClick={() => router.push('/settings')}
           >
             ⚙️ Settings
@@ -330,6 +322,13 @@ export default function MessagesPage() {
                       </option>
                     ))}
                   </select>
+                  
+                  {/* Agent Description */}
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-xs text-gray-700 leading-relaxed">
+                      {AI_AGENTS[selectedAgent].systemPrompt.split('\n')[0]}
+                    </p>
+                  </div>
                 </div>
 
                 <Button onClick={startNewChat} className="w-full" size="sm">
