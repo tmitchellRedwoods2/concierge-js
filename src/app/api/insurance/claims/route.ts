@@ -106,3 +106,46 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectToDatabase();
+    
+    const { searchParams } = new URL(request.url);
+    const claimId = searchParams.get('id');
+    
+    if (!claimId) {
+      return NextResponse.json({ error: 'Claim ID is required' }, { status: 400 });
+    }
+
+    // Find and delete the claim (only if it belongs to the user)
+    const claim = await InsuranceClaim.findOneAndDelete({ 
+      _id: claimId, 
+      userId: session.user.id 
+    });
+
+    if (!claim) {
+      return NextResponse.json({ error: 'Claim not found or unauthorized' }, { status: 404 });
+    }
+
+    return NextResponse.json({ 
+      status: 'ok',
+      message: 'Insurance claim deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting insurance claim:', error);
+    return NextResponse.json(
+      { 
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}

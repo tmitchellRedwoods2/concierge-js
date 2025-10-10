@@ -21,7 +21,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Building2
+  Building2,
+  Trash2
 } from "lucide-react";
 
 export default function InsurancePage() {
@@ -228,6 +229,31 @@ export default function InsurancePage() {
       }
     } catch (error) {
       console.error('Failed to file claim:', error);
+      alert('Network error. Please try again.');
+    }
+  };
+
+  const deleteClaim = async (claimId: string) => {
+    if (!confirm('Are you sure you want to delete this claim? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/insurance/claims?id=${claimId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      console.log('Delete response:', data);
+
+      if (response.ok) {
+        alert('Claim deleted successfully!');
+        await loadClaims(); // Reload claims to update the UI
+      } else {
+        alert(`Error: ${data.error || 'Failed to delete claim'}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete claim:', error);
       alert('Network error. Please try again.');
     }
   };
@@ -576,9 +602,19 @@ export default function InsurancePage() {
                             {claim.policyId?.policyName || 'Unknown Policy'} • {new Date(claim.incidentDate).toLocaleDateString()}
                           </CardDescription>
                         </div>
-                        <Badge className={getClaimStatusColor(claim.status)}>
-                          {claim.status.replace('_', ' ')}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getClaimStatusColor(claim.status)}>
+                            {claim.status.replace('_', ' ')}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteClaim(claim._id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
