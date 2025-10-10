@@ -273,6 +273,9 @@ export default function InsurancePage() {
     return sum + annualPremium;
   }, 0);
 
+  // Calculate active claims
+  const activeClaims = claims.filter(c => c.status === 'FILED' || c.status === 'UNDER_REVIEW');
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -414,7 +417,7 @@ export default function InsurancePage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
-                {claims.filter(c => c.status === 'PENDING' || c.status === 'UNDER_REVIEW').length}
+                {activeClaims.length}
               </div>
               <p className="text-sm text-gray-500">In progress</p>
             </CardContent>
