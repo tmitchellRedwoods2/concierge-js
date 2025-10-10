@@ -1,9 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-// Initialize Claude AI
-const anthropic = new Anthropic({
-  apiKey: process.env.CLAUDE_API_KEY || '',
-});
+// Initialize Claude AI only if API key is available
+const anthropic = process.env.CLAUDE_API_KEY ? new Anthropic({
+  apiKey: process.env.CLAUDE_API_KEY,
+}) : null;
 
 // Mock AI responses for fallback - no API costs!
 const MOCK_RESPONSES = {
@@ -191,9 +191,9 @@ export async function generateAIResponse(
       apiKeyPrefix: process.env.CLAUDE_API_KEY?.substring(0, 10) || 'none'
     });
     
-    // Check if we have a Claude API key
-    if (!process.env.CLAUDE_API_KEY) {
-      console.log('❌ No Claude API key found, using mock responses');
+    // Check if we have a Claude API key and anthropic client
+    if (!process.env.CLAUDE_API_KEY || !anthropic) {
+      console.log('❌ No Claude API key found or anthropic client not initialized, using mock responses');
       console.log('Environment variables available:', Object.keys(process.env).filter(key => key.includes('CLAUDE') || key.includes('API')));
       return await generateMockResponse(messages, agentType);
     }
