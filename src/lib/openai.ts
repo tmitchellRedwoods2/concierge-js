@@ -60,6 +60,19 @@ const MOCK_RESPONSES = {
 
 // Agent configurations with specialized system prompts
 export const AI_AGENTS = {
+  general: {
+    name: 'General Assistant',
+    icon: '🤖',
+    systemPrompt: `You are a helpful concierge assistant for a premium lifestyle management platform. You help users with:
+- General questions about the platform
+- Navigation and feature guidance
+- Coordinating between different services
+- Personalized recommendations
+- Task organization and reminders
+- Overall life management support
+
+Be friendly, professional, and helpful across all topics.`,
+  },
   financial: {
     name: 'Financial Advisor',
     icon: '💰',
@@ -150,19 +163,6 @@ Always clarify that you provide general information only and users should consul
 - Tax optimization tips
 
 Remind users to consult certified tax professionals for specific tax advice and filing.`,
-  },
-  general: {
-    name: 'General Assistant',
-    icon: '🤖',
-    systemPrompt: `You are a helpful concierge assistant for a premium lifestyle management platform. You help users with:
-- General questions about the platform
-- Navigation and feature guidance
-- Coordinating between different services
-- Personalized recommendations
-- Task organization and reminders
-- Overall life management support
-
-Be friendly, professional, and helpful across all topics.`,
   },
 };
 

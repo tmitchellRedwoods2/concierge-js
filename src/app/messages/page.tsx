@@ -293,7 +293,7 @@ export default function MessagesPage() {
       </div>
 
       {/* AI Advisor Selector Bar */}
-      <div className="bg-gray-800 border-b">
+      <div className="bg-gray-200 border-b">
         <div className="w-full px-4 py-2">
           <div className="flex overflow-x-auto gap-2">
             {Object.entries(AI_AGENTS).map(([key, agent]) => (
@@ -324,7 +324,7 @@ export default function MessagesPage() {
             <Card className="h-full p-3">
               <div className="space-y-3">
                 <div>
-                  <h2 className="text-base font-semibold mb-1">💬 Messages</h2>
+                  <h2 className="text-base font-semibold mb-1">🤖 AI Agents</h2>
                   <p className="text-xs text-gray-600 mb-2">
                     Chat with AI assistants
                   </p>
