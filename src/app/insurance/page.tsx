@@ -102,10 +102,16 @@ export default function InsurancePage() {
 
   const loadClaims = async () => {
     try {
+      console.log('Loading claims...');
       const response = await fetch('/api/insurance/claims');
+      console.log('Claims response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('Claims data:', data);
         setClaims(data.claims || []);
+        console.log('Claims set to state:', data.claims || []);
+      } else {
+        console.error('Failed to load claims - response not ok:', response.status);
       }
     } catch (error) {
       console.error('Failed to load claims:', error);
@@ -541,12 +547,14 @@ export default function InsurancePage() {
               </Button>
             </div>
 
+            {console.log('Claims in UI render:', claims)}
             {claims.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <FileText className="h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No claims yet</h3>
                   <p className="text-gray-500 mb-4">File your first insurance claim to get started.</p>
+                  <p className="text-xs text-gray-400 mb-4">Debug: Claims count = {claims.length}</p>
                   <Button onClick={() => setShowAddClaim(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     File First Claim
