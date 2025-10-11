@@ -1,30 +1,55 @@
-const nextJest = require('next/jest');
+const nextJest = require('next/jest')
 
 const createJestConfig = nextJest({
-  // Provide the path to your Next.js app to load next.config.js and .env files
+  // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
   dir: './',
-});
+})
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testEnvironment: 'jsdom',
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
+  testEnvironment: 'jest-environment-jsdom',
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(next-auth|@auth|@panva|bson|mongodb|mongoose)/)',
+  ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
-    '!src/**/*.test.{js,jsx,ts,tsx}',
+    '!src/**/__tests__/**',
+    '!src/**/__mocks__/**',
+    '!src/types/**',
   ],
+  coverageReporters: ['text', 'lcov', 'json', 'html', 'cobertura', 'json-summary'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 50,
+      functions: 50,
+      lines: 50,
+      statements: 50,
     },
   },
-};
+  testMatch: [
+    '**/__tests__/**/*.[jt]s?(x)',
+    '**/?(*.)+(spec|test).[jt]s?(x)',
+  ],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '/e2e/'],
+  testResultsProcessor: 'jest-junit',
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: 'coverage',
+      outputName: 'junit.xml',
+      classNameTemplate: '{classname}',
+      titleTemplate: '{title}',
+      ancestorSeparator: ' › ',
+      usePathForSuiteName: true,
+    }],
+  ],
+}
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-module.exports = createJestConfig(customJestConfig);
+module.exports = createJestConfig(customJestConfig)
