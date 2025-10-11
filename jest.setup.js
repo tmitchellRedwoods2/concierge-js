@@ -61,6 +61,7 @@ const createMockModel = () => {
   model.create = jest.fn()
   model.updateOne = jest.fn()
   model.deleteOne = jest.fn()
+  model.insertMany = jest.fn()
   model.countDocuments = jest.fn().mockResolvedValue(0)
   
   return { __esModule: true, default: model }
