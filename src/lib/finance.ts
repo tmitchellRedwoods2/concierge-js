@@ -155,13 +155,14 @@ export async function getHistoricalData(
     const results: HistoricalData[] = [];
     
     for (const [date, values] of Object.entries(timeSeries)) {
+      const dailyData = values as any;
       results.push({
         date,
-        open: parseFloat(values['1. open'] as string),
-        high: parseFloat(values['2. high'] as string),
-        low: parseFloat(values['3. low'] as string),
-        close: parseFloat(values['4. close'] as string),
-        volume: parseInt(values['5. volume'] as string),
+        open: parseFloat(dailyData['1. open']),
+        high: parseFloat(dailyData['2. high']),
+        low: parseFloat(dailyData['3. low']),
+        close: parseFloat(dailyData['4. close']),
+        volume: parseInt(dailyData['5. volume']),
       });
     }
     

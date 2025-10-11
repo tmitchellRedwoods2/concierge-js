@@ -175,7 +175,7 @@ describe('Health Management Integration Tests', () => {
 
   describe('Error Handling in Workflow', () => {
     it('should handle authentication failure at any step', async () => {
-      mockAuth.mockResolvedValueOnce(null as any);
+      mockAuth.mockResolvedValueOnce(null);
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions', {
         method: 'POST',

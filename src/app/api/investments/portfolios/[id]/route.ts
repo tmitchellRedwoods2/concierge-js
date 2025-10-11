@@ -7,7 +7,7 @@ import { calculatePortfolioPerformance } from '@/lib/finance';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -18,8 +18,9 @@ export async function GET(
 
     await connectToDatabase();
     
+    const { id } = await params;
     const portfolio = await Portfolio.findOne({
-      _id: params.id,
+      _id: id,
       userId: session.user.id,
       isActive: true,
     });
@@ -31,7 +32,7 @@ export async function GET(
       );
     }
 
-    const holdings = await Holding.find({ portfolioId: params.id });
+    const holdings = await Holding.find({ portfolioId: id });
     
     // Calculate portfolio performance
     const performance = calculatePortfolioPerformance(
@@ -58,7 +59,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -71,9 +72,10 @@ export async function PUT(
 
     await connectToDatabase();
     
+    const { id } = await params;
     const portfolio = await Portfolio.findOneAndUpdate(
       {
-        _id: params.id,
+        _id: id,
         userId: session.user.id,
       },
       { name, description },
@@ -103,7 +105,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -114,9 +116,10 @@ export async function DELETE(
 
     await connectToDatabase();
     
+    const { id } = await params;
     const portfolio = await Portfolio.findOneAndUpdate(
       {
-        _id: params.id,
+        _id: id,
         userId: session.user.id,
       },
       { isActive: false },

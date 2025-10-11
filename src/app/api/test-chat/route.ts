@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     
     const aiResponsePromise = generateAIResponse(testMessages, agentType as any);
     
-    const aiResponse = await Promise.race([aiResponsePromise, timeoutPromise]);
+    const aiResponse = await Promise.race([aiResponsePromise, timeoutPromise]) as any;
     
     console.log('🧪 AI Response received:', {
       model: aiResponse.model,

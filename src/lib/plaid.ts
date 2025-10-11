@@ -1,4 +1,4 @@
-import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid';
+import { Configuration, PlaidApi, PlaidEnvironments, Products, CountryCode } from 'plaid';
 
 // Initialize Plaid client
 function getPlaidClient() {
@@ -49,8 +49,8 @@ export async function createLinkToken(userId: string) {
         client_user_id: userId,
       },
       client_name: 'Concierge.js',
-      products: ['transactions', 'accounts'],
-      country_codes: ['US'],
+      products: [Products.Transactions, Products.Auth],
+      country_codes: [CountryCode.Us],
       language: 'en',
     });
 
@@ -99,7 +99,9 @@ export async function getTransactions(accessToken: string, startDate: string, en
       access_token: accessToken,
       start_date: startDate,
       end_date: endDate,
-      count: 500,
+      options: {
+        count: 500,
+      },
     });
 
     return response.data.transactions;

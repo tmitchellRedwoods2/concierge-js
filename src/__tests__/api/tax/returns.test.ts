@@ -70,7 +70,7 @@ describe('Tax Returns API', () => {
     });
 
     it('should return 401 for unauthenticated user', async () => {
-      mockAuth.mockResolvedValueOnce(null as any);
+      mockAuth.mockResolvedValueOnce(null);
 
       const request = new NextRequest('http://localhost:3000/api/tax/returns');
       const response = await GET(request);

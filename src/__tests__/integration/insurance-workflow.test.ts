@@ -166,7 +166,7 @@ describe('Insurance Management Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle unauthorized access', async () => {
-      mockAuth.mockResolvedValueOnce(null as any);
+      mockAuth.mockResolvedValueOnce(null);
 
       const request = new NextRequest('http://localhost:3000/api/insurance/policies');
       const response = await getPolicies(request);

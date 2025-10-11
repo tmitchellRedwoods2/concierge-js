@@ -77,7 +77,7 @@ describe('Insurance Policies API', () => {
     });
 
     it('should return 401 for unauthenticated user', async () => {
-      mockAuth.mockResolvedValueOnce(null as any);
+      mockAuth.mockResolvedValueOnce(null);
 
       const request = new NextRequest('http://localhost:3000/api/insurance/policies');
       const response = await GET(request);

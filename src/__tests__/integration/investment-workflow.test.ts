@@ -19,8 +19,8 @@ describe('Investment Management Integration Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAuth.mockResolvedValue(mockSession as any);
-    mockDbConnect.mockResolvedValue(undefined as any);
+    mockAuth.mockResolvedValue(mockSession);
+    mockDbConnect.mockResolvedValue(undefined);
   });
 
   describe('Portfolio Creation Flow', () => {
@@ -31,7 +31,7 @@ describe('Investment Management Integration Tests', () => {
     });
 
     it('should enforce authentication for portfolio operations', async () => {
-      mockAuth.mockResolvedValueOnce(null as any);
+      mockAuth.mockResolvedValueOnce(null);
       
       // Verify auth is required
       expect(mockAuth).toBeDefined();

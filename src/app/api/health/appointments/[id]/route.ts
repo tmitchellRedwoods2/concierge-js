@@ -5,7 +5,7 @@ import Appointment from '@/lib/db/models/Appointment';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -16,8 +16,9 @@ export async function DELETE(
 
     await dbConnect();
     
+    const { id } = await params;
     const appointment = await Appointment.findOneAndDelete({
-      _id: params.id,
+      _id: id,
       userId: session.user.id
     });
 
@@ -40,7 +41,7 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -52,8 +53,9 @@ export async function PUT(
     const body = await request.json();
     await dbConnect();
     
+    const { id } = await params;
     const appointment = await Appointment.findOneAndUpdate(
-      { _id: params.id, userId: session.user.id },
+      { _id: id, userId: session.user.id },
       { ...body, updatedAt: new Date() },
       { new: true }
     );
