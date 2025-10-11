@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import PlaidLink, { ConnectedAccountCard } from "@/components/PlaidLink";
-import { Banknote, TrendingUp, CreditCard, PieChart, Plus } from "lucide-react";
+import { Banknote, TrendingUp, CreditCard, PieChart, Plus, Edit, Trash2 } from "lucide-react";
 
 export default function ExpensesPage() {
   const { data: session } = useSession();
@@ -35,6 +35,16 @@ export default function ExpensesPage() {
     endDate: ""
   });
   const [showBudgetForm, setShowBudgetForm] = useState(false);
+
+  // Transaction editing state
+  const [editingExpense, setEditingExpense] = useState<any>(null);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [editExpense, setEditExpense] = useState({
+    description: "",
+    amount: "",
+    category: "",
+    date: ""
+  });
   
   // Plaid integration state
   const [linkToken, setLinkToken] = useState<string | null>(null);
@@ -179,7 +189,7 @@ export default function ExpensesPage() {
       });
 
       if (response.ok) {
-        setExpenses(expenses.filter(expense => expense.id !== expenseId));
+        setExpenses(expenses.filter(expense => (expense._id || expense.id) !== expenseId));
       } else {
         alert('Failed to delete expense');
       }
@@ -187,6 +197,59 @@ export default function ExpensesPage() {
       console.error('Error deleting expense:', error);
       alert('Failed to delete expense. Please try again.');
     }
+  };
+
+  const startEditExpense = (expense: any) => {
+    setEditingExpense(expense);
+    setEditExpense({
+      description: expense.description,
+      amount: expense.amount.toString(),
+      category: expense.category,
+      date: expense.date
+    });
+    setShowExpenseForm(true);
+  };
+
+  const updateExpense = async () => {
+    if (!editingExpense || !editExpense.description || !editExpense.amount) {
+      alert('Please fill in description and amount');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/expenses/${editingExpense._id || editingExpense.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editExpense),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update the expense in the local state
+        setExpenses(expenses.map(expense => 
+          (expense._id || expense.id) === (editingExpense._id || editingExpense.id) 
+            ? { ...expense, ...data.expense }
+            : expense
+        ));
+        setShowExpenseForm(false);
+        setEditingExpense(null);
+        setEditExpense({ description: "", amount: "", category: "", date: "" });
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to update expense: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      alert('Failed to update expense. Please try again.');
+    }
+  };
+
+  const cancelEdit = () => {
+    setShowExpenseForm(false);
+    setEditingExpense(null);
+    setEditExpense({ description: "", amount: "", category: "", date: "" });
   };
 
   const loadExpenses = async () => {
@@ -466,6 +529,54 @@ export default function ExpensesPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Edit Expense Modal */}
+            {showExpenseForm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <Card className="w-full max-w-md mx-4 border-blue-200 bg-blue-50">
+                  <CardHeader>
+                    <CardTitle>Edit Transaction</CardTitle>
+                    <CardDescription>
+                      Update the transaction details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <Input
+                        placeholder="Description"
+                        value={editExpense.description}
+                        onChange={(e) => setEditExpense({ ...editExpense, description: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Amount"
+                        type="number"
+                        step="0.01"
+                        value={editExpense.amount}
+                        onChange={(e) => setEditExpense({ ...editExpense, amount: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Category"
+                        value={editExpense.category}
+                        onChange={(e) => setEditExpense({ ...editExpense, category: e.target.value })}
+                      />
+                      <Input
+                        type="date"
+                        value={editExpense.date}
+                        onChange={(e) => setEditExpense({ ...editExpense, date: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-6">
+                      <Button onClick={updateExpense} className="flex-1">
+                        Update Transaction
+                      </Button>
+                      <Button variant="outline" onClick={cancelEdit} className="flex-1">
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
 
           {/* Bank Accounts Tab */}
@@ -609,14 +720,26 @@ export default function ExpensesPage() {
                           <div className="text-right">
                             <p className="font-semibold text-lg">${expense.amount.toFixed(2)}</p>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteExpense(expense._id || expense.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            Delete
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => startEditExpense(expense)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteExpense(expense._id || expense.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
