@@ -10,6 +10,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check if Plaid is configured
+    if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
+      return NextResponse.json({
+        error: 'Plaid not configured',
+        message: 'Bank connection requires Plaid API credentials to be set up'
+      }, { status: 503 });
+    }
+
     const linkToken = await createLinkToken(session.user.id);
     
     return NextResponse.json({ link_token: linkToken });

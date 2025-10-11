@@ -62,11 +62,16 @@ export default function ExpensesPage() {
       if (response.ok) {
         const data = await response.json();
         setLinkToken(data.link_token);
+      } else if (response.status === 503) {
+        const data = await response.json();
+        alert(`Bank connection not configured: ${data.message}`);
       } else {
         console.error('Failed to create link token');
+        alert('Failed to connect to bank services. Please try again later.');
       }
     } catch (error) {
       console.error('Error creating link token:', error);
+      alert('Failed to connect to bank services. Please try again later.');
     } finally {
       setLinkTokenLoading(false);
     }
