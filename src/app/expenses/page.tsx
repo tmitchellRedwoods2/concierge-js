@@ -120,19 +120,81 @@ export default function ExpensesPage() {
     }
   };
 
-  const addExpense = () => {
-    if (newExpense.description && newExpense.amount) {
-      const expense = {
-        id: expenses.length + 1,
-        description: newExpense.description,
-        amount: parseFloat(newExpense.amount),
-        category: newExpense.category || "Other",
-        date: new Date().toISOString().split('T')[0]
-      };
-      setExpenses([...expenses, expense]);
-      setNewExpense({ description: "", amount: "", category: "" });
+  const addExpense = async () => {
+    if (!newExpense.description || !newExpense.amount) {
+      alert('Please fill in description and amount');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          description: newExpense.description,
+          amount: parseFloat(newExpense.amount),
+          category: newExpense.category || "Other",
+          date: new Date().toISOString().split('T')[0]
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Add the new expense to the local state
+        const newExpenseItem = {
+          id: data.expense._id,
+          description: data.expense.description,
+          amount: data.expense.amount,
+          category: data.expense.category,
+          date: data.expense.date
+        };
+        setExpenses([newExpenseItem, ...expenses]);
+        setNewExpense({ description: "", amount: "", category: "" });
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to add expense: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      alert('Failed to add expense. Please try again.');
     }
   };
+
+  const deleteExpense = async (expenseId: string) => {
+    try {
+      const response = await fetch(`/api/expenses/${expenseId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setExpenses(expenses.filter(expense => expense.id !== expenseId));
+      } else {
+        alert('Failed to delete expense');
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      alert('Failed to delete expense. Please try again.');
+    }
+  };
+
+  const loadExpenses = async () => {
+    try {
+      const response = await fetch('/api/expenses');
+      if (response.ok) {
+        const data = await response.json();
+        setExpenses(data.expenses || []);
+      }
+    } catch (error) {
+      console.error('Failed to load expenses:', error);
+    }
+  };
+
+  // Load expenses on component mount
+  useEffect(() => {
+    loadExpenses();
+  }, []);
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
@@ -326,6 +388,24 @@ export default function ExpensesPage() {
               </Button>
             </div>
 
+            {/* Plaid Configuration Notice */}
+            <Card className="border-amber-200 bg-amber-50">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-3">
+                  <div className="text-amber-600">
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-800">Bank Integration Setup</h3>
+                    <p className="text-amber-700 text-sm mt-1">
+                      Bank account connection requires Plaid API credentials. Currently using manual expense tracking.
+                      Contact your administrator to enable automatic bank integration.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Plaid Link Component */}
             {linkToken && (
               <div className="max-w-md mx-auto">
@@ -404,8 +484,18 @@ export default function ExpensesPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-lg">${expense.amount.toFixed(2)}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className="font-semibold text-lg">${expense.amount.toFixed(2)}</p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteExpense(expense.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     ))}

@@ -1,169 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="109" failures="0" errors="0" time="6.798">
-  <testsuite name="Legal Cases API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:41" time="1.018" tests="4">
-    <testcase classname="Legal Cases API GET /api/legal/cases should return legal cases for authenticated user" name="Legal Cases API GET /api/legal/cases should return legal cases for authenticated user" time="0.008">
+<testsuites name="jest tests" tests="109" failures="0" errors="0" time="1.424">
+  <testsuite name="Tax Returns API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.324" tests="6">
+    <testcase classname="Tax Returns API GET /api/tax/returns should return tax returns for authenticated user" name="Tax Returns API GET /api/tax/returns should return tax returns for authenticated user" time="0.003">
     </testcase>
-    <testcase classname="Legal Cases API GET /api/legal/cases should return 401 for unauthenticated user" name="Legal Cases API GET /api/legal/cases should return 401 for unauthenticated user" time="0.002">
+    <testcase classname="Tax Returns API GET /api/tax/returns should filter by tax year" name="Tax Returns API GET /api/tax/returns should filter by tax year" time="0.001">
     </testcase>
-    <testcase classname="Legal Cases API POST /api/legal/cases should create a new legal case" name="Legal Cases API POST /api/legal/cases should create a new legal case" time="0.002">
+    <testcase classname="Tax Returns API GET /api/tax/returns should return 401 for unauthenticated user" name="Tax Returns API GET /api/tax/returns should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Legal Cases API POST /api/legal/cases should return 400 for missing required fields" name="Legal Cases API POST /api/legal/cases should return 400 for missing required fields" time="0">
+    <testcase classname="Tax Returns API POST /api/tax/returns should create a new tax return" name="Tax Returns API POST /api/tax/returns should create a new tax return" time="0.001">
     </testcase>
-  </testsuite>
-  <testsuite name="Button Component" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:42" time="1.011" tests="18">
-    <testcase classname="Button Component Rendering should render button with text" name="Button Component Rendering should render button with text" time="0.06">
+    <testcase classname="Tax Returns API POST /api/tax/returns should return 400 for missing required fields" name="Tax Returns API POST /api/tax/returns should return 400 for missing required fields" time="0.001">
     </testcase>
-    <testcase classname="Button Component Rendering should render button with default variant" name="Button Component Rendering should render button with default variant" time="0.011">
-    </testcase>
-    <testcase classname="Button Component Rendering should apply custom className" name="Button Component Rendering should apply custom className" time="0.008">
-    </testcase>
-    <testcase classname="Button Component Variants should render with default variant" name="Button Component Variants should render with default variant" time="0.004">
-    </testcase>
-    <testcase classname="Button Component Variants should render with outline variant" name="Button Component Variants should render with outline variant" time="0.003">
-    </testcase>
-    <testcase classname="Button Component Variants should render with ghost variant" name="Button Component Variants should render with ghost variant" time="0.005">
-    </testcase>
-    <testcase classname="Button Component Variants should render with destructive variant" name="Button Component Variants should render with destructive variant" time="0.004">
-    </testcase>
-    <testcase classname="Button Component Sizes should render with default size" name="Button Component Sizes should render with default size" time="0.003">
-    </testcase>
-    <testcase classname="Button Component Sizes should render with sm size" name="Button Component Sizes should render with sm size" time="0.003">
-    </testcase>
-    <testcase classname="Button Component Sizes should render with lg size" name="Button Component Sizes should render with lg size" time="0.004">
-    </testcase>
-    <testcase classname="Button Component Sizes should render with icon size" name="Button Component Sizes should render with icon size" time="0.006">
-    </testcase>
-    <testcase classname="Button Component Interactions should call onClick handler when clicked" name="Button Component Interactions should call onClick handler when clicked" time="0.009">
-    </testcase>
-    <testcase classname="Button Component Interactions should not call onClick when disabled" name="Button Component Interactions should not call onClick when disabled" time="0.003">
-    </testcase>
-    <testcase classname="Button Component Interactions should have disabled attribute when disabled prop is true" name="Button Component Interactions should have disabled attribute when disabled prop is true" time="0.002">
-    </testcase>
-    <testcase classname="Button Component Children Content should render with icon and text" name="Button Component Children Content should render with icon and text" time="0.006">
-    </testcase>
-    <testcase classname="Button Component Children Content should render with only icon" name="Button Component Children Content should render with only icon" time="0.003">
-    </testcase>
-    <testcase classname="Button Component Accessibility should be keyboard accessible" name="Button Component Accessibility should be keyboard accessible" time="0.004">
-    </testcase>
-    <testcase classname="Button Component Accessibility should have button role" name="Button Component Accessibility should have button role" time="0.003">
+    <testcase classname="Tax Returns API POST /api/tax/returns should calculate tax correctly" name="Tax Returns API POST /api/tax/returns should calculate tax correctly" time="0">
     </testcase>
   </testsuite>
-  <testsuite name="Insurance Management Integration Tests" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:43" time="0.193" tests="7">
-    <testcase classname="Insurance Management Integration Tests Policy Management Flow should add a policy and retrieve all policies" name="Insurance Management Integration Tests Policy Management Flow should add a policy and retrieve all policies" time="0.004">
+  <testsuite name="Legal Cases API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.338" tests="4">
+    <testcase classname="Legal Cases API GET /api/legal/cases should return legal cases for authenticated user" name="Legal Cases API GET /api/legal/cases should return legal cases for authenticated user" time="0.005">
     </testcase>
-    <testcase classname="Insurance Management Integration Tests Policy Management Flow should filter policies by type" name="Insurance Management Integration Tests Policy Management Flow should filter policies by type" time="0.001">
+    <testcase classname="Legal Cases API GET /api/legal/cases should return 401 for unauthenticated user" name="Legal Cases API GET /api/legal/cases should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Insurance Management Integration Tests Multi-Policy Management should handle multiple policies of different types" name="Insurance Management Integration Tests Multi-Policy Management should handle multiple policies of different types" time="0">
+    <testcase classname="Legal Cases API POST /api/legal/cases should create a new legal case" name="Legal Cases API POST /api/legal/cases should create a new legal case" time="0.001">
     </testcase>
-    <testcase classname="Insurance Management Integration Tests Policy Validation should reject policy without required fields" name="Insurance Management Integration Tests Policy Validation should reject policy without required fields" time="0">
-    </testcase>
-    <testcase classname="Insurance Management Integration Tests Policy Validation should accept policy with all required fields" name="Insurance Management Integration Tests Policy Validation should accept policy with all required fields" time="0.001">
-    </testcase>
-    <testcase classname="Insurance Management Integration Tests Error Handling should handle unauthorized access" name="Insurance Management Integration Tests Error Handling should handle unauthorized access" time="0">
-    </testcase>
-    <testcase classname="Insurance Management Integration Tests Error Handling should handle database errors gracefully" name="Insurance Management Integration Tests Error Handling should handle database errors gracefully" time="0.027">
+    <testcase classname="Legal Cases API POST /api/legal/cases should return 400 for missing required fields" name="Legal Cases API POST /api/legal/cases should return 400 for missing required fields" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="Prescriptions API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:43" time="0.195" tests="11">
-    <testcase classname="Prescriptions API GET /api/health/prescriptions should return prescriptions for authenticated user" name="Prescriptions API GET /api/health/prescriptions should return prescriptions for authenticated user" time="0.004">
+  <testsuite name="Prescriptions API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.368" tests="11">
+    <testcase classname="Prescriptions API GET /api/health/prescriptions should return prescriptions for authenticated user" name="Prescriptions API GET /api/health/prescriptions should return prescriptions for authenticated user" time="0.003">
     </testcase>
-    <testcase classname="Prescriptions API GET /api/health/prescriptions should return 401 for unauthenticated user" name="Prescriptions API GET /api/health/prescriptions should return 401 for unauthenticated user" time="0.001">
+    <testcase classname="Prescriptions API GET /api/health/prescriptions should return 401 for unauthenticated user" name="Prescriptions API GET /api/health/prescriptions should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Prescriptions API GET /api/health/prescriptions should handle database errors gracefully" name="Prescriptions API GET /api/health/prescriptions should handle database errors gracefully" time="0.013">
+    <testcase classname="Prescriptions API GET /api/health/prescriptions should handle database errors gracefully" name="Prescriptions API GET /api/health/prescriptions should handle database errors gracefully" time="0.01">
     </testcase>
-    <testcase classname="Prescriptions API POST /api/health/prescriptions should create a new prescription" name="Prescriptions API POST /api/health/prescriptions should create a new prescription" time="0.002">
+    <testcase classname="Prescriptions API POST /api/health/prescriptions should create a new prescription" name="Prescriptions API POST /api/health/prescriptions should create a new prescription" time="0">
     </testcase>
     <testcase classname="Prescriptions API POST /api/health/prescriptions should return 400 for missing required fields" name="Prescriptions API POST /api/health/prescriptions should return 400 for missing required fields" time="0.001">
     </testcase>
-    <testcase classname="Prescriptions API POST /api/health/prescriptions should return 401 for unauthenticated user" name="Prescriptions API POST /api/health/prescriptions should return 401 for unauthenticated user" time="0">
+    <testcase classname="Prescriptions API POST /api/health/prescriptions should return 401 for unauthenticated user" name="Prescriptions API POST /api/health/prescriptions should return 401 for unauthenticated user" time="0.001">
     </testcase>
     <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should delete a prescription" name="Prescriptions API DELETE /api/health/prescriptions/[id] should delete a prescription" time="0">
     </testcase>
-    <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should return 404 if prescription not found" name="Prescriptions API DELETE /api/health/prescriptions/[id] should return 404 if prescription not found" time="0.001">
+    <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should return 404 if prescription not found" name="Prescriptions API DELETE /api/health/prescriptions/[id] should return 404 if prescription not found" time="0">
     </testcase>
     <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should return 401 for unauthenticated user" name="Prescriptions API DELETE /api/health/prescriptions/[id] should return 401 for unauthenticated user" time="0">
     </testcase>
     <testcase classname="Prescriptions API PUT /api/health/prescriptions/[id] should update a prescription" name="Prescriptions API PUT /api/health/prescriptions/[id] should update a prescription" time="0.001">
     </testcase>
-    <testcase classname="Prescriptions API PUT /api/health/prescriptions/[id] should return 404 if prescription not found" name="Prescriptions API PUT /api/health/prescriptions/[id] should return 404 if prescription not found" time="0.001">
+    <testcase classname="Prescriptions API PUT /api/health/prescriptions/[id] should return 404 if prescription not found" name="Prescriptions API PUT /api/health/prescriptions/[id] should return 404 if prescription not found" time="0">
     </testcase>
   </testsuite>
-  <testsuite name="Health Management Integration Tests" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:43" time="0.188" tests="6">
-    <testcase classname="Health Management Integration Tests Complete Health Management Flow should complete full workflow: prescription -&gt; appointment -&gt; provider lookup" name="Health Management Integration Tests Complete Health Management Flow should complete full workflow: prescription -&gt; appointment -&gt; provider lookup" time="0.005">
+  <testsuite name="Insurance Policies API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.36" tests="5">
+    <testcase classname="Insurance Policies API GET /api/insurance/policies should return policies for authenticated user" name="Insurance Policies API GET /api/insurance/policies should return policies for authenticated user" time="0.011">
     </testcase>
-    <testcase classname="Health Management Integration Tests Complete Health Management Flow should retrieve all user health data after workflow" name="Health Management Integration Tests Complete Health Management Flow should retrieve all user health data after workflow" time="0.001">
+    <testcase classname="Insurance Policies API GET /api/insurance/policies should filter by policy type" name="Insurance Policies API GET /api/insurance/policies should filter by policy type" time="0">
     </testcase>
-    <testcase classname="Health Management Integration Tests Error Handling in Workflow should handle authentication failure at any step" name="Health Management Integration Tests Error Handling in Workflow should handle authentication failure at any step" time="0">
+    <testcase classname="Insurance Policies API GET /api/insurance/policies should return 401 for unauthenticated user" name="Insurance Policies API GET /api/insurance/policies should return 401 for unauthenticated user" time="0.001">
     </testcase>
-    <testcase classname="Health Management Integration Tests Error Handling in Workflow should handle missing required fields in prescription creation" name="Health Management Integration Tests Error Handling in Workflow should handle missing required fields in prescription creation" time="0.001">
+    <testcase classname="Insurance Policies API POST /api/insurance/policies should create a new policy" name="Insurance Policies API POST /api/insurance/policies should create a new policy" time="0">
     </testcase>
-    <testcase classname="Health Management Integration Tests Error Handling in Workflow should handle missing required fields in appointment scheduling" name="Health Management Integration Tests Error Handling in Workflow should handle missing required fields in appointment scheduling" time="0">
-    </testcase>
-    <testcase classname="Health Management Integration Tests Data Consistency should maintain referential integrity between prescription and appointment" name="Health Management Integration Tests Data Consistency should maintain referential integrity between prescription and appointment" time="0.001">
+    <testcase classname="Insurance Policies API POST /api/insurance/policies should return 400 for missing required fields" name="Insurance Policies API POST /api/insurance/policies should return 400 for missing required fields" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="Appointments API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:44" time="0.206" tests="11">
-    <testcase classname="Appointments API GET /api/health/appointments should return appointments for authenticated user" name="Appointments API GET /api/health/appointments should return appointments for authenticated user" time="0.009">
+  <testsuite name="Insurance Policy Data Validation" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.388" tests="21">
+    <testcase classname="Insurance Policy Data Validation Required Fields Validation should have all required fields" name="Insurance Policy Data Validation Required Fields Validation should have all required fields" time="0.011">
     </testcase>
-    <testcase classname="Appointments API GET /api/health/appointments should return 401 for unauthenticated user" name="Appointments API GET /api/health/appointments should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="Appointments API GET /api/health/appointments should handle database errors gracefully" name="Appointments API GET /api/health/appointments should handle database errors gracefully" time="0.021">
-    </testcase>
-    <testcase classname="Appointments API POST /api/health/appointments should create a new appointment" name="Appointments API POST /api/health/appointments should create a new appointment" time="0.002">
-    </testcase>
-    <testcase classname="Appointments API POST /api/health/appointments should return 400 for missing required fields" name="Appointments API POST /api/health/appointments should return 400 for missing required fields" time="0.001">
-    </testcase>
-    <testcase classname="Appointments API POST /api/health/appointments should return 401 for unauthenticated user" name="Appointments API POST /api/health/appointments should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="Appointments API DELETE /api/health/appointments/[id] should delete an appointment" name="Appointments API DELETE /api/health/appointments/[id] should delete an appointment" time="0">
-    </testcase>
-    <testcase classname="Appointments API DELETE /api/health/appointments/[id] should return 404 if appointment not found" name="Appointments API DELETE /api/health/appointments/[id] should return 404 if appointment not found" time="0">
-    </testcase>
-    <testcase classname="Appointments API DELETE /api/health/appointments/[id] should return 401 for unauthenticated user" name="Appointments API DELETE /api/health/appointments/[id] should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="Appointments API PUT /api/health/appointments/[id] should update an appointment" name="Appointments API PUT /api/health/appointments/[id] should update an appointment" time="0.001">
-    </testcase>
-    <testcase classname="Appointments API PUT /api/health/appointments/[id] should return 404 if appointment not found" name="Appointments API PUT /api/health/appointments/[id] should return 404 if appointment not found" time="0">
-    </testcase>
-  </testsuite>
-  <testsuite name="Investment Management Integration Tests" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:44" time="0.266" tests="5">
-    <testcase classname="Investment Management Integration Tests Portfolio Creation Flow should create a portfolio successfully" name="Investment Management Integration Tests Portfolio Creation Flow should create a portfolio successfully" time="0.002">
-    </testcase>
-    <testcase classname="Investment Management Integration Tests Portfolio Creation Flow should enforce authentication for portfolio operations" name="Investment Management Integration Tests Portfolio Creation Flow should enforce authentication for portfolio operations" time="0.001">
-    </testcase>
-    <testcase classname="Investment Management Integration Tests Holdings Management should validate holding data structure" name="Investment Management Integration Tests Holdings Management should validate holding data structure" time="0.002">
-    </testcase>
-    <testcase classname="Investment Management Integration Tests Holdings Management should calculate portfolio value correctly" name="Investment Management Integration Tests Holdings Management should calculate portfolio value correctly" time="0.001">
-    </testcase>
-    <testcase classname="Investment Management Integration Tests Performance Tracking should calculate gain/loss correctly" name="Investment Management Integration Tests Performance Tracking should calculate gain/loss correctly" time="0.002">
-    </testcase>
-  </testsuite>
-  <testsuite name="Tax Returns API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:44" time="0.195" tests="6">
-    <testcase classname="Tax Returns API GET /api/tax/returns should return tax returns for authenticated user" name="Tax Returns API GET /api/tax/returns should return tax returns for authenticated user" time="0.006">
-    </testcase>
-    <testcase classname="Tax Returns API GET /api/tax/returns should filter by tax year" name="Tax Returns API GET /api/tax/returns should filter by tax year" time="0.008">
-    </testcase>
-    <testcase classname="Tax Returns API GET /api/tax/returns should return 401 for unauthenticated user" name="Tax Returns API GET /api/tax/returns should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="Tax Returns API POST /api/tax/returns should create a new tax return" name="Tax Returns API POST /api/tax/returns should create a new tax return" time="0.003">
-    </testcase>
-    <testcase classname="Tax Returns API POST /api/tax/returns should return 400 for missing required fields" name="Tax Returns API POST /api/tax/returns should return 400 for missing required fields" time="0">
-    </testcase>
-    <testcase classname="Tax Returns API POST /api/tax/returns should calculate tax correctly" name="Tax Returns API POST /api/tax/returns should calculate tax correctly" time="0.001">
-    </testcase>
-  </testsuite>
-  <testsuite name="Insurance Policy Data Validation" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:45" time="0.29" tests="21">
-    <testcase classname="Insurance Policy Data Validation Required Fields Validation should have all required fields" name="Insurance Policy Data Validation Required Fields Validation should have all required fields" time="0.001">
-    </testcase>
-    <testcase classname="Insurance Policy Data Validation Required Fields Validation should validate userId is a non-empty string" name="Insurance Policy Data Validation Required Fields Validation should validate userId is a non-empty string" time="0.001">
+    <testcase classname="Insurance Policy Data Validation Required Fields Validation should validate userId is a non-empty string" name="Insurance Policy Data Validation Required Fields Validation should validate userId is a non-empty string" time="0.002">
     </testcase>
     <testcase classname="Insurance Policy Data Validation Required Fields Validation should validate policyNumber is unique and formatted" name="Insurance Policy Data Validation Required Fields Validation should validate policyNumber is unique and formatted" time="0.001">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Policy Type Validation should accept valid policy types" name="Insurance Policy Data Validation Policy Type Validation should accept valid policy types" time="0">
+    <testcase classname="Insurance Policy Data Validation Policy Type Validation should accept valid policy types" name="Insurance Policy Data Validation Policy Type Validation should accept valid policy types" time="0.001">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Policy Type Validation should validate policyType is uppercase" name="Insurance Policy Data Validation Policy Type Validation should validate policyType is uppercase" time="0.001">
+    <testcase classname="Insurance Policy Data Validation Policy Type Validation should validate policyType is uppercase" name="Insurance Policy Data Validation Policy Type Validation should validate policyType is uppercase" time="0">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Financial Field Validation should validate coverageAmount is a positive number" name="Insurance Policy Data Validation Financial Field Validation should validate coverageAmount is a positive number" time="0.001">
+    <testcase classname="Insurance Policy Data Validation Financial Field Validation should validate coverageAmount is a positive number" name="Insurance Policy Data Validation Financial Field Validation should validate coverageAmount is a positive number" time="0">
     </testcase>
     <testcase classname="Insurance Policy Data Validation Financial Field Validation should validate deductible is a non-negative number" name="Insurance Policy Data Validation Financial Field Validation should validate deductible is a non-negative number" time="0">
     </testcase>
@@ -171,17 +79,17 @@
     </testcase>
     <testcase classname="Insurance Policy Data Validation Financial Field Validation should validate deductible is less than coverageAmount" name="Insurance Policy Data Validation Financial Field Validation should validate deductible is less than coverageAmount" time="0">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Premium Frequency Validation should accept valid premium frequencies" name="Insurance Policy Data Validation Premium Frequency Validation should accept valid premium frequencies" time="0">
+    <testcase classname="Insurance Policy Data Validation Premium Frequency Validation should accept valid premium frequencies" name="Insurance Policy Data Validation Premium Frequency Validation should accept valid premium frequencies" time="0.001">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Premium Frequency Validation should validate premium frequency is uppercase" name="Insurance Policy Data Validation Premium Frequency Validation should validate premium frequency is uppercase" time="0.002">
+    <testcase classname="Insurance Policy Data Validation Premium Frequency Validation should validate premium frequency is uppercase" name="Insurance Policy Data Validation Premium Frequency Validation should validate premium frequency is uppercase" time="0">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Date Validation should have valid effectiveDate" name="Insurance Policy Data Validation Date Validation should have valid effectiveDate" time="0.009">
+    <testcase classname="Insurance Policy Data Validation Date Validation should have valid effectiveDate" name="Insurance Policy Data Validation Date Validation should have valid effectiveDate" time="0">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Date Validation should have valid expirationDate" name="Insurance Policy Data Validation Date Validation should have valid expirationDate" time="0.006">
+    <testcase classname="Insurance Policy Data Validation Date Validation should have valid expirationDate" name="Insurance Policy Data Validation Date Validation should have valid expirationDate" time="0">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Date Validation should validate expirationDate is after effectiveDate" name="Insurance Policy Data Validation Date Validation should validate expirationDate is after effectiveDate" time="0.001">
+    <testcase classname="Insurance Policy Data Validation Date Validation should validate expirationDate is after effectiveDate" name="Insurance Policy Data Validation Date Validation should validate expirationDate is after effectiveDate" time="0">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Date Validation should calculate policy duration" name="Insurance Policy Data Validation Date Validation should calculate policy duration" time="0.001">
+    <testcase classname="Insurance Policy Data Validation Date Validation should calculate policy duration" name="Insurance Policy Data Validation Date Validation should calculate policy duration" time="0">
     </testcase>
     <testcase classname="Insurance Policy Data Validation Status Validation should have valid status" name="Insurance Policy Data Validation Status Validation should have valid status" time="0">
     </testcase>
@@ -191,53 +99,145 @@
     </testcase>
     <testcase classname="Insurance Policy Data Validation Optional Fields should allow optional beneficiaries array" name="Insurance Policy Data Validation Optional Fields should allow optional beneficiaries array" time="0">
     </testcase>
-    <testcase classname="Insurance Policy Data Validation Business Logic should calculate annual premium from monthly premium" name="Insurance Policy Data Validation Business Logic should calculate annual premium from monthly premium" time="0.001">
+    <testcase classname="Insurance Policy Data Validation Business Logic should calculate annual premium from monthly premium" name="Insurance Policy Data Validation Business Logic should calculate annual premium from monthly premium" time="0">
     </testcase>
     <testcase classname="Insurance Policy Data Validation Business Logic should validate policy is currently active" name="Insurance Policy Data Validation Business Logic should validate policy is currently active" time="0">
     </testcase>
   </testsuite>
-  <testsuite name="Prescription Data Validation" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:45" time="0.191" tests="15">
-    <testcase classname="Prescription Data Validation Required Fields Validation should have all required fields" name="Prescription Data Validation Required Fields Validation should have all required fields" time="0.003">
+  <testsuite name="Appointments API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.409" tests="11">
+    <testcase classname="Appointments API GET /api/health/appointments should return appointments for authenticated user" name="Appointments API GET /api/health/appointments should return appointments for authenticated user" time="0.005">
+    </testcase>
+    <testcase classname="Appointments API GET /api/health/appointments should return 401 for unauthenticated user" name="Appointments API GET /api/health/appointments should return 401 for unauthenticated user" time="0">
+    </testcase>
+    <testcase classname="Appointments API GET /api/health/appointments should handle database errors gracefully" name="Appointments API GET /api/health/appointments should handle database errors gracefully" time="0.015">
+    </testcase>
+    <testcase classname="Appointments API POST /api/health/appointments should create a new appointment" name="Appointments API POST /api/health/appointments should create a new appointment" time="0.001">
+    </testcase>
+    <testcase classname="Appointments API POST /api/health/appointments should return 400 for missing required fields" name="Appointments API POST /api/health/appointments should return 400 for missing required fields" time="0.001">
+    </testcase>
+    <testcase classname="Appointments API POST /api/health/appointments should return 401 for unauthenticated user" name="Appointments API POST /api/health/appointments should return 401 for unauthenticated user" time="0">
+    </testcase>
+    <testcase classname="Appointments API DELETE /api/health/appointments/[id] should delete an appointment" name="Appointments API DELETE /api/health/appointments/[id] should delete an appointment" time="0">
+    </testcase>
+    <testcase classname="Appointments API DELETE /api/health/appointments/[id] should return 404 if appointment not found" name="Appointments API DELETE /api/health/appointments/[id] should return 404 if appointment not found" time="0.001">
+    </testcase>
+    <testcase classname="Appointments API DELETE /api/health/appointments/[id] should return 401 for unauthenticated user" name="Appointments API DELETE /api/health/appointments/[id] should return 401 for unauthenticated user" time="0">
+    </testcase>
+    <testcase classname="Appointments API PUT /api/health/appointments/[id] should update an appointment" name="Appointments API PUT /api/health/appointments/[id] should update an appointment" time="0.001">
+    </testcase>
+    <testcase classname="Appointments API PUT /api/health/appointments/[id] should return 404 if appointment not found" name="Appointments API PUT /api/health/appointments/[id] should return 404 if appointment not found" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Prescription Data Validation" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.419" tests="15">
+    <testcase classname="Prescription Data Validation Required Fields Validation should have all required fields" name="Prescription Data Validation Required Fields Validation should have all required fields" time="0.009">
     </testcase>
     <testcase classname="Prescription Data Validation Required Fields Validation should validate userId is a non-empty string" name="Prescription Data Validation Required Fields Validation should validate userId is a non-empty string" time="0.001">
     </testcase>
-    <testcase classname="Prescription Data Validation Required Fields Validation should validate medicationName is a non-empty string" name="Prescription Data Validation Required Fields Validation should validate medicationName is a non-empty string" time="0.001">
+    <testcase classname="Prescription Data Validation Required Fields Validation should validate medicationName is a non-empty string" name="Prescription Data Validation Required Fields Validation should validate medicationName is a non-empty string" time="0">
     </testcase>
-    <testcase classname="Prescription Data Validation Required Fields Validation should validate dosage is a non-empty string" name="Prescription Data Validation Required Fields Validation should validate dosage is a non-empty string" time="0">
+    <testcase classname="Prescription Data Validation Required Fields Validation should validate dosage is a non-empty string" name="Prescription Data Validation Required Fields Validation should validate dosage is a non-empty string" time="0.001">
     </testcase>
-    <testcase classname="Prescription Data Validation Required Fields Validation should validate frequency is a non-empty string" name="Prescription Data Validation Required Fields Validation should validate frequency is a non-empty string" time="0.001">
+    <testcase classname="Prescription Data Validation Required Fields Validation should validate frequency is a non-empty string" name="Prescription Data Validation Required Fields Validation should validate frequency is a non-empty string" time="0">
     </testcase>
-    <testcase classname="Prescription Data Validation Data Types should have correct data types for all fields" name="Prescription Data Validation Data Types should have correct data types for all fields" time="0.002">
+    <testcase classname="Prescription Data Validation Data Types should have correct data types for all fields" name="Prescription Data Validation Data Types should have correct data types for all fields" time="0.001">
     </testcase>
-    <testcase classname="Prescription Data Validation Data Types should validate refillsRemaining is a non-negative number" name="Prescription Data Validation Data Types should validate refillsRemaining is a non-negative number" time="0.001">
+    <testcase classname="Prescription Data Validation Data Types should validate refillsRemaining is a non-negative number" name="Prescription Data Validation Data Types should validate refillsRemaining is a non-negative number" time="0">
     </testcase>
-    <testcase classname="Prescription Data Validation Data Types should validate isActive is a boolean" name="Prescription Data Validation Data Types should validate isActive is a boolean" time="0">
+    <testcase classname="Prescription Data Validation Data Types should validate isActive is a boolean" name="Prescription Data Validation Data Types should validate isActive is a boolean" time="0.001">
     </testcase>
-    <testcase classname="Prescription Data Validation Business Logic Validation should validate dosage format" name="Prescription Data Validation Business Logic Validation should validate dosage format" time="0.001">
+    <testcase classname="Prescription Data Validation Business Logic Validation should validate dosage format" name="Prescription Data Validation Business Logic Validation should validate dosage format" time="0">
     </testcase>
     <testcase classname="Prescription Data Validation Business Logic Validation should validate frequency is descriptive" name="Prescription Data Validation Business Logic Validation should validate frequency is descriptive" time="0">
     </testcase>
-    <testcase classname="Prescription Data Validation Business Logic Validation should validate startDate is a valid date" name="Prescription Data Validation Business Logic Validation should validate startDate is a valid date" time="0.002">
+    <testcase classname="Prescription Data Validation Business Logic Validation should validate startDate is a valid date" name="Prescription Data Validation Business Logic Validation should validate startDate is a valid date" time="0.001">
     </testcase>
     <testcase classname="Prescription Data Validation Optional Fields should allow optional endDate" name="Prescription Data Validation Optional Fields should allow optional endDate" time="0.001">
     </testcase>
-    <testcase classname="Prescription Data Validation Optional Fields should allow optional notes" name="Prescription Data Validation Optional Fields should allow optional notes" time="0.001">
+    <testcase classname="Prescription Data Validation Optional Fields should allow optional notes" name="Prescription Data Validation Optional Fields should allow optional notes" time="0">
     </testcase>
-    <testcase classname="Prescription Data Validation Data Integrity should maintain data integrity when copying" name="Prescription Data Validation Data Integrity should maintain data integrity when copying" time="0.001">
+    <testcase classname="Prescription Data Validation Data Integrity should maintain data integrity when copying" name="Prescription Data Validation Data Integrity should maintain data integrity when copying" time="0">
     </testcase>
-    <testcase classname="Prescription Data Validation Data Integrity should handle date serialization" name="Prescription Data Validation Data Integrity should handle date serialization" time="0.002">
+    <testcase classname="Prescription Data Validation Data Integrity should handle date serialization" name="Prescription Data Validation Data Integrity should handle date serialization" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="Insurance Policies API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:25:45" time="0.155" tests="5">
-    <testcase classname="Insurance Policies API GET /api/insurance/policies should return policies for authenticated user" name="Insurance Policies API GET /api/insurance/policies should return policies for authenticated user" time="0.003">
+  <testsuite name="Investment Management Integration Tests" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.439" tests="5">
+    <testcase classname="Investment Management Integration Tests Portfolio Creation Flow should create a portfolio successfully" name="Investment Management Integration Tests Portfolio Creation Flow should create a portfolio successfully" time="0.003">
     </testcase>
-    <testcase classname="Insurance Policies API GET /api/insurance/policies should filter by policy type" name="Insurance Policies API GET /api/insurance/policies should filter by policy type" time="0.001">
+    <testcase classname="Investment Management Integration Tests Portfolio Creation Flow should enforce authentication for portfolio operations" name="Investment Management Integration Tests Portfolio Creation Flow should enforce authentication for portfolio operations" time="0">
     </testcase>
-    <testcase classname="Insurance Policies API GET /api/insurance/policies should return 401 for unauthenticated user" name="Insurance Policies API GET /api/insurance/policies should return 401 for unauthenticated user" time="0">
+    <testcase classname="Investment Management Integration Tests Holdings Management should validate holding data structure" name="Investment Management Integration Tests Holdings Management should validate holding data structure" time="0.001">
     </testcase>
-    <testcase classname="Insurance Policies API POST /api/insurance/policies should create a new policy" name="Insurance Policies API POST /api/insurance/policies should create a new policy" time="0.001">
+    <testcase classname="Investment Management Integration Tests Holdings Management should calculate portfolio value correctly" name="Investment Management Integration Tests Holdings Management should calculate portfolio value correctly" time="0.001">
     </testcase>
-    <testcase classname="Insurance Policies API POST /api/insurance/policies should return 400 for missing required fields" name="Insurance Policies API POST /api/insurance/policies should return 400 for missing required fields" time="0.001">
+    <testcase classname="Investment Management Integration Tests Performance Tracking should calculate gain/loss correctly" name="Investment Management Integration Tests Performance Tracking should calculate gain/loss correctly" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Health Management Integration Tests" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.482" tests="6">
+    <testcase classname="Health Management Integration Tests Complete Health Management Flow should complete full workflow: prescription -&gt; appointment -&gt; provider lookup" name="Health Management Integration Tests Complete Health Management Flow should complete full workflow: prescription -&gt; appointment -&gt; provider lookup" time="0.012">
+    </testcase>
+    <testcase classname="Health Management Integration Tests Complete Health Management Flow should retrieve all user health data after workflow" name="Health Management Integration Tests Complete Health Management Flow should retrieve all user health data after workflow" time="0.002">
+    </testcase>
+    <testcase classname="Health Management Integration Tests Error Handling in Workflow should handle authentication failure at any step" name="Health Management Integration Tests Error Handling in Workflow should handle authentication failure at any step" time="0">
+    </testcase>
+    <testcase classname="Health Management Integration Tests Error Handling in Workflow should handle missing required fields in prescription creation" name="Health Management Integration Tests Error Handling in Workflow should handle missing required fields in prescription creation" time="0">
+    </testcase>
+    <testcase classname="Health Management Integration Tests Error Handling in Workflow should handle missing required fields in appointment scheduling" name="Health Management Integration Tests Error Handling in Workflow should handle missing required fields in appointment scheduling" time="0.001">
+    </testcase>
+    <testcase classname="Health Management Integration Tests Data Consistency should maintain referential integrity between prescription and appointment" name="Health Management Integration Tests Data Consistency should maintain referential integrity between prescription and appointment" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Insurance Management Integration Tests" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.465" tests="7">
+    <testcase classname="Insurance Management Integration Tests Policy Management Flow should add a policy and retrieve all policies" name="Insurance Management Integration Tests Policy Management Flow should add a policy and retrieve all policies" time="0.007">
+    </testcase>
+    <testcase classname="Insurance Management Integration Tests Policy Management Flow should filter policies by type" name="Insurance Management Integration Tests Policy Management Flow should filter policies by type" time="0.001">
+    </testcase>
+    <testcase classname="Insurance Management Integration Tests Multi-Policy Management should handle multiple policies of different types" name="Insurance Management Integration Tests Multi-Policy Management should handle multiple policies of different types" time="0.002">
+    </testcase>
+    <testcase classname="Insurance Management Integration Tests Policy Validation should reject policy without required fields" name="Insurance Management Integration Tests Policy Validation should reject policy without required fields" time="0">
+    </testcase>
+    <testcase classname="Insurance Management Integration Tests Policy Validation should accept policy with all required fields" name="Insurance Management Integration Tests Policy Validation should accept policy with all required fields" time="0">
+    </testcase>
+    <testcase classname="Insurance Management Integration Tests Error Handling should handle unauthorized access" name="Insurance Management Integration Tests Error Handling should handle unauthorized access" time="0.001">
+    </testcase>
+    <testcase classname="Insurance Management Integration Tests Error Handling should handle database errors gracefully" name="Insurance Management Integration Tests Error Handling should handle database errors gracefully" time="0.021">
+    </testcase>
+  </testsuite>
+  <testsuite name="Button Component" errors="0" failures="0" skipped="0" timestamp="2025-10-11T18:56:47" time="0.635" tests="18">
+    <testcase classname="Button Component Rendering should render button with text" name="Button Component Rendering should render button with text" time="0.018">
+    </testcase>
+    <testcase classname="Button Component Rendering should render button with default variant" name="Button Component Rendering should render button with default variant" time="0.001">
+    </testcase>
+    <testcase classname="Button Component Rendering should apply custom className" name="Button Component Rendering should apply custom className" time="0.002">
+    </testcase>
+    <testcase classname="Button Component Variants should render with default variant" name="Button Component Variants should render with default variant" time="0.002">
+    </testcase>
+    <testcase classname="Button Component Variants should render with outline variant" name="Button Component Variants should render with outline variant" time="0.002">
+    </testcase>
+    <testcase classname="Button Component Variants should render with ghost variant" name="Button Component Variants should render with ghost variant" time="0.001">
+    </testcase>
+    <testcase classname="Button Component Variants should render with destructive variant" name="Button Component Variants should render with destructive variant" time="0.002">
+    </testcase>
+    <testcase classname="Button Component Sizes should render with default size" name="Button Component Sizes should render with default size" time="0">
+    </testcase>
+    <testcase classname="Button Component Sizes should render with sm size" name="Button Component Sizes should render with sm size" time="0">
+    </testcase>
+    <testcase classname="Button Component Sizes should render with lg size" name="Button Component Sizes should render with lg size" time="0.001">
+    </testcase>
+    <testcase classname="Button Component Sizes should render with icon size" name="Button Component Sizes should render with icon size" time="0.001">
+    </testcase>
+    <testcase classname="Button Component Interactions should call onClick handler when clicked" name="Button Component Interactions should call onClick handler when clicked" time="0.003">
+    </testcase>
+    <testcase classname="Button Component Interactions should not call onClick when disabled" name="Button Component Interactions should not call onClick when disabled" time="0.001">
+    </testcase>
+    <testcase classname="Button Component Interactions should have disabled attribute when disabled prop is true" name="Button Component Interactions should have disabled attribute when disabled prop is true" time="0.001">
+    </testcase>
+    <testcase classname="Button Component Children Content should render with icon and text" name="Button Component Children Content should render with icon and text" time="0.001">
+    </testcase>
+    <testcase classname="Button Component Children Content should render with only icon" name="Button Component Children Content should render with only icon" time="0.001">
+    </testcase>
+    <testcase classname="Button Component Accessibility should be keyboard accessible" name="Button Component Accessibility should be keyboard accessible" time="0.003">
+    </testcase>
+    <testcase classname="Button Component Accessibility should have button role" name="Button Component Accessibility should have button role" time="0">
     </testcase>
   </testsuite>
 </testsuites>
