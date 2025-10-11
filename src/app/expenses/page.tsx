@@ -19,12 +19,22 @@ export default function ExpensesPage() {
   const router = useRouter();
   
   // State management
-  const [expenses, setExpenses] = useState([
-    { id: 1, description: "Groceries", amount: 150.00, category: "Food", date: "2024-01-15" },
-    { id: 2, description: "Gas", amount: 45.00, category: "Transportation", date: "2024-01-14" },
-    { id: 3, description: "Coffee", amount: 12.50, category: "Food", date: "2024-01-13" },
-  ]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [newExpense, setNewExpense] = useState({ description: "", amount: "", category: "" });
+  const [expensesLoading, setExpensesLoading] = useState(true);
+  
+  // Budget management state
+  const [budgets, setBudgets] = useState<any[]>([]);
+  const [budgetsLoading, setBudgetsLoading] = useState(true);
+  const [newBudget, setNewBudget] = useState({
+    name: "",
+    category: "",
+    amount: "",
+    period: "monthly",
+    startDate: "",
+    endDate: ""
+  });
+  const [showBudgetForm, setShowBudgetForm] = useState(false);
   
   // Plaid integration state
   const [linkToken, setLinkToken] = useState<string | null>(null);
@@ -180,6 +190,7 @@ export default function ExpensesPage() {
   };
 
   const loadExpenses = async () => {
+    setExpensesLoading(true);
     try {
       const response = await fetch('/api/expenses');
       if (response.ok) {
@@ -188,12 +199,85 @@ export default function ExpensesPage() {
       }
     } catch (error) {
       console.error('Failed to load expenses:', error);
+    } finally {
+      setExpensesLoading(false);
     }
   };
 
-  // Load expenses on component mount
+  const loadBudgets = async () => {
+    setBudgetsLoading(true);
+    try {
+      const response = await fetch('/api/budgets');
+      if (response.ok) {
+        const data = await response.json();
+        setBudgets(data.budgets || []);
+      }
+    } catch (error) {
+      console.error('Failed to load budgets:', error);
+    } finally {
+      setBudgetsLoading(false);
+    }
+  };
+
+  const createBudget = async () => {
+    if (!newBudget.name || !newBudget.category || !newBudget.amount || !newBudget.startDate || !newBudget.endDate) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/budgets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newBudget),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBudgets([data.budget, ...budgets]);
+        setNewBudget({
+          name: "",
+          category: "",
+          amount: "",
+          period: "monthly",
+          startDate: "",
+          endDate: ""
+        });
+        setShowBudgetForm(false);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to create budget: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error creating budget:', error);
+      alert('Failed to create budget. Please try again.');
+    }
+  };
+
+  const deleteBudget = async (budgetId: string) => {
+    try {
+      const response = await fetch(`/api/budgets/${budgetId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setBudgets(budgets.filter(budget => budget._id !== budgetId));
+      } else {
+        alert('Failed to delete budget');
+      }
+    } catch (error) {
+      console.error('Error deleting budget:', error);
+      alert('Failed to delete budget. Please try again.');
+    }
+  };
+
+  // Load expenses, budgets, and connected accounts on component mount
   useEffect(() => {
     loadExpenses();
+    loadBudgets();
+    loadConnectedAccounts();
   }, []);
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -300,10 +384,19 @@ export default function ExpensesPage() {
                   <CardTitle className="text-lg">Total Expenses</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">
-                    ${totalExpenses.toFixed(2)}
-                  </div>
-                  <p className="text-sm text-gray-500">This month</p>
+                  {expensesLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-20"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold text-red-600">
+                        ${totalExpenses.toFixed(2)}
+                      </div>
+                      <p className="text-sm text-gray-500">This month</p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -323,12 +416,21 @@ export default function ExpensesPage() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Transactions</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {expenses.length}
+              <CardContent>
+                {expensesLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-20"></div>
                   </div>
-                  <p className="text-sm text-gray-500">This month</p>
-                </CardContent>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {expenses.length}
+                    </div>
+                    <p className="text-sm text-gray-500">This month</p>
+                  </>
+                )}
+              </CardContent>
               </Card>
             </div>
 
@@ -463,15 +565,34 @@ export default function ExpensesPage() {
                 <CardTitle>Recent Transactions</CardTitle>
               </CardHeader>
               <CardContent>
-                {expenses.length === 0 ? (
+                {expensesLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex justify-between items-center p-4 border rounded-lg animate-pulse">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                          <div>
+                            <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-24"></div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="h-6 bg-gray-200 rounded w-16"></div>
+                          <div className="h-8 bg-gray-200 rounded w-16"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : expenses.length === 0 ? (
                   <div className="text-center py-8">
                     <Banknote className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500">No transactions recorded yet.</p>
+                    <p className="text-sm text-gray-400 mt-2">Add your first expense above to get started!</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {expenses.map((expense) => (
-                      <div key={expense.id} className="flex justify-between items-center p-4 border rounded-lg">
+                      <div key={expense._id || expense.id} className="flex justify-between items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                             <Banknote className="h-5 w-5 text-blue-600" />
@@ -480,7 +601,7 @@ export default function ExpensesPage() {
                             <p className="font-medium">{expense.description}</p>
                             <div className="flex items-center gap-2">
                               <Badge variant="secondary">{expense.category}</Badge>
-                              <span className="text-sm text-gray-500">{expense.date}</span>
+                              <span className="text-sm text-gray-500">{new Date(expense.date).toLocaleDateString()}</span>
                             </div>
                           </div>
                         </div>
@@ -491,7 +612,7 @@ export default function ExpensesPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => deleteExpense(expense.id)}
+                            onClick={() => deleteExpense(expense._id || expense.id)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             Delete
@@ -512,21 +633,156 @@ export default function ExpensesPage() {
                 <h2 className="text-2xl font-bold">Budget Management</h2>
                 <p className="text-gray-600">Set and track your spending limits</p>
               </div>
-              <Button>
+              <Button onClick={() => setShowBudgetForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Budget
               </Button>
             </div>
 
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <PieChart className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Budget tracking coming soon</h3>
-                <p className="text-gray-500 text-center">
-                  Set spending limits, track progress, and get alerts when you're approaching your budget.
-                </p>
-              </CardContent>
-            </Card>
+            {/* Budget Creation Form */}
+            {showBudgetForm && (
+              <Card className="border-blue-200 bg-blue-50">
+                <CardHeader>
+                  <CardTitle>Create New Budget</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      placeholder="Budget Name (e.g., Groceries)"
+                      value={newBudget.name}
+                      onChange={(e) => setNewBudget({ ...newBudget, name: e.target.value })}
+                    />
+                    <Input
+                      placeholder="Category (e.g., Food)"
+                      value={newBudget.category}
+                      onChange={(e) => setNewBudget({ ...newBudget, category: e.target.value })}
+                    />
+                    <Input
+                      placeholder="Amount"
+                      type="number"
+                      value={newBudget.amount}
+                      onChange={(e) => setNewBudget({ ...newBudget, amount: e.target.value })}
+                    />
+                    <select
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={newBudget.period}
+                      onChange={(e) => setNewBudget({ ...newBudget, period: e.target.value })}
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                    <Input
+                      type="date"
+                      placeholder="Start Date"
+                      value={newBudget.startDate}
+                      onChange={(e) => setNewBudget({ ...newBudget, startDate: e.target.value })}
+                    />
+                    <Input
+                      type="date"
+                      placeholder="End Date"
+                      value={newBudget.endDate}
+                      onChange={(e) => setNewBudget({ ...newBudget, endDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button onClick={createBudget}>Create Budget</Button>
+                    <Button variant="outline" onClick={() => setShowBudgetForm(false)}>Cancel</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Budgets List */}
+            {budgetsLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-24"></div>
+                        </div>
+                        <div className="h-6 bg-gray-200 rounded w-20"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : budgets.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <PieChart className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No budgets created yet</h3>
+                  <p className="text-gray-500 text-center mb-4">
+                    Create your first budget to start tracking your spending limits.
+                  </p>
+                  <Button onClick={() => setShowBudgetForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Budget
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {budgets.map((budget) => {
+                  const spentAmount = expenses
+                    .filter(expense => expense.category === budget.category)
+                    .reduce((sum, expense) => sum + expense.amount, 0);
+                  const percentage = (spentAmount / budget.amount) * 100;
+                  const isOverBudget = percentage > 100;
+                  const isNearLimit = percentage > 80;
+
+                  return (
+                    <Card key={budget._id} className={`${isOverBudget ? 'border-red-200 bg-red-50' : isNearLimit ? 'border-yellow-200 bg-yellow-50' : ''}`}>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="font-semibold text-lg">{budget.name}</h3>
+                            <p className="text-gray-600 capitalize">{budget.category} • {budget.period}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(budget.startDate).toLocaleDateString()} - {new Date(budget.endDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteBudget(budget._id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Spent: ${spentAmount.toFixed(2)}</span>
+                            <span>Budget: ${budget.amount.toFixed(2)}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full transition-all ${isOverBudget ? 'bg-red-500' : isNearLimit ? 'bg-yellow-500' : 'bg-green-500'}`}
+                              style={{ width: `${Math.min(percentage, 100)}%` }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className={isOverBudget ? 'text-red-600 font-semibold' : isNearLimit ? 'text-yellow-600' : 'text-gray-500'}>
+                              {percentage.toFixed(1)}% used
+                            </span>
+                            {isOverBudget && (
+                              <span className="text-red-600 font-semibold">
+                                Over budget by ${(spentAmount - budget.amount).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
