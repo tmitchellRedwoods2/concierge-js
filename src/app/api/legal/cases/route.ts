@@ -102,6 +102,14 @@ export async function POST(request: NextRequest) {
       tags
     } = body;
 
+    // Validate required fields
+    if (!title || !caseType || !startDate) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title, caseType, and startDate are required' },
+        { status: 400 }
+      );
+    }
+
     // Generate unique case number if not provided
     const generateUniqueCaseNumber = async () => {
       let uniqueCaseNumber = caseNumber || `CASE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -156,7 +164,7 @@ export async function POST(request: NextRequest) {
       status: 'ok',
       case: legalCase,
       message: 'Legal case created successfully'
-    });
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating legal case:', error);
     return NextResponse.json(

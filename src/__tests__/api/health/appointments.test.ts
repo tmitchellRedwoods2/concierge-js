@@ -49,10 +49,9 @@ describe('Appointments API', () => {
 
   describe('GET /api/health/appointments', () => {
     it('should return appointments for authenticated user', async () => {
-      const mockFind = jest.fn().mockReturnValue({
+      (Appointment.find as jest.Mock).mockReturnValueOnce({
         sort: jest.fn().mockResolvedValue([mockAppointment]),
       });
-      (Appointment.find as jest.Mock) = mockFind;
 
       const request = new NextRequest('http://localhost:3000/api/health/appointments');
       const response = await GET(request);
@@ -61,11 +60,11 @@ describe('Appointments API', () => {
       expect(response.status).toBe(200);
       expect(data.appointments).toHaveLength(1);
       expect(data.appointments[0].doctorName).toBe('Dr. Smith');
-      expect(mockFind).toHaveBeenCalledWith({ userId: 'test-user-id' });
+      expect(Appointment.find).toHaveBeenCalledWith({ userId: 'test-user-id' });
     });
 
     it('should return 401 for unauthenticated user', async () => {
-      mockAuth.mockResolvedValue(null as any);
+      mockAuth.mockResolvedValueOnce(null as any);
 
       const request = new NextRequest('http://localhost:3000/api/health/appointments');
       const response = await GET(request);
@@ -74,10 +73,9 @@ describe('Appointments API', () => {
     });
 
     it('should handle database errors gracefully', async () => {
-      const mockFind = jest.fn().mockReturnValue({
+      (Appointment.find as jest.Mock).mockReturnValueOnce({
         sort: jest.fn().mockRejectedValue(new Error('Database error')),
       });
-      (Appointment.find as jest.Mock) = mockFind;
 
       const request = new NextRequest('http://localhost:3000/api/health/appointments');
       const response = await GET(request);

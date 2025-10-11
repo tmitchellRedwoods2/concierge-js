@@ -28,6 +28,23 @@ jest.mock('@/lib/db/connection', () => ({
 
 // Mock all Mongoose models
 const createMockModel = () => {
+  // Create chainable query methods
+  const createChainableQuery = (result) => {
+    const query = {
+      sort: jest.fn().mockReturnValue(query),
+      populate: jest.fn().mockReturnValue(query),
+      limit: jest.fn().mockReturnValue(query),
+      skip: jest.fn().mockReturnValue(query),
+      select: jest.fn().mockReturnValue(query),
+      lean: jest.fn().mockReturnValue(query),
+      exec: jest.fn().mockResolvedValue(result),
+      then: (resolve) => Promise.resolve(result).then(resolve),
+      catch: (reject) => Promise.resolve(result).catch(reject),
+    }
+    // Make the query itself thenable (acts like a Promise)
+    return Object.assign(Promise.resolve(result), query)
+  }
+  
   const model = jest.fn().mockImplementation(function(data) {
     return {
       ...data,
@@ -36,14 +53,15 @@ const createMockModel = () => {
     }
   })
   
-  model.find = jest.fn()
-  model.findOne = jest.fn()
-  model.findById = jest.fn()
+  model.find = jest.fn((query) => createChainableQuery([]))
+  model.findOne = jest.fn((query) => createChainableQuery(null))
+  model.findById = jest.fn((id) => createChainableQuery(null))
   model.findOneAndUpdate = jest.fn()
   model.findOneAndDelete = jest.fn()
   model.create = jest.fn()
   model.updateOne = jest.fn()
   model.deleteOne = jest.fn()
+  model.countDocuments = jest.fn().mockResolvedValue(0)
   
   return { __esModule: true, default: model }
 }
@@ -170,16 +188,25 @@ if (typeof global.Headers === 'undefined') {
 }
 
 // Mock NextResponse
-jest.mock('next/server', () => ({
-  NextResponse: {
-    json: (data, init) => ({
-      json: async () => data,
-      status: init?.status || 200,
-      headers: new Map(Object.entries(init?.headers || {})),
-    }),
-  },
-  NextRequest: global.Request,
-}))
+jest.mock('next/server', () => {
+  const NextResponse = {
+    json: (data, init) => {
+      const response = {
+        json: async () => data,
+        status: init?.status || 200,
+        statusText: init?.statusText || 'OK',
+        headers: new Map(Object.entries(init?.headers || {})),
+        ok: (init?.status || 200) >= 200 && (init?.status || 200) < 300,
+      }
+      return response
+    },
+  }
+  
+  return {
+    NextResponse,
+    NextRequest: global.Request,
+  }
+})
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({

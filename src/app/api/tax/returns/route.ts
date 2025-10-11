@@ -82,6 +82,14 @@ export async function POST(request: NextRequest) {
       notes
     } = body;
 
+    // Validate required fields
+    if (!taxYear || !filingStatus || !dueDate) {
+      return NextResponse.json(
+        { error: 'Missing required fields: taxYear, filingStatus, and dueDate are required' },
+        { status: 400 }
+      );
+    }
+
     // Calculate totals
     const totalIncome = (parseFloat(wages) || 0) + 
                        (parseFloat(selfEmploymentIncome) || 0) + 
@@ -118,7 +126,7 @@ export async function POST(request: NextRequest) {
       status: 'ok',
       taxReturn,
       message: 'Tax return created successfully'
-    });
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating tax return:', error);
     return NextResponse.json(

@@ -48,10 +48,10 @@ describe('Prescriptions API', () => {
 
   describe('GET /api/health/prescriptions', () => {
     it('should return prescriptions for authenticated user', async () => {
-      const mockFind = jest.fn().mockReturnValue({
+      // Configure the mock to return test data
+      (Prescription.find as jest.Mock).mockReturnValueOnce({
         sort: jest.fn().mockResolvedValue([mockPrescription]),
       });
-      (Prescription.find as jest.Mock) = mockFind;
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions');
       const response = await GET(request);
@@ -60,11 +60,11 @@ describe('Prescriptions API', () => {
       expect(response.status).toBe(200);
       expect(data.prescriptions).toHaveLength(1);
       expect(data.prescriptions[0].medicationName).toBe('Test Medication');
-      expect(mockFind).toHaveBeenCalledWith({ userId: 'test-user-id' });
+      expect(Prescription.find).toHaveBeenCalledWith({ userId: 'test-user-id' });
     });
 
     it('should return 401 for unauthenticated user', async () => {
-      mockAuth.mockResolvedValue(null as any);
+      mockAuth.mockResolvedValueOnce(null as any);
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions');
       const response = await GET(request);
@@ -73,10 +73,10 @@ describe('Prescriptions API', () => {
     });
 
     it('should handle database errors gracefully', async () => {
-      const mockFind = jest.fn().mockReturnValue({
+      // Configure the mock to throw an error
+      (Prescription.find as jest.Mock).mockReturnValueOnce({
         sort: jest.fn().mockRejectedValue(new Error('Database error')),
       });
-      (Prescription.find as jest.Mock) = mockFind;
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions');
       const response = await GET(request);
@@ -87,7 +87,7 @@ describe('Prescriptions API', () => {
 
   describe('POST /api/health/prescriptions', () => {
     it('should create a new prescription', async () => {
-      (Prescription.create as jest.Mock) = jest.fn().mockResolvedValue(mockPrescription);
+      (Prescription.create as jest.Mock).mockResolvedValueOnce(mockPrescription);
 
       const requestBody = {
         medicationName: 'Test Medication',
@@ -134,7 +134,7 @@ describe('Prescriptions API', () => {
     });
 
     it('should return 401 for unauthenticated user', async () => {
-      mockAuth.mockResolvedValue(null as any);
+      mockAuth.mockResolvedValueOnce(null as any);
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions', {
         method: 'POST',
@@ -149,7 +149,7 @@ describe('Prescriptions API', () => {
 
   describe('DELETE /api/health/prescriptions/[id]', () => {
     it('should delete a prescription', async () => {
-      (Prescription.findOneAndDelete as jest.Mock) = jest.fn().mockResolvedValue(mockPrescription);
+      (Prescription.findOneAndDelete as jest.Mock).mockResolvedValueOnce(mockPrescription);
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions/prescription-123');
       const response = await DELETE(request, { params: { id: 'prescription-123' } });
@@ -162,7 +162,7 @@ describe('Prescriptions API', () => {
     });
 
     it('should return 404 if prescription not found', async () => {
-      (Prescription.findOneAndDelete as jest.Mock) = jest.fn().mockResolvedValue(null);
+      (Prescription.findOneAndDelete as jest.Mock).mockResolvedValueOnce(null);
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions/nonexistent');
       const response = await DELETE(request, { params: { id: 'nonexistent' } });
@@ -171,7 +171,7 @@ describe('Prescriptions API', () => {
     });
 
     it('should return 401 for unauthenticated user', async () => {
-      mockAuth.mockResolvedValue(null as any);
+      mockAuth.mockResolvedValueOnce(null as any);
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions/prescription-123');
       const response = await DELETE(request, { params: { id: 'prescription-123' } });
@@ -183,7 +183,7 @@ describe('Prescriptions API', () => {
   describe('PUT /api/health/prescriptions/[id]', () => {
     it('should update a prescription', async () => {
       const updatedPrescription = { ...mockPrescription, dosage: '20mg' };
-      (Prescription.findOneAndUpdate as jest.Mock) = jest.fn().mockResolvedValue(updatedPrescription);
+      (Prescription.findOneAndUpdate as jest.Mock).mockResolvedValueOnce(updatedPrescription);
 
       const requestBody = { dosage: '20mg' };
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions/prescription-123', {
@@ -199,7 +199,7 @@ describe('Prescriptions API', () => {
     });
 
     it('should return 404 if prescription not found', async () => {
-      (Prescription.findOneAndUpdate as jest.Mock) = jest.fn().mockResolvedValue(null);
+      (Prescription.findOneAndUpdate as jest.Mock).mockResolvedValueOnce(null);
 
       const request = new NextRequest('http://localhost:3000/api/health/prescriptions/nonexistent', {
         method: 'PUT',

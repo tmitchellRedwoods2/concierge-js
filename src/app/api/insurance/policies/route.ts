@@ -81,6 +81,14 @@ export async function POST(request: NextRequest) {
       notes
     } = body;
 
+    // Validate required fields
+    if (!policyType || !policyNumber || !policyName) {
+      return NextResponse.json(
+        { error: 'Missing required fields: policyType, policyNumber, and policyName are required' },
+        { status: 400 }
+      );
+    }
+
     // Calculate next payment date based on premium frequency
     const nextPaymentDate = new Date();
     switch (premiumFrequency) {
@@ -127,7 +135,7 @@ export async function POST(request: NextRequest) {
       status: 'ok',
       policy,
       message: 'Insurance policy added successfully'
-    });
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating insurance policy:', error);
     return NextResponse.json(

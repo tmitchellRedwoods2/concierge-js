@@ -1,105 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="37" failures="12" errors="0" time="0.6">
-  <testsuite name="Prescriptions API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T16:43:47" time="0.133" tests="11">
-    <testcase classname="Prescriptions API GET /api/health/prescriptions should return prescriptions for authenticated user" name="Prescriptions API GET /api/health/prescriptions should return prescriptions for authenticated user" time="0.001">
-    </testcase>
-    <testcase classname="Prescriptions API GET /api/health/prescriptions should return 401 for unauthenticated user" name="Prescriptions API GET /api/health/prescriptions should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="Prescriptions API GET /api/health/prescriptions should handle database errors gracefully" name="Prescriptions API GET /api/health/prescriptions should handle database errors gracefully" time="0.006">
-    </testcase>
-    <testcase classname="Prescriptions API POST /api/health/prescriptions should create a new prescription" name="Prescriptions API POST /api/health/prescriptions should create a new prescription" time="0.001">
-    </testcase>
-    <testcase classname="Prescriptions API POST /api/health/prescriptions should return 400 for missing required fields" name="Prescriptions API POST /api/health/prescriptions should return 400 for missing required fields" time="0">
-    </testcase>
-    <testcase classname="Prescriptions API POST /api/health/prescriptions should return 401 for unauthenticated user" name="Prescriptions API POST /api/health/prescriptions should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should delete a prescription" name="Prescriptions API DELETE /api/health/prescriptions/[id] should delete a prescription" time="0">
-    </testcase>
-    <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should return 404 if prescription not found" name="Prescriptions API DELETE /api/health/prescriptions/[id] should return 404 if prescription not found" time="0">
-    </testcase>
-    <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should return 401 for unauthenticated user" name="Prescriptions API DELETE /api/health/prescriptions/[id] should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="Prescriptions API PUT /api/health/prescriptions/[id] should update a prescription" name="Prescriptions API PUT /api/health/prescriptions/[id] should update a prescription" time="0">
-    </testcase>
-    <testcase classname="Prescriptions API PUT /api/health/prescriptions/[id] should return 404 if prescription not found" name="Prescriptions API PUT /api/health/prescriptions/[id] should return 404 if prescription not found" time="0">
-    </testcase>
-  </testsuite>
-  <testsuite name="Legal Cases API" errors="0" failures="3" skipped="0" timestamp="2025-10-11T16:43:48" time="0.043" tests="4">
-    <testcase classname="Legal Cases API GET /api/legal/cases should return legal cases for authenticated user" name="Legal Cases API GET /api/legal/cases should return legal cases for authenticated user" time="0.007">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 200
-Received: 500
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/legal/cases.test.ts:53:31)</failure>
+<testsuites name="jest tests" tests="37" failures="0" errors="0" time="0.647">
+  <testsuite name="Legal Cases API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T17:07:14" time="0.134" tests="4">
+    <testcase classname="Legal Cases API GET /api/legal/cases should return legal cases for authenticated user" name="Legal Cases API GET /api/legal/cases should return legal cases for authenticated user" time="0.003">
     </testcase>
     <testcase classname="Legal Cases API GET /api/legal/cases should return 401 for unauthenticated user" name="Legal Cases API GET /api/legal/cases should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Legal Cases API POST /api/legal/cases should create a new legal case" name="Legal Cases API POST /api/legal/cases should create a new legal case" time="0.001">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 201
-Received: 200
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/legal/cases.test.ts:89:31)</failure>
+    <testcase classname="Legal Cases API POST /api/legal/cases should create a new legal case" name="Legal Cases API POST /api/legal/cases should create a new legal case" time="0">
     </testcase>
     <testcase classname="Legal Cases API POST /api/legal/cases should return 400 for missing required fields" name="Legal Cases API POST /api/legal/cases should return 400 for missing required fields" time="0">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 400
-Received: 200
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/legal/cases.test.ts:102:31)</failure>
     </testcase>
   </testsuite>
-  <testsuite name="Tax Returns API" errors="0" failures="5" skipped="0" timestamp="2025-10-11T16:43:48" time="0.042" tests="6">
-    <testcase classname="Tax Returns API GET /api/tax/returns should return tax returns for authenticated user" name="Tax Returns API GET /api/tax/returns should return tax returns for authenticated user" time="0.003">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 200
-Received: 500
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/tax/returns.test.ts:52:31)</failure>
+  <testsuite name="Insurance Policies API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T17:07:14" time="0.058" tests="5">
+    <testcase classname="Insurance Policies API GET /api/insurance/policies should return policies for authenticated user" name="Insurance Policies API GET /api/insurance/policies should return policies for authenticated user" time="0.001">
     </testcase>
-    <testcase classname="Tax Returns API GET /api/tax/returns should filter by tax year" name="Tax Returns API GET /api/tax/returns should filter by tax year" time="0.002">
-      <failure>Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)
-
-- Expected
-+ Received
-
-  Object {
--   &quot;taxYear&quot;: 2024,
-    &quot;userId&quot;: &quot;test-user-id&quot;,
-  },
-
-Number of calls: 1
-    at Object.toHaveBeenCalledWith (/Users/timmitchell/concierge-js/src/__tests__/api/tax/returns.test.ts:66:24)</failure>
+    <testcase classname="Insurance Policies API GET /api/insurance/policies should filter by policy type" name="Insurance Policies API GET /api/insurance/policies should filter by policy type" time="0.001">
+    </testcase>
+    <testcase classname="Insurance Policies API GET /api/insurance/policies should return 401 for unauthenticated user" name="Insurance Policies API GET /api/insurance/policies should return 401 for unauthenticated user" time="0">
+    </testcase>
+    <testcase classname="Insurance Policies API POST /api/insurance/policies should create a new policy" name="Insurance Policies API POST /api/insurance/policies should create a new policy" time="0.001">
+    </testcase>
+    <testcase classname="Insurance Policies API POST /api/insurance/policies should return 400 for missing required fields" name="Insurance Policies API POST /api/insurance/policies should return 400 for missing required fields" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Tax Returns API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T17:07:14" time="0.049" tests="6">
+    <testcase classname="Tax Returns API GET /api/tax/returns should return tax returns for authenticated user" name="Tax Returns API GET /api/tax/returns should return tax returns for authenticated user" time="0.001">
+    </testcase>
+    <testcase classname="Tax Returns API GET /api/tax/returns should filter by tax year" name="Tax Returns API GET /api/tax/returns should filter by tax year" time="0.001">
     </testcase>
     <testcase classname="Tax Returns API GET /api/tax/returns should return 401 for unauthenticated user" name="Tax Returns API GET /api/tax/returns should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Tax Returns API POST /api/tax/returns should create a new tax return" name="Tax Returns API POST /api/tax/returns should create a new tax return" time="0.001">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 201
-Received: 200
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/tax/returns.test.ts:102:31)</failure>
+    <testcase classname="Tax Returns API POST /api/tax/returns should create a new tax return" name="Tax Returns API POST /api/tax/returns should create a new tax return" time="0">
     </testcase>
     <testcase classname="Tax Returns API POST /api/tax/returns should return 400 for missing required fields" name="Tax Returns API POST /api/tax/returns should return 400 for missing required fields" time="0">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 400
-Received: 200
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/tax/returns.test.ts:115:31)</failure>
     </testcase>
-    <testcase classname="Tax Returns API POST /api/tax/returns should calculate tax correctly" name="Tax Returns API POST /api/tax/returns should calculate tax correctly" time="0">
-      <failure>TypeError: Cannot read properties of undefined (reading &apos;taxOwed&apos;)
-    at Object.taxOwed (/Users/timmitchell/concierge-js/src/__tests__/api/tax/returns.test.ts:137:26)</failure>
+    <testcase classname="Tax Returns API POST /api/tax/returns should calculate tax correctly" name="Tax Returns API POST /api/tax/returns should calculate tax correctly" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="Appointments API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T16:43:48" time="0.034" tests="11">
+  <testsuite name="Appointments API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T17:07:14" time="0.045" tests="11">
     <testcase classname="Appointments API GET /api/health/appointments should return appointments for authenticated user" name="Appointments API GET /api/health/appointments should return appointments for authenticated user" time="0.001">
     </testcase>
     <testcase classname="Appointments API GET /api/health/appointments should return 401 for unauthenticated user" name="Appointments API GET /api/health/appointments should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Appointments API GET /api/health/appointments should handle database errors gracefully" name="Appointments API GET /api/health/appointments should handle database errors gracefully" time="0.005">
+    <testcase classname="Appointments API GET /api/health/appointments should handle database errors gracefully" name="Appointments API GET /api/health/appointments should handle database errors gracefully" time="0.006">
     </testcase>
-    <testcase classname="Appointments API POST /api/health/appointments should create a new appointment" name="Appointments API POST /api/health/appointments should create a new appointment" time="0">
+    <testcase classname="Appointments API POST /api/health/appointments should create a new appointment" name="Appointments API POST /api/health/appointments should create a new appointment" time="0.001">
     </testcase>
     <testcase classname="Appointments API POST /api/health/appointments should return 400 for missing required fields" name="Appointments API POST /api/health/appointments should return 400 for missing required fields" time="0">
     </testcase>
@@ -116,43 +60,28 @@ Received: 200
     <testcase classname="Appointments API PUT /api/health/appointments/[id] should return 404 if appointment not found" name="Appointments API PUT /api/health/appointments/[id] should return 404 if appointment not found" time="0">
     </testcase>
   </testsuite>
-  <testsuite name="Insurance Policies API" errors="0" failures="4" skipped="0" timestamp="2025-10-11T16:43:48" time="0.029" tests="5">
-    <testcase classname="Insurance Policies API GET /api/insurance/policies should return policies for authenticated user" name="Insurance Policies API GET /api/insurance/policies should return policies for authenticated user" time="0.003">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 200
-Received: 500
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/insurance/policies.test.ts:59:31)</failure>
+  <testsuite name="Prescriptions API" errors="0" failures="0" skipped="0" timestamp="2025-10-11T17:07:14" time="0.034" tests="11">
+    <testcase classname="Prescriptions API GET /api/health/prescriptions should return prescriptions for authenticated user" name="Prescriptions API GET /api/health/prescriptions should return prescriptions for authenticated user" time="0.001">
     </testcase>
-    <testcase classname="Insurance Policies API GET /api/insurance/policies should filter by policy type" name="Insurance Policies API GET /api/insurance/policies should filter by policy type" time="0">
-      <failure>Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)
-
-- Expected
-+ Received
-
-  Object {
--   &quot;policyType&quot;: &quot;Auto&quot;,
-    &quot;userId&quot;: &quot;test-user-id&quot;,
-  },
-
-Number of calls: 1
-    at Object.toHaveBeenCalledWith (/Users/timmitchell/concierge-js/src/__tests__/api/insurance/policies.test.ts:73:24)</failure>
+    <testcase classname="Prescriptions API GET /api/health/prescriptions should return 401 for unauthenticated user" name="Prescriptions API GET /api/health/prescriptions should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Insurance Policies API GET /api/insurance/policies should return 401 for unauthenticated user" name="Insurance Policies API GET /api/insurance/policies should return 401 for unauthenticated user" time="0.001">
+    <testcase classname="Prescriptions API GET /api/health/prescriptions should handle database errors gracefully" name="Prescriptions API GET /api/health/prescriptions should handle database errors gracefully" time="0.003">
     </testcase>
-    <testcase classname="Insurance Policies API POST /api/insurance/policies should create a new policy" name="Insurance Policies API POST /api/insurance/policies should create a new policy" time="0">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 201
-Received: 200
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/insurance/policies.test.ts:111:31)</failure>
+    <testcase classname="Prescriptions API POST /api/health/prescriptions should create a new prescription" name="Prescriptions API POST /api/health/prescriptions should create a new prescription" time="0.001">
     </testcase>
-    <testcase classname="Insurance Policies API POST /api/insurance/policies should return 400 for missing required fields" name="Insurance Policies API POST /api/insurance/policies should return 400 for missing required fields" time="0">
-      <failure>Error: expect(received).toBe(expected) // Object.is equality
-
-Expected: 400
-Received: 200
-    at Object.toBe (/Users/timmitchell/concierge-js/src/__tests__/api/insurance/policies.test.ts:128:31)</failure>
+    <testcase classname="Prescriptions API POST /api/health/prescriptions should return 400 for missing required fields" name="Prescriptions API POST /api/health/prescriptions should return 400 for missing required fields" time="0">
+    </testcase>
+    <testcase classname="Prescriptions API POST /api/health/prescriptions should return 401 for unauthenticated user" name="Prescriptions API POST /api/health/prescriptions should return 401 for unauthenticated user" time="0">
+    </testcase>
+    <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should delete a prescription" name="Prescriptions API DELETE /api/health/prescriptions/[id] should delete a prescription" time="0">
+    </testcase>
+    <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should return 404 if prescription not found" name="Prescriptions API DELETE /api/health/prescriptions/[id] should return 404 if prescription not found" time="0">
+    </testcase>
+    <testcase classname="Prescriptions API DELETE /api/health/prescriptions/[id] should return 401 for unauthenticated user" name="Prescriptions API DELETE /api/health/prescriptions/[id] should return 401 for unauthenticated user" time="0.001">
+    </testcase>
+    <testcase classname="Prescriptions API PUT /api/health/prescriptions/[id] should update a prescription" name="Prescriptions API PUT /api/health/prescriptions/[id] should update a prescription" time="0">
+    </testcase>
+    <testcase classname="Prescriptions API PUT /api/health/prescriptions/[id] should return 404 if prescription not found" name="Prescriptions API PUT /api/health/prescriptions/[id] should return 404 if prescription not found" time="0">
     </testcase>
   </testsuite>
 </testsuites>
