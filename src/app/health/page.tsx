@@ -78,8 +78,8 @@ export default function HealthPage() {
 
   // Filters
   const [providerFilter, setProviderFilter] = useState({
-    specialty: "",
-    type: "",
+    specialty: "all",
+    type: "all",
     city: ""
   });
 
@@ -95,8 +95,8 @@ export default function HealthPage() {
     const loadProvidersWithFilters = async () => {
       try {
         const params = new URLSearchParams();
-        if (providerFilter.specialty) params.append('specialty', providerFilter.specialty);
-        if (providerFilter.type) params.append('type', providerFilter.type);
+        if (providerFilter.specialty && providerFilter.specialty !== 'all') params.append('specialty', providerFilter.specialty);
+        if (providerFilter.type && providerFilter.type !== 'all') params.append('type', providerFilter.type);
         if (providerFilter.city) params.append('city', providerFilter.city);
         
         const response = await fetch(`/api/health/providers?${params.toString()}`);
@@ -649,7 +649,7 @@ export default function HealthPage() {
                           <SelectValue placeholder="All Specialties" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Specialties</SelectItem>
+                          <SelectItem value="all">All Specialties</SelectItem>
                           <SelectItem value="Internal Medicine">Internal Medicine</SelectItem>
                           <SelectItem value="Cardiology">Cardiology</SelectItem>
                           <SelectItem value="Dermatology">Dermatology</SelectItem>
@@ -667,7 +667,7 @@ export default function HealthPage() {
                           <SelectValue placeholder="All Types" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Types</SelectItem>
+                          <SelectItem value="all">All Types</SelectItem>
                           <SelectItem value="doctor">Doctor</SelectItem>
                           <SelectItem value="specialist">Specialist</SelectItem>
                           <SelectItem value="clinic">Clinic</SelectItem>
