@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/db/mongodb';
+import connectDB from '@/lib/db/mongodb';
 import Prescription from '@/lib/db/models/Prescription';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
     
     const prescriptions = await Prescription.find({ userId: session.user.id })
       .sort({ createdAt: -1 });
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await dbConnect();
+    await connectDB();
     
     const prescription = await Prescription.create({
       userId: session.user.id,

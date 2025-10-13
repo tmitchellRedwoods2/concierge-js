@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/db/mongodb';
+import connectDB from '@/lib/db/mongodb';
 import HealthProvider from '@/lib/db/models/HealthProvider';
 
 // Sample healthcare providers data
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
     
     const { searchParams } = new URL(request.url);
     const specialty = searchParams.get('specialty');

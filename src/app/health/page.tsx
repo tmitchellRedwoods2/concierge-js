@@ -92,7 +92,24 @@ export default function HealthPage() {
 
   // Reload providers when filter changes
   useEffect(() => {
-    loadProviders();
+    const loadProvidersWithFilters = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (providerFilter.specialty) params.append('specialty', providerFilter.specialty);
+        if (providerFilter.type) params.append('type', providerFilter.type);
+        if (providerFilter.city) params.append('city', providerFilter.city);
+        
+        const response = await fetch(`/api/health/providers?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProviders(data.providers || []);
+        }
+      } catch (error) {
+        console.error('Failed to load providers:', error);
+      }
+    };
+    
+    loadProvidersWithFilters();
   }, [providerFilter]);
 
   const loadPrescriptions = async () => {

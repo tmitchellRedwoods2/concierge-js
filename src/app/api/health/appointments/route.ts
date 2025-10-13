@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/db/mongodb';
+import connectDB from '@/lib/db/mongodb';
 import Appointment from '@/lib/db/models/Appointment';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
     
     const appointments = await Appointment.find({ userId: session.user.id })
       .sort({ appointmentDate: 1 });
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await dbConnect();
+    await connectDB();
     
     const appointment = await Appointment.create({
       userId: session.user.id,

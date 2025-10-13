@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import dbConnect from '@/lib/db/mongodb';
+import connectDB from '@/lib/db/mongodb';
 import Appointment from '@/lib/db/models/Appointment';
 
 export async function DELETE(
@@ -14,7 +14,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
     
     const { id } = await params;
     const appointment = await Appointment.findOneAndDelete({
@@ -51,7 +51,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    await dbConnect();
+    await connectDB();
     
     const { id } = await params;
     const appointment = await Appointment.findOneAndUpdate(
