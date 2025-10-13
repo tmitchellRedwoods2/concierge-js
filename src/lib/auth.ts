@@ -10,6 +10,8 @@ import getUser from "@/lib/db/models/User";
 
 export const authOptions = {
   debug: process.env.NODE_ENV === 'development',
+  secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
   providers: [
     CredentialsProvider({
       name: "Credentials",
