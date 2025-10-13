@@ -33,6 +33,8 @@ import {
   Users
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import AIInsights from '@/components/dashboard/ai-insights';
+import ThemeToggle from '@/components/dashboard/theme-toggle';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -153,6 +155,7 @@ export default function DashboardPage() {
               <span className="text-sm text-gray-600">
                 Welcome, {session.user?.name}
               </span>
+              <ThemeToggle />
               <Button
                 onClick={() => signOut({ callbackUrl: "/" })}
                 variant="outline"
@@ -453,42 +456,57 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* AI Insights Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">📈 Recent Activity</h2>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                Latest Transactions & Updates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <DollarSign className="w-4 h-4 text-green-600" />
-                    <span className="text-sm">Added expense: $45.00 - Groceries</span>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">🤖 AI-Powered Insights</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AIInsights />
+            
+            {/* Recent Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  Recent Activity
+                </CardTitle>
+                <CardDescription>
+                  Latest transactions & updates across all modules
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      <span className="text-sm">Added expense: $45.00 - Groceries</span>
+                    </div>
+                    <span className="text-xs text-gray-500">2 hours ago</span>
                   </div>
-                  <span className="text-xs text-gray-500">2 hours ago</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Heart className="w-4 h-4 text-red-600" />
-                    <span className="text-sm">Appointment scheduled with Dr. Smith</span>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Heart className="w-4 h-4 text-red-600" />
+                      <span className="text-sm">Appointment scheduled with Dr. Smith</span>
+                    </div>
+                    <span className="text-xs text-gray-500">1 day ago</span>
                   </div>
-                  <span className="text-xs text-gray-500">1 day ago</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Shield className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm">Insurance claim submitted</span>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Shield className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm">Insurance claim submitted</span>
+                    </div>
+                    <span className="text-xs text-gray-500">3 days ago</span>
                   </div>
-                  <span className="text-xs text-gray-500">3 days ago</span>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm">Portfolio value updated: +$1,250</span>
+                    </div>
+                    <span className="text-xs text-gray-500">5 days ago</span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Account Information */}
