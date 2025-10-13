@@ -6,8 +6,10 @@ export async function GET() {
       hasDatabaseUrl: !!process.env.DATABASE_URL,
       hasMongoUri: !!process.env.MONGODB_URI,
       hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
+      hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
       hasClaudeKey: !!process.env.CLAUDE_API_KEY,
       nodeEnv: process.env.NODE_ENV,
+      nextAuthUrl: process.env.NEXTAUTH_URL || 'not set',
     };
 
     return NextResponse.json({
