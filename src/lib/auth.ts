@@ -8,6 +8,21 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db/mongodb";
 import getUser from "@/lib/db/models/User";
 
+// Auto-detect NEXTAUTH_URL for Vercel deployments
+const getNextAuthUrl = () => {
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
+  }
+  
+  // For Vercel deployments, use the VERCEL_URL
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  // Fallback for local development
+  return 'http://localhost:3000';
+};
+
 export const authOptions = {
   debug: process.env.NODE_ENV === 'development',
   secret: process.env.NEXTAUTH_SECRET,

@@ -7,9 +7,11 @@ export async function GET() {
       hasMongoUri: !!process.env.MONGODB_URI,
       hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
       hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
+      hasVercelUrl: !!process.env.VERCEL_URL,
       hasClaudeKey: !!process.env.CLAUDE_API_KEY,
       nodeEnv: process.env.NODE_ENV,
       nextAuthUrl: process.env.NEXTAUTH_URL || 'not set',
+      vercelUrl: process.env.VERCEL_URL || 'not set',
     };
 
     return NextResponse.json({
