@@ -183,12 +183,13 @@ export async function generateAIResponse(
   agentType: keyof typeof AI_AGENTS = 'general'
 ): Promise<{ response: string; tokens: number; model: string }> {
   try {
-    console.log('Generating AI response:', { 
+    console.log('🤖 Generating AI response for agent:', { 
       agentType, 
       messageCount: messages.length,
       hasApiKey: !!process.env.CLAUDE_API_KEY,
       apiKeyLength: process.env.CLAUDE_API_KEY?.length || 0,
-      apiKeyPrefix: process.env.CLAUDE_API_KEY?.substring(0, 10) || 'none'
+      apiKeyPrefix: process.env.CLAUDE_API_KEY?.substring(0, 10) || 'none',
+      agentExists: !!AI_AGENTS[agentType]
     });
     
     // Check if we have a Claude API key and anthropic client
@@ -202,6 +203,7 @@ export async function generateAIResponse(
     
     // Get the agent configuration
     const agent = AI_AGENTS[agentType];
+    console.log('📋 Agent configuration:', { agentType, agentName: agent?.name, hasSystemPrompt: !!agent?.systemPrompt });
     
     // Get the last user message
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
@@ -244,13 +246,14 @@ export async function generateAIResponse(
     };
     
   } catch (error) {
-    console.error('❌ Claude AI error:', error);
+    console.error('❌ Claude AI error for agent:', agentType, error);
     console.log('Error details:', {
+      agentType,
       message: error instanceof Error ? error.message : 'Unknown error',
       name: error instanceof Error ? error.name : 'Unknown',
       stack: error instanceof Error ? error.stack : 'No stack trace'
     });
-    console.log('🔄 Falling back to mock response');
+    console.log('🔄 Falling back to mock response for agent:', agentType);
     return await generateMockResponse(messages, agentType);
   }
 }
