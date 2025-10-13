@@ -5,7 +5,7 @@ export interface IMessage extends mongoose.Document {
   sessionId: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  agentType?: 'financial' | 'health' | 'travel' | 'legal' | 'tax' | 'general';
+  agentType?: 'financial' | 'investment' | 'insurance' | 'health' | 'travel' | 'legal' | 'tax' | 'general';
   metadata?: {
     tokens?: number;
     model?: string;
@@ -39,7 +39,7 @@ const MessageSchema = new mongoose.Schema<IMessage>(
     },
     agentType: {
       type: String,
-      enum: ['financial', 'health', 'travel', 'legal', 'tax', 'general'],
+      enum: ['financial', 'investment', 'insurance', 'health', 'travel', 'legal', 'tax', 'general'],
       default: 'general',
     },
     metadata: {

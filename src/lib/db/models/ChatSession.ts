@@ -4,7 +4,7 @@ export interface IChatSession extends mongoose.Document {
   userId: mongoose.Types.ObjectId;
   sessionId: string;
   title: string;
-  agentType: 'financial' | 'health' | 'travel' | 'legal' | 'tax' | 'general';
+  agentType: 'financial' | 'investment' | 'insurance' | 'health' | 'travel' | 'legal' | 'tax' | 'general';
   isActive: boolean;
   messageCount: number;
   lastMessageAt: Date;
@@ -32,7 +32,7 @@ const ChatSessionSchema = new mongoose.Schema<IChatSession>(
     },
     agentType: {
       type: String,
-      enum: ['financial', 'health', 'travel', 'legal', 'tax', 'general'],
+      enum: ['financial', 'investment', 'insurance', 'health', 'travel', 'legal', 'tax', 'general'],
       default: 'general',
     },
     isActive: {
