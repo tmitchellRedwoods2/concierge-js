@@ -9,6 +9,7 @@ import connectDB from "@/lib/db/mongodb";
 import getUser from "@/lib/db/models/User";
 
 export const authOptions = {
+  debug: process.env.NODE_ENV === 'development',
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -57,6 +58,7 @@ export const authOptions = {
     }),
   ],
   trustHost: true,
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, user }: any) {
       if (user) {
