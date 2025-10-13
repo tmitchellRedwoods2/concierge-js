@@ -90,6 +90,11 @@ export default function HealthPage() {
     loadProviders();
   }, []);
 
+  // Reload providers when filter changes
+  useEffect(() => {
+    loadProviders();
+  }, [providerFilter]);
+
   const loadPrescriptions = async () => {
     try {
       const response = await fetch('/api/health/prescriptions');
@@ -622,7 +627,6 @@ export default function HealthPage() {
                       <Label htmlFor="specialty">Specialty</Label>
                       <Select value={providerFilter.specialty} onValueChange={(value) => {
                         setProviderFilter({...providerFilter, specialty: value});
-                        setTimeout(loadProviders, 100);
                       }}>
                         <SelectTrigger>
                           <SelectValue placeholder="All Specialties" />
@@ -641,7 +645,6 @@ export default function HealthPage() {
                       <Label htmlFor="type">Provider Type</Label>
                       <Select value={providerFilter.type} onValueChange={(value) => {
                         setProviderFilter({...providerFilter, type: value});
-                        setTimeout(loadProviders, 100);
                       }}>
                         <SelectTrigger>
                           <SelectValue placeholder="All Types" />
@@ -663,7 +666,6 @@ export default function HealthPage() {
                         value={providerFilter.city}
                         onChange={(e) => {
                           setProviderFilter({...providerFilter, city: e.target.value});
-                          setTimeout(loadProviders, 500);
                         }}
                       />
                     </div>
@@ -671,7 +673,12 @@ export default function HealthPage() {
 
                   {/* Providers List */}
                   <div className="space-y-4">
-                    {providers.map((provider) => (
+                    {providers.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No healthcare providers found. Try adjusting your filters.
+                      </div>
+                    ) : (
+                      providers.map((provider) => (
                       <div key={provider._id} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
@@ -712,11 +719,7 @@ export default function HealthPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
-                    {providers.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        No providers found. Try adjusting your filters.
-                      </div>
+                    ))
                     )}
                   </div>
                 </CardContent>
