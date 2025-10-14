@@ -154,13 +154,13 @@ export function ConnectedAccountCard({ account, onDisconnect }: ConnectedAccount
           <div>
             <p className="text-sm text-gray-500">Current Balance</p>
             <p className="text-lg font-semibold">
-              {formatCurrency(account.balances.current)}
+              {formatCurrency(account.balances?.current)}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Available</p>
             <p className="text-lg font-semibold">
-              {formatCurrency(account.balances.available)}
+              {formatCurrency(account.balances?.available)}
             </p>
           </div>
         </div>

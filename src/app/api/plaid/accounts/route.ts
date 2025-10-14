@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
         userId: session.user.id,
         plaidAccountId: 'mock_plaid_1',
         institutionName: 'Chase Bank',
-        accountName: 'Chase Total Checking',
-        accountType: 'depository',
-        accountSubtype: 'checking',
+        name: 'Chase Total Checking',
+        type: 'depository',
+        subtype: 'checking',
         mask: '1234',
-        balance: {
+        balances: {
           available: 2456.78,
           current: 2456.78,
           iso_currency_code: 'USD'
@@ -36,11 +36,11 @@ export async function GET(request: NextRequest) {
         userId: session.user.id,
         plaidAccountId: 'mock_plaid_2',
         institutionName: 'Bank of America',
-        accountName: 'Bank of America Cash Rewards Credit Card',
-        accountType: 'credit',
-        accountSubtype: 'credit card',
+        name: 'Bank of America Cash Rewards Credit Card',
+        type: 'credit',
+        subtype: 'credit card',
         mask: '5678',
-        balance: {
+        balances: {
           available: 5000.00,
           current: 1234.56,
           iso_currency_code: 'USD'
@@ -54,11 +54,11 @@ export async function GET(request: NextRequest) {
         userId: session.user.id,
         plaidAccountId: 'mock_plaid_3',
         institutionName: 'Wells Fargo',
-        accountName: 'Wells Fargo Savings',
-        accountType: 'depository',
-        accountSubtype: 'savings',
+        name: 'Wells Fargo Savings',
+        type: 'depository',
+        subtype: 'savings',
         mask: '9012',
-        balance: {
+        balances: {
           available: 15750.25,
           current: 15750.25,
           iso_currency_code: 'USD'
