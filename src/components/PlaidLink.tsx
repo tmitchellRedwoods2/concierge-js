@@ -103,6 +103,7 @@ interface ConnectedAccountCardProps {
 export function ConnectedAccountCard({ account, onDisconnect }: ConnectedAccountCardProps) {
   const formatCurrency = (amount: number | null) => {
     if (amount === null) return 'N/A';
+    if (typeof window === 'undefined') return `$${amount?.toFixed(2) || '0.00'}`;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
