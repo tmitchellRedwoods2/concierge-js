@@ -383,6 +383,9 @@ export default function InsurancePage() {
             <Button variant="ghost" size="sm" onClick={() => router.push("/messages")} className="whitespace-nowrap text-xs px-3 py-2">
               🤖 AI Agents
             </Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/workflows")} className="whitespace-nowrap text-xs px-3 py-2">
+              🤖 Workflows
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => router.push("/settings")} className="whitespace-nowrap text-xs px-3 py-2">
               ⚙️ Settings
             </Button>
