@@ -11,14 +11,69 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectToDatabase();
+    // Mock connected accounts for demo purposes
+    const mockAccounts = [
+      {
+        _id: 'mock_account_1',
+        userId: session.user.id,
+        plaidAccountId: 'mock_plaid_1',
+        institutionName: 'Chase Bank',
+        accountName: 'Chase Total Checking',
+        accountType: 'depository',
+        accountSubtype: 'checking',
+        mask: '1234',
+        balance: {
+          available: 2456.78,
+          current: 2456.78,
+          iso_currency_code: 'USD'
+        },
+        isActive: true,
+        createdAt: new Date('2024-01-15'),
+        updatedAt: new Date()
+      },
+      {
+        _id: 'mock_account_2',
+        userId: session.user.id,
+        plaidAccountId: 'mock_plaid_2',
+        institutionName: 'Bank of America',
+        accountName: 'Bank of America Cash Rewards Credit Card',
+        accountType: 'credit',
+        accountSubtype: 'credit card',
+        mask: '5678',
+        balance: {
+          available: 5000.00,
+          current: 1234.56,
+          iso_currency_code: 'USD'
+        },
+        isActive: true,
+        createdAt: new Date('2024-01-10'),
+        updatedAt: new Date()
+      },
+      {
+        _id: 'mock_account_3',
+        userId: session.user.id,
+        plaidAccountId: 'mock_plaid_3',
+        institutionName: 'Wells Fargo',
+        accountName: 'Wells Fargo Savings',
+        accountType: 'depository',
+        accountSubtype: 'savings',
+        mask: '9012',
+        balance: {
+          available: 15750.25,
+          current: 15750.25,
+          iso_currency_code: 'USD'
+        },
+        isActive: true,
+        createdAt: new Date('2024-01-05'),
+        updatedAt: new Date()
+      }
+    ];
     
-    const accounts = await Account.find({
-      userId: session.user.id,
-      isActive: true,
-    }).sort({ createdAt: -1 });
-    
-    return NextResponse.json({ accounts });
+    return NextResponse.json({ 
+      accounts: mockAccounts,
+      mock: true,
+      message: 'Mock accounts data'
+    });
   } catch (error) {
     console.error('Get accounts error:', error);
     return NextResponse.json(

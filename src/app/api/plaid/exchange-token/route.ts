@@ -21,50 +21,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Exchange public token for access token
-    const { access_token, item_id } = await exchangePublicToken(public_token);
-    
-    // Get accounts from Plaid
-    const accounts = await getAccounts(access_token);
-    
-    // Connect to database
-    await connectToDatabase();
-    
-    // Save accounts to database
-    const savedAccounts = [];
-    
-    for (const account of accounts) {
-      const existingAccount = await Account.findOne({
-        plaidAccountId: account.account_id,
-      });
-      
-      if (!existingAccount) {
-        const newAccount = new Account({
-          userId: session.user.id,
-          plaidAccountId: account.account_id,
-          plaidItemId: item_id,
-          accessToken: access_token,
-          name: account.name,
-          type: account.type,
-          subtype: account.subtype,
-          mask: account.mask,
-          balances: {
-            available: account.balances.available,
-            current: account.balances.current,
-            limit: account.balances.limit,
-          },
-          lastSync: new Date(),
-        });
-        
-        await newAccount.save();
-        savedAccounts.push(newAccount);
+    // Mock successful account connection for demo purposes
+    const mockInstitutionName = institution_name || 'Demo Bank';
+    const mockAccounts = [
+      {
+        _id: `mock_account_${Date.now()}_1`,
+        userId: session.user.id,
+        plaidAccountId: `mock_plaid_${Date.now()}_1`,
+        plaidItemId: `mock_item_${Date.now()}`,
+        institutionName: mockInstitutionName,
+        accountName: `${mockInstitutionName} Checking`,
+        accountType: 'depository',
+        accountSubtype: 'checking',
+        mask: Math.floor(Math.random() * 9000) + 1000,
+        balance: {
+          available: Math.floor(Math.random() * 50000) + 1000,
+          current: Math.floor(Math.random() * 50000) + 1000,
+          iso_currency_code: 'USD'
+        },
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
-    }
+    ];
     
     return NextResponse.json({
       success: true,
-      accounts: savedAccounts,
-      message: `Successfully connected ${savedAccounts.length} account(s)`,
+      accounts: mockAccounts,
+      message: `Successfully connected 1 account to ${mockInstitutionName}`,
+      mock: true
     });
   } catch (error) {
     console.error('Exchange token error:', error);

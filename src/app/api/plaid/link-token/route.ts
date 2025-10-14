@@ -10,17 +10,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if Plaid is configured
-    if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
-      return NextResponse.json({
-        error: 'Plaid not configured',
-        message: 'Bank connection requires Plaid API credentials to be set up'
-      }, { status: 503 });
-    }
-
-    const linkToken = await createLinkToken(session.user.id);
+    // Mock Plaid integration for demo purposes
+    // In production, this would use real Plaid credentials
+    const mockLinkToken = `link-sandbox-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    return NextResponse.json({ link_token: linkToken });
+    return NextResponse.json({ 
+      link_token: mockLinkToken,
+      mock: true,
+      message: 'Mock Plaid integration active'
+    });
   } catch (error) {
     console.error('Link token error:', error);
     return NextResponse.json(
