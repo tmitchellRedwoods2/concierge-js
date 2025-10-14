@@ -1,10 +1,8 @@
 'use client';
 
-import { usePlaidLink } from 'react-plaid-link';
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Banknote, Link, CheckCircle, AlertCircle } from 'lucide-react';
+import { Banknote, Link, AlertCircle } from 'lucide-react';
 
 interface PlaidLinkProps {
   onSuccess: (publicToken: string, metadata: any) => void;
@@ -14,18 +12,8 @@ interface PlaidLinkProps {
 }
 
 export default function PlaidLink({ onSuccess, onError, linkToken, loading }: PlaidLinkProps) {
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-
-  // Ensure we're on the client side
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   // Mock Plaid integration for demo purposes
   const handleMockConnection = async () => {
-    setIsConnecting(true);
-    
     // Simulate connection delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     
@@ -47,44 +35,8 @@ export default function PlaidLink({ onSuccess, onError, linkToken, loading }: Pl
       ]
     };
     
-    setIsConnecting(false);
     onSuccess(mockPublicToken, mockMetadata);
   };
-
-  // Check if we're using mock mode
-  const isMockMode = linkToken?.includes('mock') || linkToken?.includes('sandbox');
-
-  // Only initialize PlaidLink on client side
-  const config = isClient && !isMockMode ? {
-    token: linkToken,
-    onSuccess: (publicToken: string, metadata: any) => {
-      setIsConnecting(false);
-      onSuccess(publicToken, metadata);
-    },
-    onExit: (err: any, metadata: any) => {
-      setIsConnecting(false);
-      if (err && onError) {
-        onError(err);
-      }
-    },
-    onEvent: (eventName: string, metadata: any) => {
-      if (eventName === 'OPEN') {
-        setIsConnecting(true);
-      }
-    },
-  } : null;
-
-  const { open, ready } = usePlaidLink(config || { token: null, onSuccess: () => {}, onExit: () => {}, onEvent: () => {} });
-
-  if (!isClient) {
-    return (
-      <Card className="w-full max-w-md">
-        <CardContent className="flex items-center justify-center p-6">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (loading) {
     return (
@@ -92,22 +44,6 @@ export default function PlaidLink({ onSuccess, onError, linkToken, loading }: Pl
         <CardContent className="flex items-center justify-center p-6">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </CardContent>
-      </Card>
-    );
-  }
-
-  if (!linkToken) {
-    return (
-      <Card className="w-full max-w-md border-red-200 bg-red-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-700">
-            <AlertCircle className="h-5 w-5" />
-            Connection Error
-          </CardTitle>
-          <CardDescription className="text-red-600">
-            Unable to initialize bank connection. Please try again.
-          </CardDescription>
-        </CardHeader>
       </Card>
     );
   }
@@ -124,31 +60,19 @@ export default function PlaidLink({ onSuccess, onError, linkToken, loading }: Pl
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isMockMode && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700">
-              🎭 <strong>Demo Mode:</strong> This will simulate connecting to a bank account
-            </p>
-          </div>
-        )}
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-700">
+            🎭 <strong>Demo Mode:</strong> This will simulate connecting to a bank account
+          </p>
+        </div>
         
         <Button
-          onClick={isMockMode ? handleMockConnection : () => open()}
-          disabled={isMockMode ? isConnecting : (!ready || isConnecting)}
+          onClick={handleMockConnection}
           className="w-full"
           size="lg"
         >
-          {isConnecting ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              {isMockMode ? 'Simulating Connection...' : 'Connecting...'}
-            </>
-          ) : (
-            <>
-              <Link className="h-4 w-4 mr-2" />
-              {isMockMode ? 'Connect Demo Bank Account' : 'Connect Bank Account'}
-            </>
-          )}
+          <Link className="h-4 w-4 mr-2" />
+          Connect Demo Bank Account
         </Button>
         
         <div className="mt-4 text-xs text-gray-500 text-center">
