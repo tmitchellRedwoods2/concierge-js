@@ -1,7 +1,7 @@
 'use client';
 
 import { usePlaidLink } from 'react-plaid-link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Banknote, Link, CheckCircle, AlertCircle } from 'lucide-react';
@@ -15,6 +15,12 @@ interface PlaidLinkProps {
 
 export default function PlaidLink({ onSuccess, onError, linkToken, loading }: PlaidLinkProps) {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Mock Plaid integration for demo purposes
   const handleMockConnection = async () => {
@@ -47,6 +53,38 @@ export default function PlaidLink({ onSuccess, onError, linkToken, loading }: Pl
 
   // Check if we're using mock mode
   const isMockMode = linkToken?.includes('mock') || linkToken?.includes('sandbox');
+
+  // Only initialize PlaidLink on client side
+  const config = isClient && !isMockMode ? {
+    token: linkToken,
+    onSuccess: (publicToken: string, metadata: any) => {
+      setIsConnecting(false);
+      onSuccess(publicToken, metadata);
+    },
+    onExit: (err: any, metadata: any) => {
+      setIsConnecting(false);
+      if (err && onError) {
+        onError(err);
+      }
+    },
+    onEvent: (eventName: string, metadata: any) => {
+      if (eventName === 'OPEN') {
+        setIsConnecting(true);
+      }
+    },
+  } : null;
+
+  const { open, ready } = usePlaidLink(config || { token: null, onSuccess: () => {}, onExit: () => {}, onEvent: () => {} });
+
+  if (!isClient) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardContent className="flex items-center justify-center p-6">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
