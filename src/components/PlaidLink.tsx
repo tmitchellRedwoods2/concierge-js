@@ -111,6 +111,7 @@ export function ConnectedAccountCard({ account, onDisconnect }: ConnectedAccount
   };
 
   const getAccountTypeIcon = (type: string) => {
+    if (!type || typeof type !== 'string') return '💰';
     switch (type.toLowerCase()) {
       case 'depository':
         return '🏦';
@@ -132,16 +133,16 @@ export function ConnectedAccountCard({ account, onDisconnect }: ConnectedAccount
           <div className="flex items-center gap-3">
             <span className="text-2xl">{getAccountTypeIcon(account.type)}</span>
             <div>
-              <CardTitle className="text-lg">{account.name}</CardTitle>
+              <CardTitle className="text-lg">{account.name || 'Unknown Account'}</CardTitle>
               <CardDescription className="capitalize">
-                {account.subtype} •••• {account.mask}
+                {account.subtype || 'account'} •••• {account.mask || '****'}
               </CardDescription>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onDisconnect(account._id)}
+            onClick={() => onDisconnect(account._id || '')}
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
           >
             Disconnect
