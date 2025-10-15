@@ -35,21 +35,23 @@ export default function ConditionNode({ data, selected }: NodeProps<ConditionNod
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-yellow-500"
+        id="input"
+        className="w-3 h-3 bg-yellow-500 border-2 border-white"
+        style={{ left: -6 }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="true"
-        className="w-3 h-3 bg-green-500"
-        style={{ top: '30%' }}
+        className="w-3 h-3 bg-green-500 border-2 border-white"
+        style={{ top: '30%', right: -6 }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="false"
-        className="w-3 h-3 bg-red-500"
-        style={{ top: '70%' }}
+        className="w-3 h-3 bg-red-500 border-2 border-white"
+        style={{ top: '70%', right: -6 }}
       />
     </div>
   );

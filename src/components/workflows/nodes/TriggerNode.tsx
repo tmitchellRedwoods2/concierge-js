@@ -78,7 +78,9 @@ export default function TriggerNode({ data, selected }: NodeProps<TriggerNodeDat
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-blue-500"
+        id="output"
+        className="w-3 h-3 bg-blue-500 border-2 border-white"
+        style={{ right: -6 }}
       />
     </div>
   );

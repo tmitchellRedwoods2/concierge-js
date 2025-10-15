@@ -56,12 +56,16 @@ export default function APINode({ data, selected }: NodeProps<APINodeData>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-orange-500"
+        id="input"
+        className="w-3 h-3 bg-orange-500 border-2 border-white"
+        style={{ left: -6 }}
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-orange-500"
+        id="output"
+        className="w-3 h-3 bg-orange-500 border-2 border-white"
+        style={{ right: -6 }}
       />
     </div>
   );

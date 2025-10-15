@@ -40,12 +40,16 @@ export default function AINode({ data, selected }: NodeProps<AINodeData>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-purple-500"
+        id="input"
+        className="w-3 h-3 bg-purple-500 border-2 border-white"
+        style={{ left: -6 }}
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="w-3 h-3 bg-purple-500"
+        id="output"
+        className="w-3 h-3 bg-purple-500 border-2 border-white"
+        style={{ right: -6 }}
       />
     </div>
   );

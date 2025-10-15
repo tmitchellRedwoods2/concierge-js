@@ -42,21 +42,23 @@ export default function ApprovalNode({ data, selected }: NodeProps<ApprovalNodeD
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-indigo-500"
+        id="input"
+        className="w-3 h-3 bg-indigo-500 border-2 border-white"
+        style={{ left: -6 }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="approved"
-        className="w-3 h-3 bg-green-500"
-        style={{ top: '30%' }}
+        className="w-3 h-3 bg-green-500 border-2 border-white"
+        style={{ top: '30%', right: -6 }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="rejected"
-        className="w-3 h-3 bg-red-500"
-        style={{ top: '70%' }}
+        className="w-3 h-3 bg-red-500 border-2 border-white"
+        style={{ top: '70%', right: -6 }}
       />
     </div>
   );
