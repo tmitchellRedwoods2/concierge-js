@@ -79,7 +79,7 @@ export default function TriggerNode({ data, selected }: NodeProps<TriggerNodeDat
         type="source"
         position={Position.Right}
         id="output"
-        className="w-3 h-3 bg-blue-500 border-2 border-white"
+        className="w-3 h-3 bg-blue-500 border-2 border-white hover:bg-blue-600"
         style={{ right: -6 }}
       />
     </div>
