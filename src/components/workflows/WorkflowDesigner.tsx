@@ -104,13 +104,16 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
         return;
       }
       
-      setEdges((eds) => addEdge({
+      const newEdge = {
         ...params,
         id: `edge-${params.source}-${params.target}-${Date.now()}`,
         type: 'default',
         animated: true,
         style: { stroke: '#3b82f6', strokeWidth: 2 }
-      }, eds));
+      };
+      
+      console.log('Adding edge:', newEdge);
+      setEdges((eds) => addEdge(newEdge, eds));
     },
     [setEdges]
   );
@@ -123,6 +126,14 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
   const onPaneClick = useCallback(() => {
     setSelectedNode(null);
     setShowConfigModal(false);
+  }, []);
+
+  const onConnectStart = useCallback((event: React.MouseEvent, { nodeId, handleId }: any) => {
+    console.log('Connection started from:', nodeId, handleId);
+  }, []);
+
+  const onConnectEnd = useCallback((event: React.MouseEvent) => {
+    console.log('Connection ended');
   }, []);
 
   // Validate workflow
@@ -227,22 +238,38 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
           <h2 className="text-xl font-semibold">🎨 Workflow Designer</h2>
           <p className="text-sm text-gray-600">Drag nodes from the sidebar to build your workflow</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={isValid ? "default" : "secondary"}>
-            {isValid ? "Valid" : "Invalid"}
-          </Badge>
-          <Button variant="outline" size="sm" onClick={testWorkflow} disabled={!isValid}>
-            <TestTube className="w-4 h-4 mr-2" />
-            Test
-          </Button>
-          <Button variant="outline" size="sm" onClick={saveWorkflow} disabled={!isValid}>
-            <Save className="w-4 h-4 mr-2" />
-            Save
-          </Button>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Close
-          </Button>
-        </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={isValid ? "default" : "secondary"}>
+              {isValid ? "Valid" : "Invalid"}
+            </Badge>
+            <Button variant="outline" size="sm" onClick={() => {
+              if (nodes.length >= 2) {
+                const newEdge = {
+                  id: `test-edge-${Date.now()}`,
+                  source: nodes[0].id,
+                  target: nodes[1].id,
+                  type: 'default',
+                  animated: true,
+                  style: { stroke: '#3b82f6', strokeWidth: 2 }
+                };
+                setEdges((eds) => [...eds, newEdge]);
+                console.log('Added test edge:', newEdge);
+              }
+            }}>
+              Test Connect
+            </Button>
+            <Button variant="outline" size="sm" onClick={testWorkflow} disabled={!isValid}>
+              <TestTube className="w-4 h-4 mr-2" />
+              Test
+            </Button>
+            <Button variant="outline" size="sm" onClick={saveWorkflow} disabled={!isValid}>
+              <Save className="w-4 h-4 mr-2" />
+              Save
+            </Button>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Close
+            </Button>
+          </div>
       </div>
 
       <div className="flex-1 flex">
@@ -348,11 +375,19 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onConnectStart={onConnectStart}
+            onConnectEnd={onConnectEnd}
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             fitView
+            connectionLineType="smoothstep"
+            defaultEdgeOptions={{
+              type: 'default',
+              animated: true,
+              style: { stroke: '#3b82f6', strokeWidth: 2 }
+            }}
           >
             <Controls />
             <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
