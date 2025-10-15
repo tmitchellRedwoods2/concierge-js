@@ -95,7 +95,23 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
   const [showConfigModal, setShowConfigModal] = useState(false);
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => {
+      console.log('Connecting:', params);
+      
+      // Validate connection
+      if (!params.source || !params.target || params.source === params.target) {
+        console.log('Invalid connection');
+        return;
+      }
+      
+      setEdges((eds) => addEdge({
+        ...params,
+        id: `edge-${params.source}-${params.target}-${Date.now()}`,
+        type: 'default',
+        animated: true,
+        style: { stroke: '#3b82f6', strokeWidth: 2 }
+      }, eds));
+    },
     [setEdges]
   );
 

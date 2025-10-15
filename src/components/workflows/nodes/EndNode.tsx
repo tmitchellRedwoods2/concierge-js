@@ -57,7 +57,9 @@ export default function EndNode({ data, selected }: NodeProps<EndNodeData>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="w-3 h-3 bg-gray-500"
+        id="input"
+        className="w-3 h-3 bg-gray-500 border-2 border-white"
+        style={{ left: -6 }}
       />
     </div>
   );
