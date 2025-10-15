@@ -8,6 +8,7 @@ import ReactFlow, {
   Connection,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   Controls,
   Background,
   BackgroundVariant,
@@ -26,6 +27,7 @@ import {
   Save, 
   Settings, 
   Plus,
+  Maximize,
   Trash2,
   Eye,
   TestTube
@@ -138,11 +140,16 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
 
   // Validate workflow
   const validateWorkflow = useCallback(() => {
+    // A workflow is valid if it has at least 2 nodes and they're connected
+    const hasMultipleNodes = nodes.length >= 2;
+    const hasConnections = edges.length >= nodes.length - 1; // At least n-1 connections for n nodes
+    
+    // OR if it has a trigger and end node specifically
     const hasTrigger = nodes.some(node => node.type === 'trigger');
     const hasEnd = nodes.some(node => node.type === 'end');
-    const hasConnections = edges.length > 0;
+    const hasTriggerEndFlow = hasTrigger && hasEnd && edges.length > 0;
     
-    return hasTrigger && hasEnd && hasConnections;
+    return hasMultipleNodes || hasTriggerEndFlow;
   }, [nodes, edges]);
 
   // Update validation when nodes/edges change
@@ -231,7 +238,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
   }, [nodes, edges, onTest]);
 
   return (
-    <div className="h-full min-h-[600px] flex flex-col">
+    <div className="h-screen flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <div>
@@ -261,6 +268,16 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
             <Button variant="outline" size="sm" onClick={testWorkflow} disabled={!isValid}>
               <TestTube className="w-4 h-4 mr-2" />
               Test
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              // Fit view to show all nodes
+              const reactFlowInstance = document.querySelector('.react-flow') as any;
+              if (reactFlowInstance && reactFlowInstance.fitView) {
+                reactFlowInstance.fitView();
+              }
+            }}>
+              <Maximize className="w-4 h-4 mr-2" />
+              Fit View
             </Button>
             <Button variant="outline" size="sm" onClick={saveWorkflow} disabled={!isValid}>
               <Save className="w-4 h-4 mr-2" />
@@ -368,7 +385,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
         </div>
 
         {/* Main Canvas */}
-        <div className="flex-1 relative h-full">
+        <div className="flex-1 relative" style={{ height: 'calc(100vh - 200px)' }}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
