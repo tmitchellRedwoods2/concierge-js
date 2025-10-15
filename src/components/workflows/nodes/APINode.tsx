@@ -30,27 +30,19 @@ const getMethodColor = (method: string) => {
 
 export default function APINode({ data, selected }: NodeProps<APINodeData>) {
   return (
-    <div className={`px-2 py-1 shadow-md rounded-md border-2 w-[120px] ${
+    <div className={`px-1 py-0.5 shadow-sm rounded border w-[60px] ${
       selected ? 'border-blue-500' : 'border-gray-300'
     } bg-orange-100 border-orange-300 text-orange-800`}>
-      <div className="flex items-center gap-1 mb-1">
-        <Globe className="w-4 h-4" />
-        <div className="font-bold text-xs">{data.label}</div>
+      <div className="flex items-center justify-center mb-1">
+        <Globe className="w-3 h-3" />
       </div>
       
-      <div className="text-xs text-gray-600 mb-1">
-        API Call
+      <div className="text-xs font-bold text-center mb-1">
+        API
       </div>
       
-      <div className="space-y-1">
-        <Badge className={`text-xs ${getMethodColor(data.method)}`}>
-          {data.method || 'POST'}
-        </Badge>
-        {data.url && (
-          <div className="text-xs text-gray-600 truncate">
-            {data.url}
-          </div>
-        )}
+      <div className="text-xs text-center truncate">
+        {data.method || 'POST'}
       </div>
 
       <Handle

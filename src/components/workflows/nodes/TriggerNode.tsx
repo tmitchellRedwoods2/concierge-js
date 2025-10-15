@@ -48,30 +48,20 @@ const getTriggerColor = (type: string) => {
 
 export default function TriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
   return (
-    <div className={`px-2 py-1 shadow-md rounded-md border-2 w-[120px] ${
+    <div className={`px-1 py-0.5 shadow-sm rounded border w-[60px] ${
       selected ? 'border-blue-500' : 'border-gray-300'
     } ${getTriggerColor(data.triggerType)}`}>
-      <div className="flex items-center gap-1 mb-1">
+      <div className="flex items-center justify-center mb-1">
         {getTriggerIcon(data.triggerType)}
-        <div className="font-bold text-xs">{data.label}</div>
       </div>
       
-      <div className="text-xs text-gray-600 mb-1">
-        {data.triggerType.charAt(0).toUpperCase() + data.triggerType.slice(1)} Trigger
+      <div className="text-xs font-bold text-center mb-1">
+        {data.triggerType.charAt(0).toUpperCase() + data.triggerType.slice(1)}
       </div>
       
       {data.conditions.length > 0 && (
-        <div className="space-y-0.5">
-          {data.conditions.slice(0, 1).map((condition, index) => (
-            <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
-              {condition.field} {condition.operator} "{condition.value}"
-            </Badge>
-          ))}
-          {data.conditions.length > 1 && (
-            <Badge variant="secondary" className="text-xs px-1 py-0">
-              +{data.conditions.length - 1} more
-            </Badge>
-          )}
+        <div className="text-xs text-center truncate">
+          {data.conditions[0].value}
         </div>
       )}
 
