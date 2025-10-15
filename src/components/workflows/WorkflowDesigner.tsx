@@ -19,6 +19,7 @@ import 'reactflow/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import NodeConfigModal from "./NodeConfigModal";
 import { 
   Play, 
   Pause, 
@@ -91,6 +92,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isValid, setIsValid] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -99,10 +101,12 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
+    setShowConfigModal(true);
   }, []);
 
   const onPaneClick = useCallback(() => {
     setSelectedNode(null);
+    setShowConfigModal(false);
   }, []);
 
   // Validate workflow
@@ -147,6 +151,17 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
       )
     );
   }, [setNodes]);
+
+  const handleNodeConfigSave = useCallback((nodeId: string, data: any) => {
+    updateNodeData(nodeId, data);
+    setShowConfigModal(false);
+    setSelectedNode(null);
+  }, [updateNodeData]);
+
+  const handleConfigModalClose = useCallback(() => {
+    setShowConfigModal(false);
+    setSelectedNode(null);
+  }, []);
 
   const saveWorkflow = useCallback(() => {
     const workflowData = {
@@ -278,17 +293,22 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
 
           {selectedNode && (
             <div className="mt-6">
-              <h4 className="font-medium mb-2">Node Properties</h4>
+              <h4 className="font-medium mb-2">Selected Node</h4>
               <div className="space-y-2">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Name</label>
-                  <input
-                    type="text"
-                    value={selectedNode.data.label}
-                    onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
-                    className="w-full px-2 py-1 text-sm border rounded"
-                  />
+                <div className="p-2 bg-blue-50 rounded text-sm">
+                  <strong>{selectedNode.data.label}</strong>
+                  <br />
+                  <span className="text-gray-600">{selectedNode.type}</span>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowConfigModal(true)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configure
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
@@ -322,6 +342,14 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
           </ReactFlow>
         </div>
       </div>
+
+      {/* Node Configuration Modal */}
+      <NodeConfigModal
+        node={selectedNode}
+        isOpen={showConfigModal}
+        onClose={handleConfigModalClose}
+        onSave={handleNodeConfigSave}
+      />
     </div>
   );
 }
