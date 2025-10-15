@@ -20,7 +20,8 @@ import {
   Clock,
   AlertTriangle,
   Activity,
-  Zap
+  Zap,
+  Plus
 } from 'lucide-react';
 
 interface Workflow {
@@ -67,6 +68,14 @@ export default function WorkflowsPage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('workflows');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newWorkflow, setNewWorkflow] = useState({
+    name: '',
+    description: '',
+    triggerType: 'email',
+    approvalRequired: false,
+    autoExecute: true
+  });
 
   useEffect(() => {
     loadData();
@@ -157,6 +166,43 @@ export default function WorkflowsPage() {
       }
     } catch (error) {
       console.error('Error starting voicemail monitoring:', error);
+    }
+  };
+
+  const createWorkflow = async () => {
+    try {
+      const response = await fetch('/api/workflows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newWorkflow.name,
+          description: newWorkflow.description,
+          trigger: {
+            type: newWorkflow.triggerType,
+            conditions: []
+          },
+          steps: [],
+          approvalRequired: newWorkflow.approvalRequired,
+          autoExecute: newWorkflow.autoExecute,
+          isActive: false
+        }),
+      });
+
+      if (response.ok) {
+        setShowCreateModal(false);
+        setNewWorkflow({
+          name: '',
+          description: '',
+          triggerType: 'email',
+          approvalRequired: false,
+          autoExecute: true
+        });
+        loadData(); // Reload workflows
+      }
+    } catch (error) {
+      console.error('Error creating workflow:', error);
     }
   };
 
@@ -370,6 +416,13 @@ export default function WorkflowsPage() {
         </TabsList>
 
         <TabsContent value="workflows" className="space-y-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Workflows</h2>
+            <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create Workflow
+            </Button>
+          </div>
           <div className="grid gap-6">
             {workflows.map((workflow) => (
               <Card key={workflow.id}>
@@ -628,6 +681,87 @@ export default function WorkflowsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Create Workflow Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Create New Workflow</CardTitle>
+              <CardDescription>
+                Set up an autonomous AI workflow to respond to events
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Workflow Name</label>
+                <input
+                  type="text"
+                  value={newWorkflow.name}
+                  onChange={(e) => setNewWorkflow(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Auto-schedule appointments"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  value={newWorkflow.description}
+                  onChange={(e) => setNewWorkflow(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Describe what this workflow does..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Trigger Type</label>
+                <select
+                  value={newWorkflow.triggerType}
+                  onChange={(e) => setNewWorkflow(prev => ({ ...prev, triggerType: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="email">Email</option>
+                  <option value="voicemail">Voicemail</option>
+                  <option value="webhook">Webhook</option>
+                  <option value="schedule">Scheduled</option>
+                </select>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={newWorkflow.approvalRequired}
+                    onChange={(e) => setNewWorkflow(prev => ({ ...prev, approvalRequired: e.target.checked }))}
+                    className="mr-2"
+                  />
+                  Require Approval
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={newWorkflow.autoExecute}
+                    onChange={(e) => setNewWorkflow(prev => ({ ...prev, autoExecute: e.target.checked }))}
+                    className="mr-2"
+                  />
+                  Auto Execute
+                </label>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={createWorkflow} disabled={!newWorkflow.name.trim()}>
+                  Create Workflow
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       </div>
     </div>
   );
