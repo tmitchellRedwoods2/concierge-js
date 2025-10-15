@@ -14,7 +14,7 @@ interface AINodeData {
 
 export default function AINode({ data, selected }: NodeProps<AINodeData>) {
   return (
-    <div className={`px-4 py-2 shadow-md rounded-md border-2 min-w-[200px] ${
+    <div className={`px-3 py-2 shadow-md rounded-md border-2 min-w-[150px] max-w-[200px] ${
       selected ? 'border-blue-500' : 'border-gray-300'
     } bg-purple-100 border-purple-300 text-purple-800`}>
       <div className="flex items-center gap-2 mb-2">

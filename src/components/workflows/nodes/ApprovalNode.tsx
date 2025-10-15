@@ -15,7 +15,7 @@ export default function ApprovalNode({ data, selected }: NodeProps<ApprovalNodeD
   const timeoutHours = Math.round(data.timeout / (1000 * 60 * 60));
 
   return (
-    <div className={`px-4 py-2 shadow-md rounded-md border-2 min-w-[200px] ${
+    <div className={`px-3 py-2 shadow-md rounded-md border-2 min-w-[150px] max-w-[200px] ${
       selected ? 'border-blue-500' : 'border-gray-300'
     } bg-indigo-100 border-indigo-300 text-indigo-800`}>
       <div className="flex items-center gap-2 mb-2">

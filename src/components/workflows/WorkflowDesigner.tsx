@@ -74,7 +74,7 @@ const initialNodes: Node[] = [
   {
     id: 'trigger-1',
     type: 'trigger',
-    position: { x: 250, y: 50 },
+    position: { x: 100, y: 100 },
     data: {
       label: 'Email Trigger',
       triggerType: 'email',
@@ -143,14 +143,14 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
     const newNode: Node = {
       id: `${type}-${Date.now()}`,
       type,
-      position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
+      position: { x: 200 + (nodes.length * 50), y: 150 + (nodes.length * 30) },
       data: {
         label: `${type.charAt(0).toUpperCase() + type.slice(1)} Step`,
         ...getDefaultNodeData(type)
       },
     };
     setNodes((nds) => [...nds, newNode]);
-  }, [setNodes]);
+  }, [setNodes, nodes.length]);
 
   const deleteNode = useCallback((nodeId: string) => {
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
@@ -360,17 +360,17 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
           
           {/* Instructions Overlay */}
           {nodes.length <= 1 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 max-w-md text-center shadow-lg">
-                <div className="text-4xl mb-4">🎨</div>
-                <h3 className="font-semibold text-lg mb-2">Start Building Your Workflow</h3>
-                <p className="text-gray-600 mb-4">
+            <div className="absolute top-4 left-4 pointer-events-none z-10">
+              <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 max-w-sm shadow-lg border">
+                <div className="text-2xl mb-2">🎨</div>
+                <h3 className="font-semibold text-sm mb-2">Start Building Your Workflow</h3>
+                <p className="text-xs text-gray-600 mb-2">
                   1. Drag a <strong>Trigger</strong> from the sidebar<br/>
                   2. Add <strong>AI Processing</strong> or <strong>API Call</strong> steps<br/>
                   3. Connect them by dragging between the dots<br/>
                   4. Add an <strong>End</strong> node to complete
                 </p>
-                <div className="text-sm text-gray-500">
+                <div className="text-xs text-gray-500">
                   Click any node to configure its settings
                 </div>
               </div>
