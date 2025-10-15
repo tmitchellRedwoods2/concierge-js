@@ -221,26 +221,41 @@ export default function WorkflowsPage() {
 
   const saveWorkflowFromDesigner = async (workflowData: any) => {
     try {
+      // Generate a default name if not provided
+      const workflowName = workflowData.name || `Workflow ${new Date().toLocaleString()}`;
+      const workflowDescription = workflowData.description || 'Workflow created from visual designer';
+
       const response = await fetch('/api/workflows', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: workflowData.name,
-          description: workflowData.description,
-          nodes: workflowData.nodes,
-          edges: workflowData.edges,
+          name: workflowName,
+          description: workflowDescription,
+          trigger: 'email', // Default trigger type
+          steps: workflowData.nodes || [],
+          nodes: workflowData.nodes || [],
+          edges: workflowData.edges || [],
+          approvalRequired: false,
+          autoExecute: false,
           isActive: false
         }),
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('Workflow saved successfully:', result);
         closeDesigner();
         loadData(); // Reload workflows
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to save workflow:', errorData);
+        alert('Failed to save workflow. Please try again.');
       }
     } catch (error) {
       console.error('Error saving workflow:', error);
+      alert('Error saving workflow. Please check the console for details.');
     }
   };
 

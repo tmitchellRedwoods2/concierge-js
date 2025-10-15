@@ -231,7 +231,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
   }, [nodes, edges, onTest]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-full min-h-[600px] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <div>
@@ -368,7 +368,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
         </div>
 
         {/* Main Canvas */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative h-full">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -382,6 +382,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             fitView
+            fitViewOptions={{ padding: 0.1, minZoom: 0.5, maxZoom: 2 }}
             connectionLineType="smoothstep"
             defaultEdgeOptions={{
               type: 'default',
