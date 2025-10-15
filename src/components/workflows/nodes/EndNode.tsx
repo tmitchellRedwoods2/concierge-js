@@ -38,15 +38,15 @@ const getResultColor = (result: string) => {
 
 export default function EndNode({ data, selected }: NodeProps<EndNodeData>) {
   return (
-    <div className={`px-3 py-2 shadow-md rounded-md border-2 min-w-[150px] max-w-[200px] ${
+    <div className={`px-2 py-1 shadow-md rounded-md border-2 w-[120px] ${
       selected ? 'border-blue-500' : 'border-gray-300'
     } ${getResultColor(data.result)}`}>
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-1 mb-1">
         {getResultIcon(data.result)}
-        <div className="font-bold text-sm">{data.label}</div>
+        <div className="font-bold text-xs">{data.label}</div>
       </div>
       
-      <div className="text-xs text-gray-600 mb-2">
+      <div className="text-xs text-gray-600 mb-1">
         End
       </div>
       
