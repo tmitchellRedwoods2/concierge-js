@@ -90,8 +90,23 @@ const initialNodes: Node[] = [
 const initialEdges: Edge[] = [];
 
 export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: WorkflowDesignerProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  // Load workflow data if provided, otherwise use initial nodes
+  const getInitialNodes = () => {
+    if (workflow && workflow.nodes && workflow.nodes.length > 0) {
+      return workflow.nodes;
+    }
+    return initialNodes;
+  };
+
+  const getInitialEdges = () => {
+    if (workflow && workflow.edges && workflow.edges.length > 0) {
+      return workflow.edges;
+    }
+    return initialEdges;
+  };
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(getInitialNodes());
+  const [edges, setEdges, onEdgesChange] = useEdgesState(getInitialEdges());
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isValid, setIsValid] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -156,6 +171,18 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
   React.useEffect(() => {
     setIsValid(validateWorkflow());
   }, [nodes, edges, validateWorkflow]);
+
+  // Update nodes/edges when workflow prop changes
+  React.useEffect(() => {
+    if (workflow) {
+      if (workflow.nodes && workflow.nodes.length > 0) {
+        setNodes(workflow.nodes);
+      }
+      if (workflow.edges && workflow.edges.length > 0) {
+        setEdges(workflow.edges);
+      }
+    }
+  }, [workflow, setNodes, setEdges]);
 
   const addNode = useCallback((type: string) => {
     const newNode: Node = {
@@ -412,7 +439,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
           </ReactFlow>
           
           {/* Instructions Overlay */}
-          {nodes.length <= 1 && (
+          {nodes.length <= 1 && !workflow && (
             <div className="absolute top-4 left-4 pointer-events-none z-10">
               <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 max-w-sm shadow-lg border">
                 <div className="text-2xl mb-2">🎨</div>
