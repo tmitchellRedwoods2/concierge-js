@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import WorkflowDesigner from "@/components/workflows/WorkflowDesigner";
 import { 
   Bot, 
   Mail, 
@@ -69,6 +70,8 @@ export default function WorkflowsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('workflows');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDesigner, setShowDesigner] = useState(false);
+  const [editingWorkflow, setEditingWorkflow] = useState<any>(null);
   const [newWorkflow, setNewWorkflow] = useState({
     name: '',
     description: '',
@@ -204,6 +207,46 @@ export default function WorkflowsPage() {
     } catch (error) {
       console.error('Error creating workflow:', error);
     }
+  };
+
+  const openDesigner = (workflow?: any) => {
+    setEditingWorkflow(workflow);
+    setShowDesigner(true);
+  };
+
+  const closeDesigner = () => {
+    setShowDesigner(false);
+    setEditingWorkflow(null);
+  };
+
+  const saveWorkflowFromDesigner = async (workflowData: any) => {
+    try {
+      const response = await fetch('/api/workflows', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: workflowData.name,
+          description: workflowData.description,
+          nodes: workflowData.nodes,
+          edges: workflowData.edges,
+          isActive: false
+        }),
+      });
+
+      if (response.ok) {
+        closeDesigner();
+        loadData(); // Reload workflows
+      }
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+    }
+  };
+
+  const testWorkflowFromDesigner = (workflowData: any) => {
+    console.log('Testing workflow:', workflowData);
+    // TODO: Implement workflow testing
   };
 
   const stopMonitoring = async (monitorId: string) => {
@@ -418,10 +461,16 @@ export default function WorkflowsPage() {
         <TabsContent value="workflows" className="space-y-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Workflows</h2>
-            <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Create Workflow
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => openDesigner()} className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Visual Designer
+              </Button>
+              <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Create Workflow
+              </Button>
+            </div>
           </div>
           <div className="grid gap-6">
             {workflows.map((workflow) => (
@@ -777,6 +826,18 @@ export default function WorkflowsPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Workflow Designer Modal */}
+      {showDesigner && (
+        <div className="fixed inset-0 z-50">
+          <WorkflowDesigner
+            workflow={editingWorkflow}
+            onSave={saveWorkflowFromDesigner}
+            onTest={testWorkflowFromDesigner}
+            onClose={closeDesigner}
+          />
         </div>
       )}
       </div>
