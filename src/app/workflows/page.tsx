@@ -462,16 +462,39 @@ export default function WorkflowsPage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Workflows</h2>
             <div className="flex gap-2">
-              <Button onClick={() => openDesigner()} className="flex items-center gap-2">
+              <Button onClick={() => openDesigner()} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
                 <Settings className="w-4 h-4" />
-                Visual Designer
+                🎨 Design New Workflow
               </Button>
-              <Button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2">
+              <Button onClick={() => setShowCreateModal(true)} variant="outline" className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
-                Create Workflow
+                Quick Create
               </Button>
             </div>
           </div>
+
+          {/* Onboarding Card */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="text-2xl">🎨</div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 mb-2">Create Your First AI Workflow</h3>
+                  <p className="text-blue-700 mb-4">
+                    Use our visual designer to create autonomous AI workflows that respond to emails, voicemails, and other events.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button onClick={() => openDesigner()} className="bg-blue-600 hover:bg-blue-700">
+                      Start Designing
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowCreateModal(true)}>
+                      Quick Setup
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <div className="grid gap-6">
             {workflows.map((workflow) => (
               <Card key={workflow.id}>

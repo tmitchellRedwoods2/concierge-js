@@ -208,8 +208,8 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <div>
-          <h2 className="text-xl font-semibold">Workflow Designer</h2>
-          <p className="text-sm text-gray-600">Design your autonomous AI workflow</p>
+          <h2 className="text-xl font-semibold">🎨 Workflow Designer</h2>
+          <p className="text-sm text-gray-600">Drag nodes from the sidebar to build your workflow</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={isValid ? "default" : "secondary"}>
@@ -232,7 +232,8 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
       <div className="flex-1 flex">
         {/* Sidebar */}
         <div className="w-64 border-r bg-gray-50 p-4">
-          <h3 className="font-semibold mb-4">Step Library</h3>
+          <h3 className="font-semibold mb-2">Step Library</h3>
+          <p className="text-xs text-gray-600 mb-4">Drag these to the canvas to build your workflow</p>
           
           <div className="space-y-2">
             <Button
@@ -324,7 +325,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
         </div>
 
         {/* Main Canvas */}
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -340,6 +341,25 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
             <Controls />
             <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           </ReactFlow>
+          
+          {/* Instructions Overlay */}
+          {nodes.length <= 1 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 max-w-md text-center shadow-lg">
+                <div className="text-4xl mb-4">🎨</div>
+                <h3 className="font-semibold text-lg mb-2">Start Building Your Workflow</h3>
+                <p className="text-gray-600 mb-4">
+                  1. Drag a <strong>Trigger</strong> from the sidebar<br/>
+                  2. Add <strong>AI Processing</strong> or <strong>API Call</strong> steps<br/>
+                  3. Connect them by dragging between the dots<br/>
+                  4. Add an <strong>End</strong> node to complete
+                </p>
+                <div className="text-sm text-gray-500">
+                  Click any node to configure its settings
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
