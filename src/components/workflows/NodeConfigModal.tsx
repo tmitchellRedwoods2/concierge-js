@@ -318,7 +318,7 @@ export default function NodeConfigModal({ node, isOpen, onClose, onSave }: NodeC
           placeholder="e.g., {{ai_result.confidence}} > 0.8"
           rows={3}
         />
-        <p className="text-xs text-gray-500 mt-1">Use template variables like {{ai_result.field}} or {{trigger.data}}</p>
+        <p className="text-xs text-gray-500 mt-1">Use template variables like {`{{ai_result.field}}`} or {`{{trigger.data}}`}</p>
       </div>
 
       <div>
