@@ -210,6 +210,7 @@ export default function WorkflowsPage() {
   };
 
   const openDesigner = (workflow?: any) => {
+    console.log('Opening designer with workflow:', workflow);
     setEditingWorkflow(workflow);
     setShowDesigner(true);
   };
@@ -869,13 +870,15 @@ export default function WorkflowsPage() {
 
       {/* Workflow Designer Modal */}
       {showDesigner && (
-        <div className="fixed inset-0 z-50">
-          <WorkflowDesigner
-            workflow={editingWorkflow}
-            onSave={saveWorkflowFromDesigner}
-            onTest={testWorkflowFromDesigner}
-            onClose={closeDesigner}
-          />
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50">
+          <div className="w-full h-full">
+            <WorkflowDesigner
+              workflow={editingWorkflow}
+              onSave={saveWorkflowFromDesigner}
+              onTest={testWorkflowFromDesigner}
+              onClose={closeDesigner}
+            />
+          </div>
         </div>
       )}
       </div>
