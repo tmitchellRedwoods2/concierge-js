@@ -14,23 +14,20 @@ interface ConditionNodeData {
 
 export default function ConditionNode({ data, selected }: NodeProps<ConditionNodeData>) {
   return (
-    <div className={`px-2 py-1 shadow-md rounded-md border-2 w-[120px] ${
+    <div className={`px-1 py-0.5 shadow-sm rounded border w-[60px] ${
       selected ? 'border-blue-500' : 'border-gray-300'
     } bg-yellow-100 border-yellow-300 text-yellow-800`}>
-      <div className="flex items-center gap-1 mb-1">
-        <GitBranch className="w-4 h-4" />
-        <div className="font-bold text-xs">{data.label}</div>
+      <div className="flex items-center justify-center mb-1">
+        <GitBranch className="w-3 h-3" />
       </div>
       
-      <div className="text-xs text-gray-600 mb-1">
-        Condition
+      <div className="text-xs font-bold text-center mb-1">
+        IF
       </div>
       
-      {data.condition && (
-        <div className="text-xs text-gray-600 truncate">
-          {data.condition}
-        </div>
-      )}
+      <div className="text-xs text-center truncate">
+        {data.condition || 'condition'}
+      </div>
 
       <Handle
         type="target"
