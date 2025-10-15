@@ -6,7 +6,7 @@ import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
 
 // Mock workflow data - in production this would come from database
-const mockWorkflows = [
+let mockWorkflows = [
   {
     id: 'schedule-appointment',
     name: 'Schedule Appointment',
@@ -188,13 +188,13 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // In a real implementation, this would save to database
+    // Create new workflow
     const newWorkflow = {
       id: `workflow_${Date.now()}`,
       name,
       description,
       trigger,
-      steps,
+      steps: steps || [],
       approvalRequired: approvalRequired || false,
       autoExecute: autoExecute || false,
       timeoutMs: 300000,
@@ -204,18 +204,62 @@ export async function POST(request: NextRequest) {
       },
       createdAt: new Date(),
       updatedAt: new Date(),
-      isActive: true
+      isActive: false // New workflows start inactive
     };
+
+    // Add to mock workflows array (in production, save to database)
+    mockWorkflows.push(newWorkflow);
 
     return NextResponse.json({
       success: true,
-      workflow: newWorkflow
+      workflow: newWorkflow,
+      message: 'Workflow created successfully'
     });
 
   } catch (error) {
     console.error('Error creating workflow:', error);
     return NextResponse.json(
       { error: 'Failed to create workflow' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { id, isActive } = body;
+
+    await connectDB();
+
+    // Find and update workflow
+    const workflowIndex = mockWorkflows.findIndex(w => w.id === id);
+    if (workflowIndex === -1) {
+      return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
+    }
+
+    // Update workflow
+    mockWorkflows[workflowIndex] = {
+      ...mockWorkflows[workflowIndex],
+      isActive: isActive !== undefined ? isActive : mockWorkflows[workflowIndex].isActive,
+      updatedAt: new Date()
+    };
+
+    return NextResponse.json({
+      success: true,
+      workflow: mockWorkflows[workflowIndex],
+      message: 'Workflow updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Error updating workflow:', error);
+    return NextResponse.json(
+      { error: 'Failed to update workflow' },
       { status: 500 }
     );
   }

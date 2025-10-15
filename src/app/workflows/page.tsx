@@ -438,11 +438,28 @@ export default function WorkflowsPage() {
                     <div className="flex items-center gap-2">
                       <Switch 
                         checked={workflow.isActive} 
-                        onCheckedChange={(checked) => {
-                          // Toggle workflow status
-                          setWorkflows(prev => prev.map(w => 
-                            w.id === workflow.id ? { ...w, isActive: checked } : w
-                          ));
+                        onCheckedChange={async (checked) => {
+                          try {
+                            const response = await fetch('/api/workflows', {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                id: workflow.id,
+                                isActive: checked
+                              }),
+                            });
+
+                            if (response.ok) {
+                              // Update local state
+                              setWorkflows(prev => prev.map(w => 
+                                w.id === workflow.id ? { ...w, isActive: checked } : w
+                              ));
+                            }
+                          } catch (error) {
+                            console.error('Error updating workflow status:', error);
+                          }
                         }}
                       />
                       <Badge variant={workflow.isActive ? "default" : "secondary"}>
