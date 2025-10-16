@@ -482,56 +482,62 @@ export default function WorkflowsPage() {
                 <Settings className="w-4 h-4" />
                 🎨 Design New Workflow
               </Button>
-              <Button onClick={() => openDesigner({
-                id: 'current-workflow',
-                name: 'My Email Workflow',
-                nodes: [
-                  {
-                    id: 'trigger-1',
-                    type: 'trigger',
-                    position: { x: 100, y: 100 },
-                    data: {
-                      label: 'Email Trigger',
-                      triggerType: 'email',
-                      conditions: [{ field: 'content', operator: 'contains', value: 'appointment' }]
+              <Button onClick={() => {
+                const sampleWorkflow = {
+                  id: 'current-workflow',
+                  name: 'My Email Workflow',
+                  nodes: [
+                    {
+                      id: 'trigger-1',
+                      type: 'trigger',
+                      position: { x: 100, y: 100 },
+                      data: {
+                        label: 'Email Trigger',
+                        triggerType: 'email',
+                        conditions: [{ field: 'content', operator: 'contains', value: 'appointment' }]
+                      }
+                    },
+                    {
+                      id: 'ai-1',
+                      type: 'ai',
+                      position: { x: 300, y: 100 },
+                      data: {
+                        label: 'AI Processing',
+                        prompt: 'Extract appointment details from email',
+                        model: 'claude-3-sonnet',
+                        temperature: 0.3
+                      }
+                    },
+                    {
+                      id: 'api-1',
+                      type: 'api',
+                      position: { x: 500, y: 100 },
+                      data: {
+                        label: 'API Call',
+                        method: 'POST',
+                        url: 'https://api.calendar.com/appointments',
+                        headers: {},
+                        body: {}
+                      }
+                    },
+                    {
+                      id: 'end-1',
+                      type: 'end',
+                      position: { x: 700, y: 100 },
+                      data: {
+                        label: 'End',
+                        result: 'success'
+                      }
                     }
-                  },
-                  {
-                    id: 'ai-1',
-                    type: 'ai',
-                    position: { x: 300, y: 100 },
-                    data: {
-                      label: 'AI Processing',
-                      prompt: 'Extract appointment details from email',
-                      model: 'claude-3-sonnet'
-                    }
-                  },
-                  {
-                    id: 'api-1',
-                    type: 'api',
-                    position: { x: 500, y: 100 },
-                    data: {
-                      label: 'API Call',
-                      method: 'POST',
-                      url: 'https://api.calendar.com/appointments'
-                    }
-                  },
-                  {
-                    id: 'end-1',
-                    type: 'end',
-                    position: { x: 700, y: 100 },
-                    data: {
-                      label: 'End',
-                      result: 'success'
-                    }
-                  }
-                ],
-                edges: [
-                  { id: 'e1-2', source: 'trigger-1', target: 'ai-1' },
-                  { id: 'e2-3', source: 'ai-1', target: 'api-1' },
-                  { id: 'e3-4', source: 'api-1', target: 'end-1' }
-                ]
-              })} variant="outline" className="flex items-center gap-2">
+                  ],
+                  edges: [
+                    { id: 'e1-2', source: 'trigger-1', target: 'ai-1', type: 'default' },
+                    { id: 'e2-3', source: 'ai-1', target: 'api-1', type: 'default' },
+                    { id: 'e3-4', source: 'api-1', target: 'end-1', type: 'default' }
+                  ]
+                };
+                openDesigner(sampleWorkflow);
+              }} variant="outline" className="flex items-center gap-2">
                 <Settings className="w-4 h-4" />
                 Edit Current Workflow
               </Button>
