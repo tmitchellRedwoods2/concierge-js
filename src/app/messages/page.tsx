@@ -284,6 +284,14 @@ export default function MessagesPage() {
             variant="ghost"
             size="sm"
             className="text-xs px-3 py-2"
+            onClick={() => router.push('/workflows')}
+          >
+            🤖 Workflows
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs px-3 py-2"
             onClick={() => router.push('/settings')}
           >
             ⚙️ Settings
