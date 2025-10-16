@@ -67,6 +67,7 @@ export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [executions, setExecutions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('workflows');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -82,6 +83,7 @@ export default function WorkflowsPage() {
 
   useEffect(() => {
     loadData();
+    loadExecutions();
   }, []);
 
   const loadData = async () => {
@@ -263,6 +265,48 @@ export default function WorkflowsPage() {
   const testWorkflowFromDesigner = (workflowData: any) => {
     console.log('Testing workflow:', workflowData);
     // TODO: Implement workflow testing
+  };
+
+  const executeWorkflow = async (workflowId: string) => {
+    try {
+      const response = await fetch('/api/workflows/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workflowId,
+          triggerData: {
+            email: 'test@example.com',
+            content: 'I need to schedule an appointment for tomorrow at 2 PM'
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Workflow executed:', result);
+        loadExecutions(); // Reload executions
+        alert('Workflow executed successfully! Check the Executions tab.');
+      } else {
+        alert('Failed to execute workflow');
+      }
+    } catch (error) {
+      console.error('Error executing workflow:', error);
+      alert('Error executing workflow');
+    }
+  };
+
+  const loadExecutions = async () => {
+    try {
+      const response = await fetch('/api/workflows/execute');
+      if (response.ok) {
+        const data = await response.json();
+        setExecutions(data.executions || []);
+      }
+    } catch (error) {
+      console.error('Error loading executions:', error);
+    }
   };
 
   const stopMonitoring = async (monitorId: string) => {
@@ -467,8 +511,9 @@ export default function WorkflowsPage() {
         </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="workflows">Workflows</TabsTrigger>
+          <TabsTrigger value="executions">Executions</TabsTrigger>
           <TabsTrigger value="monitors">Event Monitors</TabsTrigger>
           <TabsTrigger value="approvals">Pending Approvals</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -646,11 +691,69 @@ export default function WorkflowsPage() {
                         </Badge>
                       </div>
                     </div>
+                    
+                    <div className="flex gap-2 pt-4">
+                      <Button variant="outline" size="sm" onClick={() => executeWorkflow(workflow.id)}>
+                        <Play className="w-4 h-4 mr-2" />
+                        Execute
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openDesigner(workflow)}>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="executions" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Workflow Executions
+              </CardTitle>
+              <CardDescription>
+                View the execution history and status of your workflows
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {executions.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No executions yet. Execute a workflow to see results here.
+                  </div>
+                ) : (
+                  executions.map((execution) => (
+                    <div key={execution.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{execution.workflowName}</h3>
+                          <Badge variant={execution.status === 'completed' ? 'default' : 'secondary'}>
+                            {execution.status}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(execution.startTime).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        Trigger: {execution.triggerData?.content || 'Email received'}
+                      </div>
+                      {execution.result && (
+                        <div className="text-sm text-green-600">
+                          Result: {execution.result.appointmentId ? `Appointment ${execution.result.appointmentId} scheduled` : 'Completed successfully'}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="monitors" className="space-y-6">
