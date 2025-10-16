@@ -621,13 +621,13 @@ export default function WorkflowsPage() {
                       <div>
                         <h4 className="font-medium mb-2">Trigger</h4>
                         <p className="text-sm text-gray-600">
-                          {workflow.trigger.type.replace('_', ' ').toUpperCase()}
+                          {workflow.trigger?.type?.replace('_', ' ').toUpperCase() || 'Email'}
                         </p>
                       </div>
                       <div>
                         <h4 className="font-medium mb-2">Steps</h4>
                         <p className="text-sm text-gray-600">
-                          {workflow.steps.length} step{workflow.steps.length !== 1 ? 's' : ''}
+                          {workflow.steps?.length || workflow.nodes?.length || 0} step{(workflow.steps?.length || workflow.nodes?.length || 0) !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
