@@ -745,7 +745,14 @@ export default function WorkflowsPage() {
                       </div>
                       {execution.result && (
                         <div className="text-sm text-green-600">
-                          Result: {execution.result.appointmentId ? `Appointment ${execution.result.appointmentId} scheduled` : 'Completed successfully'}
+                          Result: {execution.result.eventId ? `Calendar event ${execution.result.eventId} created` : execution.result.appointmentId ? `Appointment ${execution.result.appointmentId} scheduled` : 'Completed successfully'}
+                        </div>
+                      )}
+                      {execution.calendarEvent && (
+                        <div className="text-sm text-blue-600">
+                          <a href={execution.calendarEvent.eventUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                            View in Google Calendar
+                          </a>
                         </div>
                       )}
                     </div>

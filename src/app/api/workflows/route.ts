@@ -8,6 +8,103 @@ import connectDB from '@/lib/db/mongodb';
 // Mock workflow data - in production this would come from database
 let mockWorkflows = [
   {
+    id: 'my-email-workflow',
+    name: 'My Email Workflow',
+    description: 'Workflow created from visual designer',
+    trigger: {
+      type: 'email',
+      conditions: [
+        { field: 'content', operator: 'contains', value: 'appointment' }
+      ]
+    },
+    nodes: [
+      {
+        id: 'trigger-1',
+        type: 'trigger',
+        position: { x: 100, y: 100 },
+        data: {
+          label: 'Email Trigger',
+          triggerType: 'email',
+          conditions: [{ field: 'content', operator: 'contains', value: 'appointment' }]
+        }
+      },
+      {
+        id: 'ai-1',
+        type: 'ai',
+        position: { x: 300, y: 100 },
+        data: {
+          label: 'AI Processing',
+          prompt: 'Extract appointment details from email',
+          model: 'claude-3-sonnet',
+          temperature: 0.3
+        }
+      },
+      {
+        id: 'api-1',
+        type: 'api',
+        position: { x: 500, y: 100 },
+        data: {
+          label: 'API Call',
+          method: 'POST',
+          url: 'https://api.calendar.com/appointments',
+          headers: {},
+          body: {}
+        }
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        position: { x: 700, y: 100 },
+        data: {
+          label: 'End',
+          result: 'success'
+        }
+      }
+    ],
+    edges: [
+      { id: 'e1-2', source: 'trigger-1', target: 'ai-1', type: 'default' },
+      { id: 'e2-3', source: 'ai-1', target: 'api-1', type: 'default' },
+      { id: 'e3-4', source: 'api-1', target: 'end-1', type: 'default' }
+    ],
+    steps: [
+      {
+        id: 'extract_details',
+        name: 'Extract Appointment Details',
+        type: 'ai_processing',
+        config: {
+          prompt: 'Extract appointment details from: {intent.content}'
+        },
+        dependencies: []
+      },
+      {
+        id: 'schedule_appointment',
+        name: 'Schedule Appointment',
+        type: 'api_call',
+        config: {
+          url: '/api/health/appointments',
+          method: 'POST',
+          body: {
+            provider: '{intent.entities.provider}',
+            date: '{intent.entities.date}',
+            time: '{intent.entities.time}',
+            reason: '{intent.entities.reason}'
+          }
+        },
+        dependencies: ['extract_details']
+      }
+    ],
+    approvalRequired: false,
+    autoExecute: false,
+    isActive: true,
+    timeoutMs: 300000,
+    retryPolicy: {
+      maxRetries: 3,
+      backoffMs: 5000
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
     id: 'schedule-appointment',
     name: 'Schedule Appointment',
     description: 'Automatically schedule appointments based on email/voicemail requests',
