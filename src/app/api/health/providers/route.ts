@@ -328,10 +328,14 @@ export async function GET(request: NextRequest) {
     
     // Always ensure we have Las Vegas providers (for development)
     const lasVegasProviders = await HealthProvider.find({ city: 'Las Vegas' });
+    console.log('Las Vegas providers found:', lasVegasProviders.length);
     if (lasVegasProviders.length === 0) {
+      console.log('Adding Las Vegas providers...');
       const lasVegasOnly = SAMPLE_PROVIDERS.filter(p => p.city === 'Las Vegas');
+      console.log('Las Vegas providers to add:', lasVegasOnly.length);
       await HealthProvider.insertMany(lasVegasOnly);
       providers = await HealthProvider.find({});
+      console.log('Total providers after adding Las Vegas:', providers.length);
     }
     
     // Apply filters
@@ -340,8 +344,12 @@ export async function GET(request: NextRequest) {
     if (type) query.type = type;
     if (city) query.city = { $regex: city, $options: 'i' };
     
+    console.log('Filter query:', query);
+    console.log('Total providers before filtering:', providers.length);
+    
     if (Object.keys(query).length > 0) {
       providers = await HealthProvider.find(query);
+      console.log('Providers after filtering:', providers.length);
     }
     
     // Sort by rating (highest first)
