@@ -326,6 +326,14 @@ export async function GET(request: NextRequest) {
       providers = await HealthProvider.insertMany(SAMPLE_PROVIDERS);
     }
     
+    // Always ensure we have Las Vegas providers (for development)
+    const lasVegasProviders = await HealthProvider.find({ city: 'Las Vegas' });
+    if (lasVegasProviders.length === 0) {
+      const lasVegasOnly = SAMPLE_PROVIDERS.filter(p => p.city === 'Las Vegas');
+      await HealthProvider.insertMany(lasVegasOnly);
+      providers = await HealthProvider.find({});
+    }
+    
     // Apply filters
     let query: any = {};
     if (specialty) query.specialty = { $regex: specialty, $options: 'i' };
