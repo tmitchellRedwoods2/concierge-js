@@ -14,11 +14,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { workflowId, triggerData } = body;
 
+    console.log('Starting workflow execution for:', workflowId);
     await connectDB();
 
-    // Real workflow execution with calendar integration
-    const executionId = `exec_${Date.now()}`;
-    const startTime = new Date().toISOString();
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Workflow execution timeout')), 30000); // 30 second timeout
+    });
+
+    const executionPromise = async () => {
+      // Real workflow execution with calendar integration
+      const executionId = `exec_${Date.now()}`;
+      const startTime = new Date().toISOString();
 
     try {
       // Step 1: Trigger processing
