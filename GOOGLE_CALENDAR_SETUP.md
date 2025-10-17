@@ -23,7 +23,7 @@ This guide will help you set up Google Calendar integration for the workflow sys
 2. Click "Create Credentials" > "Service Account"
 3. Fill in the service account details:
    - Name: `concierge-calendar-service`
-   - Description: `Service account for Concierge calendar integration`
+   - Descripti`Service account for Concierge calendar integration`on: 
 4. Click "Create and Continue"
 5. Skip the optional steps and click "Done"
 
