@@ -143,10 +143,20 @@ export default function HealthPage() {
       if (providerFilter.type) params.append('type', providerFilter.type);
       if (providerFilter.city) params.append('city', providerFilter.city);
       
-      const response = await fetch(`/api/health/providers?${params.toString()}`);
+      const url = `/api/health/providers?${params.toString()}`;
+      console.log('Loading providers from:', url);
+      console.log('Provider filter:', providerFilter);
+      
+      const response = await fetch(url);
+      console.log('Providers response:', response.status, response.ok);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Providers data:', data);
         setProviders(data.providers || []);
+        console.log('Set providers state:', data.providers?.length || 0, 'providers');
+      } else {
+        console.error('Providers API error:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to load providers:', error);
