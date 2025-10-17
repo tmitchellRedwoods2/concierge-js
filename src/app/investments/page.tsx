@@ -265,6 +265,7 @@ export default function InvestmentsPage() {
 
       if (response.ok) {
         await loadHoldings(selectedPortfolio._id);
+        await loadTransactions(); // Add this line to reload transactions
         setNewTransaction({
           symbol: "",
           shares: "",
