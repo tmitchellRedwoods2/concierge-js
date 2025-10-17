@@ -148,6 +148,151 @@ const SAMPLE_PROVIDERS = [
     isInNetwork: true,
     languages: ["English", "Spanish", "Chinese", "Vietnamese"],
     availability: "24/7 Emergency, Monday-Friday 8AM-8PM"
+  },
+  // Las Vegas, NV Providers
+  {
+    name: "Dr. Maria Gonzalez",
+    specialty: "Internal Medicine",
+    type: "doctor",
+    address: "123 Las Vegas Blvd",
+    city: "Las Vegas",
+    state: "NV",
+    zipCode: "89101",
+    phoneNumber: "(702) 555-0123",
+    email: "maria.gonzalez@healthcare.com",
+    website: "https://drgonzalez.healthcare.com",
+    rating: 4.7,
+    reviewCount: 98,
+    acceptsInsurance: true,
+    isInNetwork: true,
+    languages: ["English", "Spanish"],
+    availability: "Monday-Friday 8AM-6PM"
+  },
+  {
+    name: "Dr. Robert Kim",
+    specialty: "Cardiology",
+    type: "specialist",
+    address: "456 Heart Center Drive",
+    city: "Las Vegas",
+    state: "NV",
+    zipCode: "89102",
+    phoneNumber: "(702) 555-0456",
+    email: "robert.kim@cardiology.com",
+    website: "https://drkim.cardiology.com",
+    rating: 4.8,
+    reviewCount: 76,
+    acceptsInsurance: true,
+    isInNetwork: true,
+    languages: ["English", "Korean"],
+    availability: "Monday-Friday 9AM-5PM"
+  },
+  {
+    name: "Dr. Jennifer Martinez",
+    specialty: "Dermatology",
+    type: "specialist",
+    address: "789 Skin Care Plaza",
+    city: "Las Vegas",
+    state: "NV",
+    zipCode: "89103",
+    phoneNumber: "(702) 555-0789",
+    email: "jennifer.martinez@dermatology.com",
+    website: "https://drmartinez.dermatology.com",
+    rating: 4.6,
+    reviewCount: 134,
+    acceptsInsurance: true,
+    isInNetwork: true,
+    languages: ["English", "Spanish"],
+    availability: "Monday-Friday 8AM-5PM, Saturday 9AM-2PM"
+  },
+  {
+    name: "Dr. David Thompson",
+    specialty: "Orthopedics",
+    type: "specialist",
+    address: "321 Sports Medicine Center",
+    city: "Las Vegas",
+    state: "NV",
+    zipCode: "89104",
+    phoneNumber: "(702) 555-0321",
+    email: "david.thompson@orthopedics.com",
+    website: "https://drthompson.orthopedics.com",
+    rating: 4.5,
+    reviewCount: 189,
+    acceptsInsurance: true,
+    isInNetwork: true,
+    languages: ["English"],
+    availability: "Monday-Friday 7AM-6PM"
+  },
+  {
+    name: "Dr. Amanda Lee",
+    specialty: "Pediatrics",
+    type: "doctor",
+    address: "654 Children's Medical Center",
+    city: "Las Vegas",
+    state: "NV",
+    zipCode: "89105",
+    phoneNumber: "(702) 555-0654",
+    email: "amanda.lee@pediatrics.com",
+    website: "https://drlee.pediatrics.com",
+    rating: 4.9,
+    reviewCount: 156,
+    acceptsInsurance: true,
+    isInNetwork: true,
+    languages: ["English", "Chinese"],
+    availability: "Monday-Friday 8AM-5PM"
+  },
+  {
+    name: "Walgreens Pharmacy",
+    specialty: "Pharmacy",
+    type: "pharmacy",
+    address: "987 Strip Mall Drive",
+    city: "Las Vegas",
+    state: "NV",
+    zipCode: "89106",
+    phoneNumber: "(702) 555-0987",
+    email: "store987@walgreens.com",
+    website: "https://walgreens.com",
+    rating: 4.2,
+    reviewCount: 45,
+    acceptsInsurance: true,
+    isInNetwork: true,
+    languages: ["English", "Spanish"],
+    availability: "24/7"
+  },
+  {
+    name: "CVS Pharmacy",
+    specialty: "Pharmacy",
+    type: "pharmacy",
+    address: "147 Health Plaza",
+    city: "Las Vegas",
+    state: "NV",
+    zipCode: "89107",
+    phoneNumber: "(702) 555-0147",
+    email: "store147@cvs.com",
+    website: "https://cvs.com",
+    rating: 4.3,
+    reviewCount: 67,
+    acceptsInsurance: true,
+    isInNetwork: true,
+    languages: ["English", "Spanish", "Chinese"],
+    availability: "24/7"
+  },
+  {
+    name: "University Medical Center",
+    specialty: "General Medicine",
+    type: "hospital",
+    address: "258 Hospital Drive",
+    city: "Las Vegas",
+    state: "NV",
+    zipCode: "89108",
+    phoneNumber: "(702) 555-0258",
+    email: "info@umc.org",
+    website: "https://umc.org",
+    rating: 4.4,
+    reviewCount: 278,
+    acceptsInsurance: true,
+    isInNetwork: true,
+    languages: ["English", "Spanish", "Chinese", "Vietnamese"],
+    availability: "24/7 Emergency, Monday-Friday 8AM-8PM"
   }
 ];
 
@@ -171,6 +316,13 @@ export async function GET(request: NextRequest) {
     
     // If no providers in database, seed with sample data
     if (providers.length === 0) {
+      providers = await HealthProvider.insertMany(SAMPLE_PROVIDERS);
+    }
+    
+    // Force reseed with updated data (for development)
+    const forceReseed = searchParams.get('reseed');
+    if (forceReseed === 'true') {
+      await HealthProvider.deleteMany({});
       providers = await HealthProvider.insertMany(SAMPLE_PROVIDERS);
     }
     
