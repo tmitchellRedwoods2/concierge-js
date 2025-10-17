@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       // Step 3: Create real calendar event (with fallback)
       let calendarResult;
       try {
+        console.log('Creating calendar event with Google Calendar API...');
         const calendarService = new CalendarService();
         const appointmentEvent = createAppointmentEvent({
           title: aiResult.result.title,
@@ -61,15 +62,17 @@ export async function POST(request: NextRequest) {
           description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`
         });
 
+        console.log('Appointment event data:', appointmentEvent);
         calendarResult = await calendarService.createEvent(appointmentEvent);
+        console.log('Calendar API result:', calendarResult);
       } catch (error) {
-        console.log('Calendar API not configured, using mock result:', error);
-        // Fallback to mock result if calendar API is not configured
+        console.error('Calendar API error:', error);
+        // Fallback to mock result if calendar API fails
         calendarResult = {
           success: true,
           eventId: `mock_${Date.now()}`,
           eventUrl: 'https://calendar.google.com',
-          message: 'Mock calendar event created (Google Calendar API not configured)'
+          message: `Mock calendar event created (Calendar API error: ${error.message})`
         };
       }
       
