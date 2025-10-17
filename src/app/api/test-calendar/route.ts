@@ -9,6 +9,12 @@ export async function POST(request: NextRequest) {
     const clientEmail = process.env.GOOGLE_CALENDAR_CLIENT_EMAIL;
     const privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY;
     
+    console.log('🔍 Environment Variable Check:');
+    console.log('📧 Client Email:', clientEmail ? '✅ Set' : '❌ Missing');
+    console.log('🔑 Private Key:', privateKey ? '✅ Set' : '❌ Missing');
+    console.log('🔑 Private Key Length:', privateKey?.length || 0);
+    console.log('🔑 Private Key Preview:', privateKey?.substring(0, 50) + '...');
+    
     if (!clientEmail || !privateKey) {
       return NextResponse.json({
         success: false,
@@ -16,6 +22,8 @@ export async function POST(request: NextRequest) {
         details: {
           hasClientEmail: !!clientEmail,
           hasPrivateKey: !!privateKey,
+          clientEmailValue: clientEmail || 'NOT_SET',
+          privateKeyLength: privateKey?.length || 0,
         }
       }, { status: 400 });
     }

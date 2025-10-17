@@ -30,11 +30,33 @@ export class CalendarService {
   private calendar: any;
 
   constructor() {
-    // Initialize Google Calendar API
+    // Initialize Google Calendar API with robust private key handling
+    const clientEmail = process.env.GOOGLE_CALENDAR_CLIENT_EMAIL;
+    let privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY;
+
+    // Handle different private key formats
+    if (privateKey) {
+      // Replace escaped newlines with actual newlines
+      privateKey = privateKey.replace(/\\n/g, '\n');
+      
+      // Ensure the key has proper BEGIN/END markers
+      if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+        console.error('❌ Invalid private key format: Missing BEGIN marker');
+      }
+      if (!privateKey.includes('-----END PRIVATE KEY-----')) {
+        console.error('❌ Invalid private key format: Missing END marker');
+      }
+    }
+
+    console.log('🔧 Calendar Service Initialization:');
+    console.log('📧 Client Email:', clientEmail ? '✅ Set' : '❌ Missing');
+    console.log('🔑 Private Key:', privateKey ? '✅ Set' : '❌ Missing');
+    console.log('🔑 Private Key Length:', privateKey?.length || 0);
+
     this.auth = new google.auth.GoogleAuth({
       credentials: {
-        client_email: process.env.GOOGLE_CALENDAR_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_CALENDAR_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        client_email: clientEmail,
+        private_key: privateKey,
       },
       scopes: ['https://www.googleapis.com/auth/calendar'],
     });
