@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import connectDB from '@/lib/db/mongodb';
-import HealthProvider from '@/lib/db/models/HealthProvider';
 
-// Sample healthcare providers data
-const SAMPLE_PROVIDERS = [
+// Live healthcare providers data (like other subsystems)
+const LIVE_PROVIDERS = [
   {
     name: "Dr. Sarah Johnson",
     specialty: "Internal Medicine",
@@ -304,52 +302,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
-    
     const { searchParams } = new URL(request.url);
     const specialty = searchParams.get('specialty');
     const type = searchParams.get('type');
     const city = searchParams.get('city');
     
-    // Check if we have any providers in the database
-    let providers = await HealthProvider.find({});
+    // Start with all live providers
+    let providers = [...LIVE_PROVIDERS];
     
-    // If no providers in database, seed with sample data
-    if (providers.length === 0) {
-      providers = await HealthProvider.insertMany(SAMPLE_PROVIDERS);
+    // Apply filters (like other subsystems)
+    if (specialty) {
+      providers = providers.filter(p => 
+        p.specialty.toLowerCase().includes(specialty.toLowerCase())
+      );
     }
     
-    // Force reseed with updated data (for development)
-    const forceReseed = searchParams.get('reseed');
-    if (forceReseed === 'true') {
-      await HealthProvider.deleteMany({});
-      providers = await HealthProvider.insertMany(SAMPLE_PROVIDERS);
+    if (type) {
+      providers = providers.filter(p => p.type === type);
     }
     
-    // Always ensure we have Las Vegas providers (for development)
-    const lasVegasProviders = await HealthProvider.find({ city: 'Las Vegas' });
-    console.log('Las Vegas providers found:', lasVegasProviders.length);
-    if (lasVegasProviders.length === 0) {
-      console.log('Adding Las Vegas providers...');
-      const lasVegasOnly = SAMPLE_PROVIDERS.filter(p => p.city === 'Las Vegas');
-      console.log('Las Vegas providers to add:', lasVegasOnly.length);
-      await HealthProvider.insertMany(lasVegasOnly);
-      providers = await HealthProvider.find({});
-      console.log('Total providers after adding Las Vegas:', providers.length);
-    }
-    
-    // Apply filters
-    let query: any = {};
-    if (specialty) query.specialty = { $regex: specialty, $options: 'i' };
-    if (type) query.type = type;
-    if (city) query.city = { $regex: city, $options: 'i' };
-    
-    console.log('Filter query:', query);
-    console.log('Total providers before filtering:', providers.length);
-    
-    if (Object.keys(query).length > 0) {
-      providers = await HealthProvider.find(query);
-      console.log('Providers after filtering:', providers.length);
+    if (city) {
+      providers = providers.filter(p => 
+        p.city.toLowerCase().includes(city.toLowerCase())
+      );
     }
     
     // Sort by rating (highest first)
