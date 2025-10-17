@@ -135,10 +135,16 @@ export default function InvestmentsPage() {
   const loadTransactions = async () => {
     if (!selectedPortfolio) return;
     try {
+      console.log('Loading transactions for portfolio:', selectedPortfolio._id);
       const response = await fetch(`/api/investments/transactions?portfolioId=${selectedPortfolio._id}`);
+      console.log('Transactions response:', response.status, response.ok);
       if (response.ok) {
         const data = await response.json();
+        console.log('Transactions data:', data);
         setTransactions(data.transactions || []);
+        console.log('Set transactions state:', data.transactions?.length || 0, 'transactions');
+      } else {
+        console.error('Transactions API error:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to load transactions:', error);
@@ -264,7 +270,11 @@ export default function InvestmentsPage() {
       });
 
       if (response.ok) {
+        console.log('Transaction added successfully, reloading data...');
         await loadHoldings(selectedPortfolio._id);
+        console.log('Holdings reloaded, now reloading transactions...');
+        await loadTransactions(); // Add this line to reload transactions
+        console.log('Transactions reloaded');
         setNewTransaction({
           symbol: "",
           shares: "",
@@ -274,6 +284,8 @@ export default function InvestmentsPage() {
           notes: ""
         });
         setShowAddTransaction(false);
+      } else {
+        console.error('Failed to add transaction:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to add transaction:', error);
