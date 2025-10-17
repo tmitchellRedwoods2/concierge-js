@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 export interface IInvestmentTransaction extends mongoose.Document {
   portfolioId: mongoose.Types.ObjectId;
+  holdingId?: mongoose.Types.ObjectId;
   symbol: string;
   transactionType: 'BUY' | 'SELL' | 'DIVIDEND' | 'SPLIT';
   shares: number;
@@ -20,6 +21,12 @@ const InvestmentTransactionSchema = new mongoose.Schema<IInvestmentTransaction>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Portfolio',
       required: true,
+      index: true,
+    },
+    holdingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Holding',
+      required: false,
       index: true,
     },
     symbol: {

@@ -137,21 +137,7 @@ export async function POST(request: NextRequest) {
     const quote = await getStockQuote(symbol);
     const stockName = quote?.name || symbol;
 
-    // Create transaction record
-    const transaction = new InvestmentTransaction({
-      portfolioId,
-      symbol: symbol.toUpperCase(),
-      transactionType,
-      shares: Math.abs(shares),
-      price,
-      totalAmount: Math.abs(shares) * price,
-      date: date ? new Date(date) : new Date(),
-      notes,
-    });
-
-    await transaction.save();
-
-    // Update or create holding
+    // Update or create holding first
     let holding = await Holding.findOne({
       portfolioId,
       symbol: symbol.toUpperCase(),
@@ -203,6 +189,21 @@ export async function POST(request: NextRequest) {
     }
 
     await holding.save();
+
+    // Create transaction record with holdingId
+    const transaction = new InvestmentTransaction({
+      portfolioId,
+      holdingId: holding._id,
+      symbol: symbol.toUpperCase(),
+      transactionType,
+      shares: Math.abs(shares),
+      price,
+      totalAmount: Math.abs(shares) * price,
+      date: date ? new Date(date) : new Date(),
+      notes,
+    });
+
+    await transaction.save();
 
     return NextResponse.json({
       success: true,
