@@ -8,9 +8,9 @@ import connectDB from '@/lib/db/mongodb';
 // Mock workflow data - in production this would come from database
 let mockWorkflows = [
   {
-    id: 'email-appointment-scheduler',
-    name: 'Email Appointment Scheduler',
-    description: 'Automatically schedule appointments from email requests with calendar integration',
+    id: 'fresh-appointment-scheduler',
+    name: 'Fresh Appointment Scheduler',
+    description: 'Clean workflow for scheduling appointments with calendar integration',
     trigger: {
       type: 'email',
       conditions: [

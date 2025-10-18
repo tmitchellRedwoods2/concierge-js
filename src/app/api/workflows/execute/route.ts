@@ -199,25 +199,17 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    // Mock execution history
+    // Mock execution history - cleared for fresh start
     const executions = [
       {
-        id: 'exec_1',
-        workflowId: 'workflow_1',
-        workflowName: 'Email Appointment Scheduler',
+        id: 'exec_sample_1',
+        workflowId: 'fresh-appointment-scheduler',
+        workflowName: 'Fresh Appointment Scheduler',
         status: 'completed',
         startTime: new Date(Date.now() - 3600000).toISOString(),
         endTime: new Date(Date.now() - 3500000).toISOString(),
         triggerData: { email: 'user@example.com', content: 'Schedule meeting for tomorrow' },
         result: { appointmentId: 'apt_12345', status: 'scheduled' }
-      },
-      {
-        id: 'exec_2',
-        workflowId: 'workflow_1',
-        workflowName: 'Email Appointment Scheduler',
-        status: 'running',
-        startTime: new Date(Date.now() - 60000).toISOString(),
-        triggerData: { email: 'client@example.com', content: 'Need to reschedule appointment' }
       }
     ];
 
