@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         }
       };
 
-      // Step 3: Create real calendar event (with fallback)
+      // Step 3: Create real calendar event (with timeout and fallback)
       let calendarResult;
       try {
         console.log('Creating calendar event with Google Calendar API...');
@@ -64,7 +64,14 @@ export async function POST(request: NextRequest) {
         });
 
         console.log('Appointment event data:', appointmentEvent);
-        calendarResult = await calendarService.createEvent(appointmentEvent);
+        
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Calendar API timeout after 10 seconds')), 10000)
+        );
+        
+        const calendarPromise = calendarService.createEvent(appointmentEvent);
+        calendarResult = await Promise.race([calendarPromise, timeoutPromise]);
         console.log('Calendar API result:', calendarResult);
       } catch (error) {
         console.error('Calendar API error:', error);

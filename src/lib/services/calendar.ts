@@ -67,8 +67,15 @@ export class CalendarService {
   async createEvent(eventData: CalendarEvent, calendarId: string = 'primary') {
     try {
       console.log('Creating calendar event:', eventData);
+      console.log('Calendar service initialized:', !!this.calendar);
+      console.log('Auth configured:', !!this.auth);
       
-      const event = await this.calendar.events.insert({
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Calendar API timeout after 15 seconds')), 15000)
+      );
+      
+      const createPromise = this.calendar.events.insert({
         calendarId,
         resource: {
           summary: eventData.summary,
@@ -83,7 +90,8 @@ export class CalendarService {
         },
       });
 
-      console.log('Event created:', event.data);
+      const event = await Promise.race([createPromise, timeoutPromise]);
+      console.log('Event created successfully:', event.data);
       return {
         success: true,
         eventId: event.data.id,
@@ -92,6 +100,11 @@ export class CalendarService {
       };
     } catch (error) {
       console.error('Error creating calendar event:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
