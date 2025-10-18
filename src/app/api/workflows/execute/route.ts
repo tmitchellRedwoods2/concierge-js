@@ -3,6 +3,9 @@ import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
 import { CalendarService, createAppointmentEvent } from '@/lib/services/calendar';
 
+// Simple in-memory store for executions (in production, use database)
+let executionHistory = [];
+
 // Mock workflow execution for demo purposes
 export async function POST(request: NextRequest) {
   try {
@@ -120,16 +123,33 @@ export async function POST(request: NextRequest) {
       const executionResult = {
         id: executionId,
         workflowId,
+        workflowName: 'Fresh Appointment Scheduler',
         status: calendarResult.success ? 'completed' : 'failed',
         startTime,
         endTime: new Date().toISOString(),
         steps: [triggerResult, aiResult, apiResult, endResult],
         triggerData,
+        result: calendarResult.success ? {
+          appointmentId: calendarResult.eventId,
+          status: 'scheduled',
+          eventUrl: calendarResult.eventUrl
+        } : {
+          error: calendarResult.error,
+          status: 'failed'
+        },
         calendarEvent: calendarResult.success ? {
           eventId: calendarResult.eventId,
           eventUrl: calendarResult.eventUrl
         } : null
       };
+
+      // Store execution in history
+      executionHistory.unshift(executionResult);
+      
+      // Keep only last 50 executions
+      if (executionHistory.length > 50) {
+        executionHistory = executionHistory.slice(0, 50);
+      }
 
       return NextResponse.json({
         success: true,
@@ -143,13 +163,26 @@ export async function POST(request: NextRequest) {
       const executionResult = {
         id: executionId,
         workflowId,
+        workflowName: 'Fresh Appointment Scheduler',
         status: 'failed',
         startTime,
         endTime: new Date().toISOString(),
         steps: [],
         triggerData,
+        result: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          status: 'failed'
+        },
         error: error instanceof Error ? error.message : 'Unknown error'
       };
+
+      // Store failed execution in history
+      executionHistory.unshift(executionResult);
+      
+      // Keep only last 50 executions
+      if (executionHistory.length > 50) {
+        executionHistory = executionHistory.slice(0, 50);
+      }
 
         return {
           success: false,
@@ -199,23 +232,10 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    // Mock execution history - cleared for fresh start
-    const executions = [
-      {
-        id: 'exec_sample_1',
-        workflowId: 'fresh-appointment-scheduler',
-        workflowName: 'Fresh Appointment Scheduler',
-        status: 'completed',
-        startTime: new Date(Date.now() - 3600000).toISOString(),
-        endTime: new Date(Date.now() - 3500000).toISOString(),
-        triggerData: { email: 'user@example.com', content: 'Schedule meeting for tomorrow' },
-        result: { appointmentId: 'apt_12345', status: 'scheduled' }
-      }
-    ];
-
+    // Return actual execution history
     return NextResponse.json({
       success: true,
-      executions
+      executions: executionHistory
     });
 
   } catch (error) {
