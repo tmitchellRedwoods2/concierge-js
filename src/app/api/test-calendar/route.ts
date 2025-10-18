@@ -55,10 +55,11 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         success: true,
-        message: 'Google Calendar integration is working!',
+        message: result.message || 'Google Calendar integration is working!',
         eventId: result.eventId,
         eventUrl: result.eventUrl,
         testEvent: testEvent,
+        isMockEvent: result.message?.includes('Mock calendar event'),
       });
     } else {
       console.error('❌ Failed to create calendar event:', result.error);
