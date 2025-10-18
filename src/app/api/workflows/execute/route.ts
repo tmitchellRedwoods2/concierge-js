@@ -17,11 +17,18 @@ export async function POST(request: NextRequest) {
     console.log('Starting workflow execution for:', workflowId);
     await connectDB();
 
+    // Add overall timeout for the entire workflow execution
+    const workflowTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Workflow execution timeout after 30 seconds')), 30000)
+    );
+
     // Real workflow execution with calendar integration
     const executionId = `exec_${Date.now()}`;
     const startTime = new Date().toISOString();
 
-    try {
+    // Wrap the entire workflow execution in a timeout
+    const workflowExecution = async () => {
+      try {
       // Step 1: Trigger processing
       const triggerResult = {
         id: 'trigger-1',
@@ -144,15 +151,37 @@ export async function POST(request: NextRequest) {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
 
-      return NextResponse.json({
-        success: false,
-        execution: executionResult,
-        message: 'Workflow execution failed'
-      });
-    }
+        return {
+          success: false,
+          execution: executionResult,
+          message: 'Workflow execution failed'
+        };
+      }
+    };
+
+    // Execute workflow with timeout
+    const result = await Promise.race([workflowExecution(), workflowTimeout]);
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('Error executing workflow:', error);
+    
+    // If it's a timeout error, return a specific response
+    if (error instanceof Error && error.message.includes('timeout')) {
+      return NextResponse.json({
+        success: false,
+        execution: {
+          id: `exec_${Date.now()}`,
+          workflowId,
+          status: 'timeout',
+          startTime: new Date().toISOString(),
+          triggerData,
+          error: 'Workflow execution timed out after 30 seconds'
+        },
+        message: 'Workflow execution timed out'
+      });
+    }
+    
     return NextResponse.json(
       { error: 'Failed to execute workflow' },
       { status: 500 }
