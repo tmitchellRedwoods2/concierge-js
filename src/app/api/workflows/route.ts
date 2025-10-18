@@ -8,9 +8,9 @@ import connectDB from '@/lib/db/mongodb';
 // Mock workflow data - in production this would come from database
 let mockWorkflows = [
   {
-    id: 'my-email-workflow',
-    name: 'My Email Workflow',
-    description: 'Workflow created from visual designer',
+    id: 'email-appointment-scheduler',
+    name: 'Email Appointment Scheduler',
+    description: 'Automatically schedule appointments from email requests with calendar integration',
     trigger: {
       type: 'email',
       conditions: [
@@ -357,6 +357,46 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating workflow:', error);
     return NextResponse.json(
       { error: 'Failed to update workflow' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Workflow ID required' }, { status: 400 });
+    }
+
+    await connectDB();
+
+    // Find and remove workflow
+    const workflowIndex = mockWorkflows.findIndex(w => w.id === id);
+    if (workflowIndex === -1) {
+      return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
+    }
+
+    // Remove workflow
+    const deletedWorkflow = mockWorkflows.splice(workflowIndex, 1)[0];
+
+    return NextResponse.json({
+      success: true,
+      message: 'Workflow deleted successfully',
+      deletedWorkflow
+    });
+
+  } catch (error) {
+    console.error('Error deleting workflow:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete workflow' },
       { status: 500 }
     );
   }
