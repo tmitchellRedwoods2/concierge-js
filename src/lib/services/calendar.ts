@@ -34,18 +34,22 @@ export class CalendarService {
     const clientEmail = process.env.GOOGLE_CALENDAR_CLIENT_EMAIL;
     let privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY;
 
-    // Handle different private key formats with multiple attempts
+    // Handle different private key formats with comprehensive attempts
     if (privateKey) {
       console.log('🔧 Original private key length:', privateKey.length);
       console.log('🔧 Original private key preview:', privateKey.substring(0, 50) + '...');
+      console.log('🔧 Original private key contains \\n:', privateKey.includes('\\n'));
+      console.log('🔧 Original private key contains actual newlines:', privateKey.includes('\n'));
       
       // Try multiple formatting approaches
       let formattedKey = privateKey;
+      let methodUsed = 'none';
       
       // Method 1: Replace escaped newlines with actual newlines
       if (privateKey.includes('\\n')) {
         formattedKey = privateKey.replace(/\\n/g, '\n');
-        console.log('🔧 Method 1: Replaced \\n with actual newlines');
+        methodUsed = 'Method 1: Replaced \\n with actual newlines';
+        console.log('🔧', methodUsed);
       }
       
       // Method 2: If it's all on one line, try to add newlines at markers
@@ -53,30 +57,55 @@ export class CalendarService {
         formattedKey = privateKey
           .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
           .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
-        console.log('🔧 Method 2: Added newlines at markers');
+        methodUsed = 'Method 2: Added newlines at markers';
+        console.log('🔧', methodUsed);
       }
       
       // Method 3: If it has actual newlines but wrong format, fix it
       else if (privateKey.includes('\n')) {
         // Already has newlines, use as-is
         formattedKey = privateKey;
-        console.log('🔧 Method 3: Using existing newlines');
+        methodUsed = 'Method 3: Using existing newlines';
+        console.log('🔧', methodUsed);
+      }
+      
+      // Method 4: Force format the key if it's malformed
+      else if (privateKey.includes('-----BEGIN PRIVATE KEY-----') && privateKey.includes('-----END PRIVATE KEY-----')) {
+        // Try to fix common formatting issues
+        formattedKey = privateKey
+          .replace(/-----BEGIN PRIVATE KEY-----/g, '-----BEGIN PRIVATE KEY-----\n')
+          .replace(/-----END PRIVATE KEY-----/g, '\n-----END PRIVATE KEY-----')
+          .replace(/\n\n+/g, '\n'); // Remove multiple newlines
+        methodUsed = 'Method 4: Force formatted key';
+        console.log('🔧', methodUsed);
       }
       
       privateKey = formattedKey;
+      
+      // Comprehensive validation
+      console.log('🔧 Final key length:', privateKey.length);
+      console.log('🔧 Final key has newlines:', privateKey.includes('\n'));
+      console.log('🔧 Final key has BEGIN marker:', privateKey.includes('-----BEGIN PRIVATE KEY-----'));
+      console.log('🔧 Final key has END marker:', privateKey.includes('-----END PRIVATE KEY-----'));
+      console.log('🔧 Method used:', methodUsed);
       
       // Validate the key format
       if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
         console.error('❌ Invalid private key format: Missing BEGIN marker');
         console.error('❌ Key preview:', privateKey.substring(0, 100));
+        console.error('❌ Full key for debugging:', privateKey);
       }
       if (!privateKey.includes('-----END PRIVATE KEY-----')) {
         console.error('❌ Invalid private key format: Missing END marker');
         console.error('❌ Key preview:', privateKey.substring(privateKey.length - 100));
+        console.error('❌ Full key for debugging:', privateKey);
       }
       
-      console.log('🔧 Final key length:', privateKey.length);
-      console.log('🔧 Final key has newlines:', privateKey.includes('\n'));
+      // Additional validation: check if key looks like a proper PEM format
+      const keyLines = privateKey.split('\n');
+      console.log('🔧 Key has', keyLines.length, 'lines');
+      console.log('🔧 First line:', keyLines[0]);
+      console.log('🔧 Last line:', keyLines[keyLines.length - 1]);
     }
 
     console.log('🔧 Calendar Service Initialization:');
