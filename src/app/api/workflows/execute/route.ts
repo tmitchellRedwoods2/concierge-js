@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
 import { CalendarService, createAppointmentEvent } from '@/lib/services/calendar';
-
-// Simple in-memory store for executions (in production, use database)
-let executionHistory = [];
+import { WorkflowExecution } from '@/lib/models/WorkflowExecution';
 
 // Mock workflow execution for demo purposes
 export async function POST(request: NextRequest) {
@@ -162,12 +160,16 @@ export async function POST(request: NextRequest) {
         } : null
       };
 
-      // Store execution in history
-      executionHistory.unshift(executionResult);
-      
-      // Keep only last 50 executions
-      if (executionHistory.length > 50) {
-        executionHistory = executionHistory.slice(0, 50);
+      // Store execution in MongoDB
+      try {
+        const execution = new WorkflowExecution({
+          ...executionResult,
+          userId: session.user.id
+        });
+        await execution.save();
+        console.log('✅ Execution stored in MongoDB:', executionResult.id);
+      } catch (dbError) {
+        console.error('❌ Failed to store execution in MongoDB:', dbError);
       }
 
       return NextResponse.json({
@@ -195,13 +197,18 @@ export async function POST(request: NextRequest) {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
 
-      // Store failed execution in history
-      executionHistory.unshift(executionResult);
-      
-      // Keep only last 50 executions
-      if (executionHistory.length > 50) {
-        executionHistory = executionHistory.slice(0, 50);
+      // Store failed execution in MongoDB
+      try {
+        const execution = new WorkflowExecution({
+          ...executionResult,
+          userId: session.user.id
+        });
+        await execution.save();
+        console.log('✅ Failed execution stored in MongoDB:', executionResult.id);
+      } catch (dbError) {
+        console.error('❌ Failed to store execution in MongoDB:', dbError);
       }
+      
 
         return {
           success: false,
@@ -250,11 +257,16 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDB();
+    
+    // Fetch executions from MongoDB
+    const executions = await WorkflowExecution.find({ userId: session.user.id })
+      .sort({ startTime: -1 })
+      .limit(50);
 
-    // Return actual execution history
     return NextResponse.json({
       success: true,
-      executions: executionHistory
+      executions: executions,
+      count: executions.length
     });
 
   } catch (error) {
