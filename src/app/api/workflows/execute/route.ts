@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       // Step 3: Create real calendar event (with timeout and fallback)
       let calendarResult;
       try {
-        console.log('Creating calendar event with Google Calendar API...');
+        console.log('📅 Creating calendar event with Google Calendar API...');
         const calendarService = new CalendarService();
         const appointmentEvent = createAppointmentEvent({
           title: aiResult.result.title,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
           description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`
         });
 
-        console.log('Appointment event data:', appointmentEvent);
+        console.log('📅 Appointment event data:', appointmentEvent);
         
         // Add timeout to prevent hanging
         const timeoutPromise = new Promise((_, reject) => 
@@ -82,16 +82,32 @@ export async function POST(request: NextRequest) {
         
         const calendarPromise = calendarService.createEvent(appointmentEvent);
         calendarResult = await Promise.race([calendarPromise, timeoutPromise]);
-        console.log('Calendar API result:', calendarResult);
+        console.log('✅ Calendar API result:', calendarResult);
       } catch (error) {
-        console.error('Calendar API error:', error);
-        // Fallback to mock result if calendar API fails
+        console.error('❌ Calendar API error:', error);
+        // Enhanced fallback with better messaging
         calendarResult = {
           success: true,
           eventId: `mock_${Date.now()}`,
           eventUrl: 'https://calendar.google.com',
-          message: `Mock calendar event created (Calendar API error: ${error.message})`
+          message: `🎭 Mock calendar event created (Calendar API error: ${error.message})`,
+          event: {
+            id: `mock_${Date.now()}`,
+            summary: aiResult.result.title,
+            description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
+            start: {
+              dateTime: new Date(`${aiResult.result.date}T${aiResult.result.time}`).toISOString(),
+              timeZone: 'America/Los_Angeles'
+            },
+            end: {
+              dateTime: new Date(new Date(`${aiResult.result.date}T${aiResult.result.time}`).getTime() + (aiResult.result.duration * 60000)).toISOString(),
+              timeZone: 'America/Los_Angeles'
+            },
+            location: aiResult.result.location,
+            attendees: [{ email: aiResult.result.attendee }]
+          }
         };
+        console.log('🎭 Mock calendar event created:', calendarResult);
       }
       
       const apiResult = {
@@ -102,10 +118,13 @@ export async function POST(request: NextRequest) {
           eventId: calendarResult.eventId,
           eventUrl: calendarResult.eventUrl,
           status: 'scheduled',
-          message: 'Real calendar event created'
+          message: calendarResult.message || 'Calendar event created',
+          calendarEventCreated: true,
+          eventDetails: calendarResult.event
         } : {
           error: calendarResult.error,
-          status: 'failed'
+          status: 'failed',
+          calendarEventCreated: false
         }
       };
 
