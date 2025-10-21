@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { FallbackCalendarService } from './calendar-fallback';
 
 interface CalendarEvent {
   summary: string;
@@ -28,6 +29,7 @@ interface CalendarEvent {
 export class CalendarService {
   private auth: any;
   private calendar: any;
+  private fallbackService: FallbackCalendarService;
 
   constructor() {
     // Initialize Google Calendar API with robust private key handling
@@ -148,6 +150,9 @@ export class CalendarService {
       
       console.log('🔄 Calendar service will use fallback mode');
     }
+
+    // Always initialize fallback service as backup
+    this.fallbackService = new FallbackCalendarService();
   }
 
   async createEvent(eventData: CalendarEvent, calendarId: string = 'primary') {
@@ -158,8 +163,8 @@ export class CalendarService {
       
       // Check if we're in fallback mode (auth/calendar is null)
       if (!this.auth || !this.calendar) {
-        console.log('🔄 Calendar service in fallback mode - creating mock event');
-        return this.createFallbackEvent(eventData);
+        console.log('🔄 Calendar service in fallback mode - using fallback service');
+        return this.fallbackService.createEvent(eventData, calendarId);
       }
       
       // Add timeout to prevent hanging
@@ -200,8 +205,8 @@ export class CalendarService {
       
       // If it's a private key error, provide a helpful fallback
       if (error instanceof Error && error.message.includes('DECODER routines::unsupported')) {
-        console.log('🔧 Private key format error detected - using fallback mock event');
-        return this.createFallbackEvent(eventData);
+        console.log('🔧 Private key format error detected - using fallback service');
+        return this.fallbackService.createEvent(eventData, calendarId);
       }
       
       return {
