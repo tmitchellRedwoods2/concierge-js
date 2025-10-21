@@ -179,15 +179,16 @@ export class CalendarService {
           description: eventData.description,
           start: eventData.start,
           end: eventData.end,
-          attendees: eventData.attendees,
+          // Remove attendees to avoid Domain-Wide Delegation requirement
+          // attendees: eventData.attendees,
           location: eventData.location,
-        reminders: eventData.reminders || {
-          useDefault: false,
-          overrides: [
-            { method: 'popup', minutes: 15 },
-            { method: 'email', minutes: 60 },
-          ],
-        },
+          reminders: eventData.reminders || {
+            useDefault: false,
+            overrides: [
+              { method: 'popup', minutes: 15 },
+              { method: 'email', minutes: 60 },
+            ],
+          },
         },
       });
 
