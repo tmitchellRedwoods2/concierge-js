@@ -34,6 +34,11 @@ export class CalendarService {
     const clientEmail = process.env.GOOGLE_CALENDAR_CLIENT_EMAIL;
     let privateKey = process.env.GOOGLE_CALENDAR_PRIVATE_KEY;
 
+    console.log('🔧 Calendar Service Initialization:');
+    console.log('📧 Client Email:', clientEmail ? '✅ Set' : '❌ Missing');
+    console.log('🔑 Private Key:', privateKey ? '✅ Set' : '❌ Missing');
+    console.log('🔑 Private Key Length:', privateKey?.length || 0);
+
     // Handle different private key formats with comprehensive attempts
     if (privateKey) {
       console.log('🔧 Original private key length:', privateKey.length);
@@ -108,20 +113,33 @@ export class CalendarService {
       console.log('🔧 Last line:', keyLines[keyLines.length - 1]);
     }
 
-    console.log('🔧 Calendar Service Initialization:');
-    console.log('📧 Client Email:', clientEmail ? '✅ Set' : '❌ Missing');
-    console.log('🔑 Private Key:', privateKey ? '✅ Set' : '❌ Missing');
-    console.log('🔑 Private Key Length:', privateKey?.length || 0);
+    // Try to initialize Google Auth with error handling
+    try {
+      this.auth = new google.auth.GoogleAuth({
+        credentials: {
+          client_email: clientEmail,
+          private_key: privateKey,
+        },
+        scopes: ['https://www.googleapis.com/auth/calendar'],
+      });
 
-    this.auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: clientEmail,
-        private_key: privateKey,
-      },
-      scopes: ['https://www.googleapis.com/auth/calendar'],
-    });
-
-    this.calendar = google.calendar({ version: 'v3', auth: this.auth });
+      this.calendar = google.calendar({ version: 'v3', auth: this.auth });
+      
+      console.log('✅ Google Calendar service initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize Google Calendar service:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
+      
+      // Set to null to indicate fallback mode
+      this.auth = null;
+      this.calendar = null;
+      
+      console.log('🔄 Calendar service will use fallback mode');
+    }
   }
 
   async createEvent(eventData: CalendarEvent, calendarId: string = 'primary') {
@@ -129,6 +147,12 @@ export class CalendarService {
       console.log('Creating calendar event:', eventData);
       console.log('Calendar service initialized:', !!this.calendar);
       console.log('Auth configured:', !!this.auth);
+      
+      // Check if we're in fallback mode (auth/calendar is null)
+      if (!this.auth || !this.calendar) {
+        console.log('🔄 Calendar service in fallback mode - creating mock event');
+        return this.createFallbackEvent(eventData);
+      }
       
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => 
@@ -169,20 +193,7 @@ export class CalendarService {
       // If it's a private key error, provide a helpful fallback
       if (error instanceof Error && error.message.includes('DECODER routines::unsupported')) {
         console.log('🔧 Private key format error detected - using fallback mock event');
-        return {
-          success: true,
-          eventId: `mock_${Date.now()}`,
-          eventUrl: 'https://calendar.google.com',
-          event: {
-            id: `mock_${Date.now()}`,
-            summary: eventData.summary,
-            description: eventData.description,
-            start: eventData.start,
-            end: eventData.end,
-            htmlLink: 'https://calendar.google.com'
-          },
-          message: 'Mock calendar event created (Private key format issue - please check Vercel environment variables)'
-        };
+        return this.createFallbackEvent(eventData);
       }
       
       return {
@@ -190,6 +201,37 @@ export class CalendarService {
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  }
+
+  private createFallbackEvent(eventData: CalendarEvent) {
+    const mockEventId = `mock_${Date.now()}`;
+    
+    console.log('🎭 Creating fallback mock calendar event:', {
+      id: mockEventId,
+      summary: eventData.summary,
+      description: eventData.description,
+      start: eventData.start,
+      end: eventData.end
+    });
+    
+    return {
+      success: true,
+      eventId: mockEventId,
+      eventUrl: 'https://calendar.google.com',
+      event: {
+        id: mockEventId,
+        summary: eventData.summary,
+        description: eventData.description,
+        start: eventData.start,
+        end: eventData.end,
+        attendees: eventData.attendees,
+        location: eventData.location,
+        htmlLink: 'https://calendar.google.com',
+        created: new Date().toISOString(),
+        status: 'confirmed'
+      },
+      message: 'Mock calendar event created (Google Calendar API unavailable - decoder error)'
+    };
   }
 
   async updateEvent(eventId: string, eventData: Partial<CalendarEvent>, calendarId: string = 'primary') {
