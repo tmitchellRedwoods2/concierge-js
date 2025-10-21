@@ -181,9 +181,13 @@ export class CalendarService {
           end: eventData.end,
           attendees: eventData.attendees,
           location: eventData.location,
-          reminders: eventData.reminders || {
-            useDefault: true,
-          },
+        reminders: eventData.reminders || {
+          useDefault: false,
+          overrides: [
+            { method: 'popup', minutes: 15 },
+            { method: 'email', minutes: 60 },
+          ],
+        },
         },
       });
 
@@ -348,7 +352,7 @@ export function createAppointmentEvent(appointmentData: {
     ] : undefined,
     location: appointmentData.location,
     reminders: {
-      useDefault: true,
+      useDefault: false,
       overrides: [
         { method: 'popup', minutes: 15 },
         { method: 'email', minutes: 60 },
