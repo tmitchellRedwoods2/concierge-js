@@ -32,8 +32,19 @@ export async function POST(request: NextRequest) {
     console.log('📧 Client Email:', clientEmail);
     console.log('🔑 Private Key length:', privateKey.length);
 
-    // Initialize calendar service
-    const calendarService = new CalendarService();
+    // Initialize calendar service with error handling
+    let calendarService;
+    try {
+      calendarService = new CalendarService();
+    } catch (error) {
+      console.error('❌ Failed to initialize CalendarService:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to initialize calendar service',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        fallback: 'Calendar service initialization failed - decoder error detected'
+      }, { status: 500 });
+    }
     
     // Create a test event
     const testEvent = createAppointmentEvent({

@@ -115,6 +115,8 @@ export class CalendarService {
 
     // Try to initialize Google Auth with error handling
     try {
+      console.log('🔧 Attempting to initialize Google Auth...');
+      
       this.auth = new google.auth.GoogleAuth({
         credentials: {
           client_email: clientEmail,
@@ -123,6 +125,7 @@ export class CalendarService {
         scopes: ['https://www.googleapis.com/auth/calendar'],
       });
 
+      console.log('🔧 Google Auth initialized, creating calendar service...');
       this.calendar = google.calendar({ version: 'v3', auth: this.auth });
       
       console.log('✅ Google Calendar service initialized successfully');
@@ -133,6 +136,11 @@ export class CalendarService {
         name: error instanceof Error ? error.name : 'Unknown',
         stack: error instanceof Error ? error.stack : 'No stack trace'
       });
+      
+      // Check if it's the decoder error we've been fighting
+      if (error instanceof Error && error.message.includes('DECODER routines::unsupported')) {
+        console.log('🔧 Decoder error detected - switching to fallback mode');
+      }
       
       // Set to null to indicate fallback mode
       this.auth = null;
