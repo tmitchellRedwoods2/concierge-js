@@ -751,7 +751,7 @@ export default function WorkflowsPage() {
                       {execution.calendarEvent && (
                         <div className="text-sm text-blue-600">
                           <a href={execution.calendarEvent.eventUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                            View in Google Calendar
+                            View in calendar
                           </a>
                         </div>
                       )}
