@@ -155,7 +155,7 @@ export class CalendarService {
     this.fallbackService = new FallbackCalendarService();
   }
 
-  async createEvent(eventData: CalendarEvent, calendarId: string = '208b05fa966333c4e4de9881ca5532ab38fea77465bef77ce7fd087f0bb58214@group.calendar.google.com') {
+  async createEvent(eventData: CalendarEvent, calendarId: string = 'concierge-calendar-fresh@original-scout-475321-h2.iam.gserviceaccount.com') {
     try {
       console.log('Creating calendar event:', eventData);
       console.log('Calendar service initialized:', !!this.calendar);
