@@ -209,13 +209,48 @@ export async function POST(request: NextRequest) {
         console.error('❌ Failed to store execution in MongoDB:', dbError);
       }
       
+      return NextResponse.json({
+        success: false,
+        execution: executionResult,
+        message: 'Workflow execution failed'
+      });
+    } catch (error) {
+      console.error('Workflow execution error:', error);
+      
+      const executionResult = {
+        id: executionId,
+        workflowId,
+        workflowName: 'Fresh Appointment Scheduler',
+        status: 'failed',
+        startTime,
+        endTime: new Date().toISOString(),
+        steps: [],
+        triggerData,
+        result: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          status: 'failed'
+        },
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
 
-        return {
-          success: false,
-          execution: executionResult,
-          message: 'Workflow execution failed'
-        };
+      // Store failed execution in MongoDB
+      try {
+        const execution = new WorkflowExecution({
+          ...executionResult,
+          userId: session.user.id
+        });
+        await execution.save();
+        console.log('✅ Failed execution stored in MongoDB:', executionResult.id);
+      } catch (dbError) {
+        console.error('❌ Failed to store execution in MongoDB:', dbError);
       }
+      
+      return NextResponse.json({
+        success: false,
+        execution: executionResult,
+        message: 'Workflow execution failed'
+      });
+    }
     };
 
     // Execute workflow with timeout
