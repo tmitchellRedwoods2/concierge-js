@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
 import { InAppCalendarService } from '@/lib/services/in-app-calendar';
+import { CalendarSyncService } from '@/lib/services/calendar-sync';
 import { WorkflowExecution } from '@/lib/models/WorkflowExecution';
 
 // Mock workflow execution for demo purposes
@@ -85,6 +86,13 @@ export async function POST(request: NextRequest) {
           
           calendarResult = await inAppCalendarService.createEvent(eventData, session.user.id);
           console.log('✅ Internal calendar result:', calendarResult);
+          
+          // Sync to external calendar if enabled
+          if (calendarResult.success && calendarResult.event) {
+            const syncService = new CalendarSyncService();
+            const syncResult = await syncService.syncEventIfEnabled(calendarResult.event, session.user.id);
+            console.log('🔄 External calendar sync result:', syncResult);
+          }
         } catch (error) {
           console.error('❌ Internal calendar error:', error);
           calendarResult = {
