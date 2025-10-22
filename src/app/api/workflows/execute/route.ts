@@ -30,232 +30,196 @@ export async function POST(request: NextRequest) {
     // Wrap the entire workflow execution in a timeout
     const workflowExecution = async () => {
       try {
-      // Step 1: Trigger processing
-      const triggerResult = {
-        id: 'trigger-1',
-        type: 'trigger',
-        status: 'completed',
-        result: { 
-          email: triggerData?.email || 'test@example.com', 
-          content: triggerData?.content || 'I need to schedule an appointment' 
-        }
-      };
-
-      // Step 2: AI Processing (extract appointment details)
-      const aiResult = {
-        id: 'ai-1',
-        type: 'ai',
-        status: 'completed',
-        result: { 
-          date: '2024-01-15',
-          time: '14:00',
-          duration: 60,
-          attendee: 'john.doe@example.com',
-          location: 'Conference Room A',
-          title: 'AI Scheduled Appointment'
-        }
-      };
-
-      // Step 3: Create real calendar event (with timeout and fallback)
-      let calendarResult;
-      try {
-        console.log('📅 Creating calendar event with Google Calendar API...');
-        const calendarService = new CalendarService();
-        const appointmentEvent = createAppointmentEvent({
-          title: aiResult.result.title,
-          date: aiResult.result.date,
-          time: aiResult.result.time,
-          duration: aiResult.result.duration,
-          attendee: aiResult.result.attendee,
-          location: aiResult.result.location,
-          description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`
-        });
-
-        console.log('📅 Appointment event data:', appointmentEvent);
-        
-        // Add timeout to prevent hanging
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Calendar API timeout after 10 seconds')), 10000)
-        );
-        
-        const calendarPromise = calendarService.createEvent(appointmentEvent, 'brtracker.docs@gmail.com', session.user.id);
-        calendarResult = await Promise.race([calendarPromise, timeoutPromise]);
-        console.log('✅ Calendar API result:', calendarResult);
-      } catch (error) {
-        console.error('❌ Calendar API error:', error);
-        // Enhanced fallback with better messaging
-        calendarResult = {
-          success: true,
-          eventId: `mock_${Date.now()}`,
-          eventUrl: 'https://calendar.google.com',
-          message: `🎭 Mock calendar event created (Calendar API error: ${error.message})`,
-          event: {
-            id: `mock_${Date.now()}`,
-            summary: aiResult.result.title,
-            description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
-            start: {
-              dateTime: new Date(`${aiResult.result.date}T${aiResult.result.time}`).toISOString(),
-              timeZone: 'America/Los_Angeles'
-            },
-            end: {
-              dateTime: new Date(new Date(`${aiResult.result.date}T${aiResult.result.time}`).getTime() + (aiResult.result.duration * 60000)).toISOString(),
-              timeZone: 'America/Los_Angeles'
-            },
-            location: aiResult.result.location,
-            attendees: [{ email: aiResult.result.attendee }]
+        // Step 1: Trigger processing
+        const triggerResult = {
+          id: 'trigger-1',
+          type: 'trigger',
+          status: 'completed',
+          result: { 
+            email: triggerData?.email || 'test@example.com', 
+            content: triggerData?.content || 'I need to schedule an appointment' 
           }
         };
-        console.log('🎭 Mock calendar event created:', calendarResult);
-      }
-      
-      const apiResult = {
-        id: 'api-1',
-        type: 'api',
-        status: calendarResult.success ? 'completed' : 'failed',
-        result: calendarResult.success ? {
-          eventId: calendarResult.eventId,
-          eventUrl: calendarResult.eventUrl,
-          status: 'scheduled',
-          message: calendarResult.message || 'Calendar event created',
-          calendarEventCreated: true,
-          eventDetails: calendarResult.event
-        } : {
-          error: calendarResult.error,
+
+        // Step 2: AI Processing (extract appointment details)
+        const aiResult = {
+          id: 'ai-1',
+          type: 'ai',
+          status: 'completed',
+          result: { 
+            date: '2024-01-15',
+            time: '14:00',
+            duration: 60,
+            attendee: 'john.doe@example.com',
+            location: 'Conference Room A',
+            title: 'AI Scheduled Appointment'
+          }
+        };
+
+        // Step 3: Create real calendar event (with timeout and fallback)
+        let calendarResult;
+        try {
+          console.log('📅 Creating calendar event with Google Calendar API...');
+          const calendarService = new CalendarService();
+          const appointmentEvent = createAppointmentEvent({
+            title: aiResult.result.title,
+            date: aiResult.result.date,
+            time: aiResult.result.time,
+            duration: aiResult.result.duration,
+            attendee: aiResult.result.attendee,
+            location: aiResult.result.location,
+            description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`
+          });
+
+          console.log('📅 Appointment event data:', appointmentEvent);
+          
+          // Add timeout to prevent hanging
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Calendar API timeout after 10 seconds')), 10000)
+          );
+          
+          const calendarPromise = calendarService.createEvent(appointmentEvent, 'brtracker.docs@gmail.com', session.user.id);
+          calendarResult = await Promise.race([calendarPromise, timeoutPromise]);
+          console.log('✅ Calendar API result:', calendarResult);
+        } catch (error) {
+          console.error('❌ Calendar API error:', error);
+          // Enhanced fallback with better messaging
+          calendarResult = {
+            success: true,
+            eventId: `mock_${Date.now()}`,
+            eventUrl: 'https://calendar.google.com',
+            message: `🎭 Mock calendar event created (Calendar API error: ${error.message})`,
+            event: {
+              id: `mock_${Date.now()}`,
+              summary: aiResult.result.title,
+              description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
+              start: {
+                dateTime: new Date(`${aiResult.result.date}T${aiResult.result.time}`).toISOString(),
+                timeZone: 'America/Los_Angeles'
+              },
+              end: {
+                dateTime: new Date(new Date(`${aiResult.result.date}T${aiResult.result.time}`).getTime() + (aiResult.result.duration * 60000)).toISOString(),
+                timeZone: 'America/Los_Angeles'
+              },
+              location: aiResult.result.location,
+              attendees: [{ email: aiResult.result.attendee }]
+            }
+          };
+          console.log('🎭 Mock calendar event created:', calendarResult);
+        }
+        
+        const apiResult = {
+          id: 'api-1',
+          type: 'api',
+          status: calendarResult.success ? 'completed' : 'failed',
+          result: calendarResult.success ? {
+            eventId: calendarResult.eventId,
+            eventUrl: calendarResult.eventUrl,
+            status: 'scheduled',
+            message: calendarResult.message || 'Calendar event created',
+            calendarEventCreated: true,
+            eventDetails: calendarResult.event
+          } : {
+            error: calendarResult.error,
+            status: 'failed',
+            calendarEventCreated: false
+          }
+        };
+
+        // Step 4: End
+        const endResult = {
+          id: 'end-1',
+          type: 'end',
+          status: calendarResult.success ? 'completed' : 'failed',
+          result: { 
+            success: calendarResult.success, 
+            message: calendarResult.success ? 'Appointment scheduled successfully in Google Calendar' : 'Failed to create calendar event'
+          }
+        };
+
+        const executionResult = {
+          id: executionId,
+          workflowId,
+          workflowName: 'Fresh Appointment Scheduler',
+          status: calendarResult.success ? 'completed' : 'failed',
+          startTime,
+          endTime: new Date().toISOString(),
+          steps: [triggerResult, aiResult, apiResult, endResult],
+          triggerData,
+          result: calendarResult.success ? {
+            appointmentId: calendarResult.eventId,
+            status: 'scheduled',
+            eventUrl: calendarResult.eventUrl
+          } : {
+            error: calendarResult.error,
+            status: 'failed'
+          },
+          calendarEvent: calendarResult.success ? {
+            eventId: calendarResult.eventId,
+            eventUrl: calendarResult.eventUrl
+          } : null
+        };
+
+        // Store execution in MongoDB
+        try {
+          const execution = new WorkflowExecution({
+            ...executionResult,
+            userId: session.user.id
+          });
+          await execution.save();
+          console.log('✅ Execution stored in MongoDB:', executionResult.id);
+        } catch (dbError) {
+          console.error('❌ Failed to store execution in MongoDB:', dbError);
+        }
+
+        return NextResponse.json({
+          success: true,
+          execution: executionResult,
+          message: calendarResult.success ? 'Workflow executed successfully with real calendar integration' : 'Workflow failed to create calendar event'
+        });
+
+      } catch (error) {
+        console.error('Workflow execution error:', error);
+        
+        const executionResult = {
+          id: executionId,
+          workflowId,
+          workflowName: 'Fresh Appointment Scheduler',
           status: 'failed',
-          calendarEventCreated: false
+          startTime,
+          endTime: new Date().toISOString(),
+          steps: [],
+          triggerData,
+          result: {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            status: 'failed'
+          },
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+
+        // Store failed execution in MongoDB
+        try {
+          const execution = new WorkflowExecution({
+            ...executionResult,
+            userId: session.user.id
+          });
+          await execution.save();
+          console.log('✅ Failed execution stored in MongoDB:', executionResult.id);
+        } catch (dbError) {
+          console.error('❌ Failed to store execution in MongoDB:', dbError);
         }
-      };
-
-      // Step 4: End
-      const endResult = {
-        id: 'end-1',
-        type: 'end',
-        status: calendarResult.success ? 'completed' : 'failed',
-        result: { 
-          success: calendarResult.success, 
-          message: calendarResult.success ? 'Appointment scheduled successfully in Google Calendar' : 'Failed to create calendar event'
-        }
-      };
-
-      const executionResult = {
-        id: executionId,
-        workflowId,
-        workflowName: 'Fresh Appointment Scheduler',
-        status: calendarResult.success ? 'completed' : 'failed',
-        startTime,
-        endTime: new Date().toISOString(),
-        steps: [triggerResult, aiResult, apiResult, endResult],
-        triggerData,
-        result: calendarResult.success ? {
-          appointmentId: calendarResult.eventId,
-          status: 'scheduled',
-          eventUrl: calendarResult.eventUrl
-        } : {
-          error: calendarResult.error,
-          status: 'failed'
-        },
-        calendarEvent: calendarResult.success ? {
-          eventId: calendarResult.eventId,
-          eventUrl: calendarResult.eventUrl
-        } : null
-      };
-
-      // Store execution in MongoDB
-      try {
-        const execution = new WorkflowExecution({
-          ...executionResult,
-          userId: session.user.id
+        
+        return NextResponse.json({
+          success: false,
+          execution: executionResult,
+          message: 'Workflow execution failed'
         });
-        await execution.save();
-        console.log('✅ Execution stored in MongoDB:', executionResult.id);
-      } catch (dbError) {
-        console.error('❌ Failed to store execution in MongoDB:', dbError);
       }
+    };
 
-      return NextResponse.json({
-        success: true,
-        execution: executionResult,
-        message: calendarResult.success ? 'Workflow executed successfully with real calendar integration' : 'Workflow failed to create calendar event'
-      });
-
-    } catch (error) {
-      console.error('Workflow execution error:', error);
-      
-      const executionResult = {
-        id: executionId,
-        workflowId,
-        workflowName: 'Fresh Appointment Scheduler',
-        status: 'failed',
-        startTime,
-        endTime: new Date().toISOString(),
-        steps: [],
-        triggerData,
-        result: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          status: 'failed'
-        },
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-
-      // Store failed execution in MongoDB
-      try {
-        const execution = new WorkflowExecution({
-          ...executionResult,
-          userId: session.user.id
-        });
-        await execution.save();
-        console.log('✅ Failed execution stored in MongoDB:', executionResult.id);
-      } catch (dbError) {
-        console.error('❌ Failed to store execution in MongoDB:', dbError);
-      }
-      
-      return NextResponse.json({
-        success: false,
-        execution: executionResult,
-        message: 'Workflow execution failed'
-      });
-    } catch (error) {
-      console.error('Workflow execution error:', error);
-      
-      const executionResult = {
-        id: executionId,
-        workflowId,
-        workflowName: 'Fresh Appointment Scheduler',
-        status: 'failed',
-        startTime,
-        endTime: new Date().toISOString(),
-        steps: [],
-        triggerData,
-        result: {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          status: 'failed'
-        },
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-
-      // Store failed execution in MongoDB
-      try {
-        const execution = new WorkflowExecution({
-          ...executionResult,
-          userId: session.user.id
-        });
-        await execution.save();
-        console.log('✅ Failed execution stored in MongoDB:', executionResult.id);
-      } catch (dbError) {
-        console.error('❌ Failed to store execution in MongoDB:', dbError);
-      }
-      
-      return NextResponse.json({
-        success: false,
-        execution: executionResult,
-        message: 'Workflow execution failed'
-      });
-    }
-  };
-
-  // Execute workflow with timeout
+    // Execute workflow with timeout
     const result = await Promise.race([workflowExecution(), workflowTimeout]);
-    return NextResponse.json(result);
+    return result;
 
   } catch (error) {
     console.error('Error executing workflow:', error);
@@ -266,10 +230,10 @@ export async function POST(request: NextRequest) {
         success: false,
         execution: {
           id: `exec_${Date.now()}`,
-          workflowId,
+          workflowId: body?.workflowId,
           status: 'timeout',
           startTime: new Date().toISOString(),
-          triggerData,
+          triggerData: body?.triggerData,
           error: 'Workflow execution timed out after 30 seconds'
         },
         message: 'Workflow execution timed out'
