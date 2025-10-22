@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
-import { CalendarService, createAppointmentEvent } from '@/lib/services/calendar';
+import { InAppCalendarService } from '@/lib/services/in-app-calendar';
 import { WorkflowExecution } from '@/lib/models/WorkflowExecution';
 
 // Mock workflow execution for demo purposes
@@ -56,56 +56,41 @@ export async function POST(request: NextRequest) {
           }
         };
 
-        // Step 3: Create real calendar event (with timeout and fallback)
+        // Step 3: Create internal calendar event
         let calendarResult;
         try {
-          console.log('📅 Creating calendar event with Google Calendar API...');
-          const calendarService = new CalendarService();
-          const appointmentEvent = createAppointmentEvent({
+          console.log('📅 Creating internal calendar event...');
+          const inAppCalendarService = new InAppCalendarService();
+          
+          const startDate = new Date(`${aiResult.result.date}T${aiResult.result.time}`);
+          const endDate = new Date(startDate.getTime() + (aiResult.result.duration * 60000));
+          
+          const eventData = {
             title: aiResult.result.title,
-            date: aiResult.result.date,
-            time: aiResult.result.time,
-            duration: aiResult.result.duration,
-            attendee: aiResult.result.attendee,
+            description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
+            startDate: startDate,
+            endDate: endDate,
             location: aiResult.result.location,
-            description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`
-          });
-
-          console.log('📅 Appointment event data:', appointmentEvent);
-          
-          // Add timeout to prevent hanging
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Calendar API timeout after 10 seconds')), 10000)
-          );
-          
-          const calendarPromise = calendarService.createEvent(appointmentEvent, 'brtracker.docs@gmail.com', session.user.id);
-          calendarResult = await Promise.race([calendarPromise, timeoutPromise]);
-          console.log('✅ Calendar API result:', calendarResult);
-        } catch (error) {
-          console.error('❌ Calendar API error:', error);
-          // Enhanced fallback with better messaging
-          calendarResult = {
-            success: true,
-            eventId: `mock_${Date.now()}`,
-            eventUrl: 'https://calendar.google.com',
-            message: `🎭 Mock calendar event created (Calendar API error: ${error.message})`,
-            event: {
-              id: `mock_${Date.now()}`,
-              summary: aiResult.result.title,
-              description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
-              start: {
-                dateTime: new Date(`${aiResult.result.date}T${aiResult.result.time}`).toISOString(),
-                timeZone: 'America/Los_Angeles'
-              },
-              end: {
-                dateTime: new Date(new Date(`${aiResult.result.date}T${aiResult.result.time}`).getTime() + (aiResult.result.duration * 60000)).toISOString(),
-                timeZone: 'America/Los_Angeles'
-              },
-              location: aiResult.result.location,
-              attendees: [{ email: aiResult.result.attendee }]
-            }
+            attendees: [aiResult.result.attendee],
+            reminders: {
+              email: true,
+              popup: true,
+              minutes: 15
+            },
+            source: 'workflow' as const,
+            workflowExecutionId: executionId
           };
-          console.log('🎭 Mock calendar event created:', calendarResult);
+
+          console.log('📅 Internal calendar event data:', eventData);
+          
+          calendarResult = await inAppCalendarService.createEvent(eventData, session.user.id);
+          console.log('✅ Internal calendar result:', calendarResult);
+        } catch (error) {
+          console.error('❌ Internal calendar error:', error);
+          calendarResult = {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          };
         }
         
         const apiResult = {
@@ -146,18 +131,18 @@ export async function POST(request: NextRequest) {
           endTime: new Date().toISOString(),
           steps: [triggerResult, aiResult, apiResult, endResult],
           triggerData,
-          result: calendarResult.success ? {
-            appointmentId: calendarResult.eventId,
-            status: 'scheduled',
-            eventUrl: calendarResult.eventUrl
-          } : {
-            error: calendarResult.error,
-            status: 'failed'
-          },
-          calendarEvent: calendarResult.success ? {
-            eventId: calendarResult.eventId,
-            eventUrl: calendarResult.eventUrl
-          } : null
+        result: calendarResult.success ? {
+          appointmentId: calendarResult.eventId,
+          status: 'scheduled',
+          eventUrl: `/calendar/event/${calendarResult.eventId}`
+        } : {
+          error: calendarResult.error,
+          status: 'failed'
+        },
+        calendarEvent: calendarResult.success ? {
+          eventId: calendarResult.eventId,
+          eventUrl: `/calendar/event/${calendarResult.eventId}`
+        } : null
         };
 
         // Store execution in MongoDB
@@ -175,7 +160,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           execution: executionResult,
-          message: calendarResult.success ? 'Workflow executed successfully with real calendar integration' : 'Workflow failed to create calendar event'
+          message: calendarResult.success ? 'Workflow executed successfully with internal calendar integration' : 'Workflow failed to create calendar event'
         });
 
       } catch (error) {
