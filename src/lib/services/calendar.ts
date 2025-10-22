@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { FallbackCalendarService } from './calendar-fallback';
+import { InAppCalendarService } from './in-app-calendar';
 
 interface CalendarEvent {
   summary: string;
@@ -30,6 +31,7 @@ export class CalendarService {
   private auth: any;
   private calendar: any;
   private fallbackService: FallbackCalendarService;
+  private inAppService: InAppCalendarService;
 
   constructor() {
     // Initialize Google Calendar API with robust private key handling
@@ -153,13 +155,45 @@ export class CalendarService {
 
     // Always initialize fallback service as backup
     this.fallbackService = new FallbackCalendarService();
+    
+    // Initialize in-app calendar service
+    this.inAppService = new InAppCalendarService();
   }
 
-  async createEvent(eventData: CalendarEvent, calendarId: string = 'brtracker.docs@gmail.com') {
+  async createEvent(eventData: CalendarEvent, calendarId: string = 'brtracker.docs@gmail.com', userId?: string) {
     try {
       console.log('Creating calendar event:', eventData);
       console.log('Calendar service initialized:', !!this.calendar);
       console.log('Auth configured:', !!this.auth);
+      
+      // Use in-app calendar service instead of Google Calendar API
+      if (userId) {
+        console.log('📅 Using in-app calendar service');
+        const inAppResult = await this.inAppService.createEvent({
+          title: eventData.summary,
+          description: eventData.description,
+          startDate: new Date(eventData.start.dateTime),
+          endDate: new Date(eventData.end.dateTime),
+          location: eventData.location,
+          attendees: eventData.attendees?.map(a => a.email),
+          reminders: {
+            email: true,
+            popup: true,
+            minutes: 15
+          }
+        }, userId);
+
+        if (inAppResult.success) {
+          console.log('✅ In-app calendar event created successfully');
+          return {
+            success: true,
+            eventId: inAppResult.eventId,
+            eventUrl: inAppResult.eventUrl,
+            event: inAppResult.event,
+            message: 'Event created in in-app calendar'
+          };
+        }
+      }
       
       // Check if we're in fallback mode (auth/calendar is null)
       if (!this.auth || !this.calendar) {

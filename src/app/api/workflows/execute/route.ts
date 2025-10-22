@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
           setTimeout(() => reject(new Error('Calendar API timeout after 10 seconds')), 10000)
         );
         
-        const calendarPromise = calendarService.createEvent(appointmentEvent);
+        const calendarPromise = calendarService.createEvent(appointmentEvent, 'brtracker.docs@gmail.com', session.user.id);
         calendarResult = await Promise.race([calendarPromise, timeoutPromise]);
         console.log('✅ Calendar API result:', calendarResult);
       } catch (error) {
