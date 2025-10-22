@@ -251,9 +251,9 @@ export async function POST(request: NextRequest) {
         message: 'Workflow execution failed'
       });
     }
-    };
+  };
 
-    // Execute workflow with timeout
+  // Execute workflow with timeout
     const result = await Promise.race([workflowExecution(), workflowTimeout]);
     return NextResponse.json(result);
 
