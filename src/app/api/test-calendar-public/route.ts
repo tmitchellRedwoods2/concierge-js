@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
 
     console.log('📅 Creating test event:', testEvent);
 
-    // Create the event
-    const result = await calendarService.createEvent(testEvent);
+    // Create the event using in-app calendar (no userId for public test)
+    const result = await calendarService.createEvent(testEvent, 'brtracker.docs@gmail.com', 'test-user-id');
     
     if (result.success) {
       console.log('✅ Calendar event created successfully:', result.eventId);
