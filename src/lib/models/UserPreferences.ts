@@ -8,6 +8,12 @@ export interface IUserPreferences extends Document {
     syncDirection: 'internal-to-external' | 'external-to-internal' | 'bidirectional';
     externalCalendarId?: string;
     externalCalendarName?: string;
+    appleCalendarConfig?: {
+      serverUrl: string;
+      username: string;
+      password: string;
+      calendarPath: string;
+    };
     syncSettings: {
       autoSync: boolean;
       syncInterval: number; // minutes

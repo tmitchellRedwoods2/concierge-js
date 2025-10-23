@@ -19,6 +19,8 @@ export interface ICalendarEvent extends Document {
   workflowExecutionId?: string;
   googleEventId?: string;
   googleEventUrl?: string;
+  appleEventId?: string;
+  appleEventUrl?: string;
 }
 
 const CalendarEventSchema = new Schema<ICalendarEvent>({
@@ -49,7 +51,9 @@ const CalendarEventSchema = new Schema<ICalendarEvent>({
   },
   workflowExecutionId: { type: String },
   googleEventId: { type: String },
-  googleEventUrl: { type: String }
+  googleEventUrl: { type: String },
+  appleEventId: { type: String },
+  appleEventUrl: { type: String }
 }, {
   timestamps: true
 });

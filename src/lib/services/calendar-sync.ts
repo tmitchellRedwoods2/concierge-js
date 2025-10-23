@@ -2,6 +2,7 @@ import { UserPreferences } from '@/lib/models/UserPreferences';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
 import { CalendarService } from './calendar';
 import { InAppCalendarService } from './in-app-calendar';
+import { AppleCalendarService } from './apple-calendar';
 
 export interface CalendarSyncResult {
   success: boolean;
@@ -99,11 +100,45 @@ export class CalendarSyncService {
   }
 
   private async syncToAppleCalendar(event: any, userId: string): Promise<CalendarSyncResult> {
-    // TODO: Implement Apple Calendar sync
-    return {
-      success: false,
-      error: 'Apple Calendar sync not yet implemented'
-    };
+    try {
+      // Get user's Apple Calendar configuration
+      const preferences = await this.getUserCalendarPreferences(userId);
+      const appleConfig = preferences?.calendarPreferences?.appleCalendarConfig;
+      
+      if (!appleConfig) {
+        return {
+          success: false,
+          error: 'Apple Calendar not configured. Please set up your Apple Calendar credentials in settings.'
+        };
+      }
+
+      const appleCalendarService = new AppleCalendarService(appleConfig);
+      const result = await appleCalendarService.createEvent(event, userId);
+      
+      if (result.success) {
+        // Update the internal event with Apple Calendar info
+        await CalendarEvent.findByIdAndUpdate(event._id, {
+          appleEventId: result.eventId,
+          appleEventUrl: result.eventUrl
+        });
+        
+        return {
+          success: true,
+          externalEventId: result.eventId,
+          externalEventUrl: result.eventUrl
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to create Apple Calendar event'
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Apple Calendar sync failed'
+      };
+    }
   }
 
   private async syncToCalDAV(event: any, userId: string): Promise<CalendarSyncResult> {
