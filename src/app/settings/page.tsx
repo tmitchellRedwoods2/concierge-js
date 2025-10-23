@@ -174,6 +174,31 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Calendar Settings */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>📅 Calendar Settings</CardTitle>
+            <CardDescription>Configure your calendar integration and sync preferences</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold">Calendar Integration</h3>
+                  <p className="text-sm text-gray-600">Sync events with external calendar systems</p>
+                </div>
+                <Button 
+                  onClick={() => router.push("/settings/calendar")}
+                  variant="outline"
+                  size="sm"
+                >
+                  Configure Calendar
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Preferences */}
         <Card className="mb-8">
           <CardHeader>

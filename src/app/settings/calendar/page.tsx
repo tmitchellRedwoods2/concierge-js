@@ -111,10 +111,10 @@ export default function CalendarSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
                     { value: 'internal', label: 'Internal Calendar', description: 'Use only the internal calendar system' },
-                    { value: 'google', label: 'Google Calendar', description: 'Sync with Google Calendar' },
-                    { value: 'outlook', label: 'Outlook Calendar', description: 'Sync with Microsoft Outlook' },
-                    { value: 'apple', label: 'Apple Calendar', description: 'Sync with Apple Calendar' },
-                    { value: 'caldav', label: 'CalDAV', description: 'Sync with CalDAV-compatible calendars' }
+                    { value: 'google', label: 'Google Calendar', description: 'Sync with Google Calendar (requires setup)' },
+                    { value: 'outlook', label: 'Outlook Calendar', description: 'Sync with Microsoft Outlook (coming soon)' },
+                    { value: 'apple', label: 'Apple Calendar', description: 'Sync with Apple Calendar (requires setup)' },
+                    { value: 'caldav', label: 'CalDAV', description: 'Sync with CalDAV-compatible calendars (coming soon)' }
                   ].map((provider) => (
                     <label key={provider.value} className="relative">
                       <input
@@ -140,6 +140,37 @@ export default function CalendarSettingsPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Provider Setup */}
+              {preferences.primaryProvider === 'apple' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-blue-800 mb-2">Apple Calendar Setup Required</h3>
+                  <p className="text-sm text-blue-700 mb-3">
+                    You need to configure your Apple Calendar credentials to enable sync.
+                  </p>
+                  <a 
+                    href="/settings/calendar/apple"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors inline-block"
+                  >
+                    Configure Apple Calendar
+                  </a>
+                </div>
+              )}
+
+              {preferences.primaryProvider === 'google' && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-yellow-800 mb-2">Google Calendar Setup Required</h3>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    Google Calendar integration is currently experiencing issues. We recommend using Apple Calendar instead.
+                  </p>
+                  <button 
+                    onClick={() => setPreferences({ ...preferences, primaryProvider: 'apple' })}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition-colors"
+                  >
+                    Switch to Apple Calendar
+                  </button>
+                </div>
+              )}
 
               {/* Sync Settings */}
               {preferences.primaryProvider !== 'internal' && (
