@@ -4,6 +4,7 @@ import connectDB from '@/lib/db/mongodb';
 import { InAppCalendarService } from '@/lib/services/in-app-calendar';
 import { CalendarSyncService } from '@/lib/services/calendar-sync';
 import { WorkflowExecution } from '@/lib/models/WorkflowExecution';
+import { NotificationService } from '@/lib/services/notification-service';
 
 // Mock workflow execution for demo purposes
 export async function POST(request: NextRequest) {
@@ -92,6 +93,36 @@ export async function POST(request: NextRequest) {
             const syncService = new CalendarSyncService();
             const syncResult = await syncService.syncEventIfEnabled(calendarResult.event, session.user.id);
             console.log('🔄 External calendar sync result:', syncResult);
+          }
+
+          // Send email notification
+          if (calendarResult.success && calendarResult.event) {
+            try {
+              console.log('📧 Sending email notification...');
+              const notificationService = new NotificationService();
+              const notificationResult = await notificationService.sendAppointmentConfirmation(
+                {
+                  _id: calendarResult.eventId,
+                  title: aiResult.result.title,
+                  description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
+                  startDate: startDate.toISOString(),
+                  endDate: endDate.toISOString(),
+                  location: aiResult.result.location,
+                  attendees: [aiResult.result.attendee],
+                },
+                session.user.id,
+                aiResult.result.attendee,
+                'Customer'
+              );
+
+              if (notificationResult.success) {
+                console.log('✅ Email notification sent successfully');
+              } else {
+                console.log('⚠️ Failed to send email notification:', notificationResult.error);
+              }
+            } catch (emailError) {
+              console.error('❌ Email notification error (non-blocking):', emailError);
+            }
           }
         } catch (error) {
           console.error('❌ Internal calendar error:', error);
