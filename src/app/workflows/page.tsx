@@ -80,6 +80,9 @@ export default function WorkflowsPage() {
     approvalRequired: false,
     autoExecute: true
   });
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
 
   useEffect(() => {
     loadData();
@@ -267,7 +270,17 @@ export default function WorkflowsPage() {
     // TODO: Implement workflow testing
   };
 
-  const executeWorkflow = async (workflowId: string) => {
+  const openEmailModal = (workflowId: string) => {
+    setSelectedWorkflowId(workflowId);
+    setShowEmailModal(true);
+  };
+
+  const executeWorkflow = async () => {
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
     try {
       const response = await fetch('/api/workflows/execute', {
         method: 'POST',
@@ -275,9 +288,9 @@ export default function WorkflowsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          workflowId,
+          workflowId: selectedWorkflowId,
           triggerData: {
-            email: 'test@example.com',
+            email: recipientEmail,
             content: 'I need to schedule an appointment for tomorrow at 2 PM'
           }
         }),
@@ -286,8 +299,10 @@ export default function WorkflowsPage() {
       if (response.ok) {
         const result = await response.json();
         console.log('Workflow executed:', result);
+        setShowEmailModal(false);
+        setRecipientEmail('');
         loadExecutions(); // Reload executions
-        alert('Workflow executed successfully! Check the Executions tab.');
+        alert('Workflow executed successfully! Email notification sent to ' + recipientEmail);
       } else {
         alert('Failed to execute workflow');
       }
@@ -693,7 +708,7 @@ export default function WorkflowsPage() {
                     </div>
                     
                     <div className="flex gap-2 pt-4">
-                      <Button variant="outline" size="sm" onClick={() => executeWorkflow(workflow.id)}>
+                      <Button variant="outline" size="sm" onClick={() => openEmailModal(workflow.id)}>
                         <Play className="w-4 h-4 mr-2" />
                         Execute
                       </Button>
@@ -701,8 +716,7 @@ export default function WorkflowsPage() {
                         <Settings className="w-4 h-4 mr-2" />
                         Edit
                       </Button>
-                    </div>
-                  </div>
+                    </div>                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -1030,6 +1044,44 @@ export default function WorkflowsPage() {
                 </Button>
                 <Button onClick={createWorkflow} disabled={!newWorkflow.name.trim()}>
                   Create Workflow
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Email Input Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Enter Recipient Email</CardTitle>
+              <CardDescription>
+                Email address to receive appointment confirmation
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Recipient Email</label>
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="recipient@example.com"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => {
+                  setShowEmailModal(false);
+                  setRecipientEmail('');
+                }}>
+                  Cancel
+                </Button>
+                <Button onClick={executeWorkflow} disabled={!recipientEmail.includes('@')}>
+                  Execute Workflow
                 </Button>
               </div>
             </CardContent>
