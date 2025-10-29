@@ -11,7 +11,7 @@ jest.mock('next-auth', () => ({
 // Mock the automation engine
 jest.mock('@/lib/services/automation-engine', () => ({
   automationEngine: {
-    getUserRules: jest.fn().mockResolvedValue([
+    getUserRules: jest.fn().mockReturnValue([
       {
         id: 'rule-1',
         name: 'Test Rule',
