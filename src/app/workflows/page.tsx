@@ -50,6 +50,24 @@ interface Monitor {
   lastCheck: string;
 }
 
+interface AutomationRule {
+  id: string;
+  name: string;
+  description: string;
+  trigger: {
+    type: string;
+    conditions: Record<string, any>;
+  };
+  actions: Array<{
+    type: string;
+    config: Record<string, any>;
+  }>;
+  enabled: boolean;
+  executionCount: number;
+  lastExecuted?: string;
+  createdAt: string;
+}
+
 interface Approval {
   id: string;
   workflowId: string;
@@ -68,6 +86,7 @@ export default function WorkflowsPage() {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [executions, setExecutions] = useState<any[]>([]);
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('workflows');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -391,6 +410,102 @@ export default function WorkflowsPage() {
     }
   };
 
+  // Automation functions
+  const loadAutomationRules = async () => {
+    try {
+      const response = await fetch('/api/automation/rules');
+      const data = await response.json();
+      
+      if (data.success) {
+        setAutomationRules(data.rules);
+      }
+    } catch (error) {
+      console.error('Error fetching automation rules:', error);
+    }
+  };
+
+  const setupDemoAutomation = async () => {
+    try {
+      const response = await fetch('/api/automation/setup-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        alert('Demo automation rules created successfully!');
+        loadAutomationRules();
+      } else {
+        alert('Failed to create demo automation rules');
+      }
+    } catch (error) {
+      console.error('Error setting up demo automation:', error);
+      alert('Error setting up demo automation');
+    }
+  };
+
+  const toggleRule = async (ruleId: string, enabled: boolean) => {
+    try {
+      const response = await fetch(`/api/automation/rules/${ruleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled })
+      });
+
+      if (response.ok) {
+        setAutomationRules(rules => 
+          rules.map(rule => 
+            rule.id === ruleId ? { ...rule, enabled } : rule
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling rule:', error);
+    }
+  };
+
+  const deleteRule = async (ruleId: string) => {
+    if (!confirm('Are you sure you want to delete this automation rule?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/automation/rules/${ruleId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setAutomationRules(rules => rules.filter(rule => rule.id !== ruleId));
+      }
+    } catch (error) {
+      console.error('Error deleting rule:', error);
+    }
+  };
+
+  const executeRule = async (ruleId: string) => {
+    try {
+      const response = await fetch('/api/automation/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruleId })
+      });
+
+      if (response.ok) {
+        alert('Rule executed successfully!');
+        loadAutomationRules(); // Refresh to get updated execution count
+      } else {
+        alert('Failed to execute rule');
+      }
+    } catch (error) {
+      console.error('Error executing rule:', error);
+      alert('Error executing rule');
+    }
+  };
+
+  // Load automation rules when component mounts
+  useEffect(() => {
+    loadAutomationRules();
+  }, []);
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -526,13 +641,111 @@ export default function WorkflowsPage() {
         </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="workflows">Workflows</TabsTrigger>
+          <TabsTrigger value="automation">Automation Rules</TabsTrigger>
           <TabsTrigger value="executions">Executions</TabsTrigger>
           <TabsTrigger value="monitors">Event Monitors</TabsTrigger>
           <TabsTrigger value="approvals">Pending Approvals</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="automation" className="space-y-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Automation Rules</h2>
+            <div className="flex gap-2">
+              <Button onClick={() => setupDemoAutomation()} className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                <Zap className="w-4 h-4" />
+                Setup Demo Rules
+              </Button>
+              <Button onClick={() => setActiveTab('workflows')} variant="outline">
+                <Activity className="w-4 h-4 mr-2" />
+                Test Workflows
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid gap-4">
+            {automationRules.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Zap className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Automation Rules</h3>
+                  <p className="text-gray-600 mb-4">
+                    Create automation rules to automatically handle emails, schedule events, and more
+                  </p>
+                  <Button onClick={() => setupDemoAutomation()}>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Setup Demo Rules
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              automationRules.map((rule) => (
+                <Card key={rule.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          {rule.name}
+                          <Badge variant={rule.enabled ? 'default' : 'secondary'}>
+                            {rule.enabled ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription>{rule.description}</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={rule.enabled}
+                          onCheckedChange={(enabled) => toggleRule(rule.id, enabled)}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => executeRule(rule.id)}
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deleteRule(rule.id)}
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium">Trigger:</span>
+                        <p className="text-gray-600 capitalize">{rule.trigger.type}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Actions:</span>
+                        <p className="text-gray-600">{rule.actions.length}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Executions:</span>
+                        <p className="text-gray-600">{rule.executionCount}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Last Run:</span>
+                        <p className="text-gray-600">
+                          {rule.lastExecuted 
+                            ? new Date(rule.lastExecuted).toLocaleDateString()
+                            : 'Never'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
 
         <TabsContent value="workflows" className="space-y-6">
           <div className="flex justify-between items-center mb-4">

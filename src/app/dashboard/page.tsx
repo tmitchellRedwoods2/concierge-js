@@ -202,6 +202,9 @@ export default function DashboardPage() {
             <Button variant="ghost" size="sm" onClick={() => router.push("/workflows")} className="whitespace-nowrap text-xs px-3 py-2">
               🤖 Workflows
             </Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/workflows")} className="whitespace-nowrap text-xs px-3 py-2">
+              ⚡ Automation
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => router.push("/settings")} className="whitespace-nowrap text-xs px-3 py-2">
               ⚙️ Settings
             </Button>
