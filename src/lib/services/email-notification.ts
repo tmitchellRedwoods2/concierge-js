@@ -1,4 +1,4 @@
-import * as nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer';
 
 export interface EmailConfig {
   host: string;
@@ -45,7 +45,7 @@ export class EmailNotificationService {
       },
     };
 
-    this.transporter = nodemailer.createTransporter(this.config);
+    this.transporter = nodemailer.createTransport(this.config);
   }
 
   async sendCalendarNotification(notification: CalendarEventNotification): Promise<{ success: boolean; messageId?: string; error?: string }> {
