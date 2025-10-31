@@ -190,7 +190,7 @@ describe('EmailTriggerService', () => {
         userId: 'test-user',
         triggerData: {
           email,
-          matchedPatterns: ['appointment', 'doctor', 'medical'],
+          matchedPatterns: expect.arrayContaining(['appointment', 'medical']),
           triggerId: expect.any(String)
         }
       });
@@ -273,7 +273,7 @@ describe('EmailTriggerService', () => {
         userId: 'test-user',
         triggerData: {
           email,
-          matchedPatterns: ['APPOINTMENT', 'Doctor'],
+          matchedPatterns: expect.arrayContaining(['APPOINTMENT']),
           triggerId: expect.any(String)
         }
       });

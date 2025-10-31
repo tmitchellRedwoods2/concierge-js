@@ -1,11 +1,24 @@
 import { SmartScheduler } from '@/lib/services/smart-scheduler';
 
 // Mock the CalendarEvent model
-jest.mock('@/lib/models/CalendarEvent', () => ({
-  CalendarEvent: jest.fn().mockImplementation(() => ({
-    save: jest.fn().mockResolvedValue({ _id: 'test-event-id' }),
-  })),
-}));
+jest.mock('@/lib/models/CalendarEvent', () => {
+  const mockFind = jest.fn().mockReturnValue({
+    sort: jest.fn().mockResolvedValue([])
+  });
+  
+  return {
+    CalendarEvent: Object.assign(
+      jest.fn().mockImplementation((data) => ({
+        ...data,
+        _id: 'test-event-id',
+        save: jest.fn().mockResolvedValue({ _id: 'test-event-id', ...data }),
+      })),
+      {
+        find: mockFind
+      }
+    ),
+  };
+});
 
 // Mock the automation engine
 jest.mock('@/lib/services/automation-engine', () => ({
@@ -111,7 +124,7 @@ describe('SmartScheduler', () => {
       expect(result?.confidence).toBeGreaterThan(0);
     });
 
-    it('should return null when no optimal time found', async () => {
+    it('should fall back to basic scheduling when no rules exist', async () => {
       const userId = 'test-user';
       const eventData = {
         title: 'Test Meeting',
@@ -120,10 +133,13 @@ describe('SmartScheduler', () => {
         flexible: false
       };
 
-      // No scheduling rules added
+      // No scheduling rules added - should use basic scheduling
       const result = await smartScheduler.findOptimalTime(userId, eventData);
 
-      expect(result).toBeNull();
+      expect(result).toBeDefined();
+      expect(result?.startTime).toBeInstanceOf(Date);
+      expect(result?.endTime).toBeInstanceOf(Date);
+      expect(result?.confidence).toBe(0.5); // Basic scheduling has 0.5 confidence
     });
 
     it('should consider time of day preferences', async () => {
@@ -230,7 +246,7 @@ describe('SmartScheduler', () => {
       expect(result?.endDate).toBeDefined();
     });
 
-    it('should return null when no optimal time found', async () => {
+    it('should use basic scheduling when no rules exist', async () => {
       const userId = 'test-user';
       const eventData = {
         title: 'Test Meeting',
@@ -238,10 +254,13 @@ describe('SmartScheduler', () => {
         type: 'meeting'
       };
 
-      // No scheduling rules
+      // No scheduling rules - should use basic scheduling
       const result = await smartScheduler.autoScheduleEvent(userId, eventData);
 
-      expect(result).toBeNull();
+      expect(result).toBeDefined();
+      expect(result?.title).toBe('Test Meeting');
+      expect(result?.startDate).toBeDefined();
+      expect(result?.endDate).toBeDefined();
     });
 
     it('should trigger automation after scheduling', async () => {

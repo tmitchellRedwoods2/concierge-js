@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer';
 
 // Mock nodemailer
 jest.mock('nodemailer', () => ({
-  createTransporter: jest.fn(),
+  createTransport: jest.fn(),
 }));
 
 describe('EmailNotificationService', () => {
@@ -23,7 +23,7 @@ describe('EmailNotificationService', () => {
       verify: jest.fn(),
     };
     
-    (nodemailer.createTransporter as jest.Mock).mockReturnValue(mockTransporter);
+    (nodemailer.createTransport as jest.Mock).mockReturnValue(mockTransporter);
     
     // Set up environment variables
     process.env.SMTP_HOST = 'smtp.gmail.com';
@@ -37,7 +37,7 @@ describe('EmailNotificationService', () => {
 
   describe('constructor', () => {
     it('should initialize with environment variables', () => {
-      expect(nodemailer.createTransporter).toHaveBeenCalledWith({
+      expect(nodemailer.createTransport).toHaveBeenCalledWith({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false,
@@ -61,7 +61,7 @@ describe('EmailNotificationService', () => {
       
       new EmailNotificationService(customConfig);
       
-      expect(nodemailer.createTransporter).toHaveBeenCalledWith(customConfig);
+      expect(nodemailer.createTransport).toHaveBeenCalledWith(customConfig);
     });
   });
 
