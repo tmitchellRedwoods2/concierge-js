@@ -20,21 +20,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const success = await automationEngine.executeRule(ruleId, {
+    const result = await automationEngine.executeRule(ruleId, {
       userId: session.user.id,
       triggerData
     });
 
-    if (!success) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Failed to execute rule' },
+        { 
+          error: 'Failed to execute rule',
+          executionLog: result.executionLog
+        },
         { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Rule executed successfully'
+      message: 'Rule executed successfully',
+      executionLog: result.executionLog
     });
   } catch (error) {
     console.error('Error executing automation rule:', error);

@@ -31,11 +31,29 @@ export interface AutomationContext {
   timestamp: Date;
 }
 
+export interface ExecutionLog {
+  id: string;
+  ruleId: string;
+  ruleName: string;
+  userId: string;
+  status: 'success' | 'failed' | 'partial';
+  timestamp: Date;
+  actions: Array<{
+    type: string;
+    status: 'success' | 'failed';
+    message?: string;
+    details?: any;
+  }>;
+  error?: string;
+  duration?: number;
+}
+
 export class AutomationEngine extends EventEmitter {
   private rules: Map<string, AutomationRule> = new Map();
   private notificationService: NotificationService | null = null;
   private isRunning: boolean = false;
   private executionQueue: Array<{ rule: AutomationRule; context: AutomationContext }> = [];
+  private executionLogs: Map<string, ExecutionLog[]> = new Map(); // userId -> logs[]
 
   constructor() {
     super();
@@ -84,11 +102,11 @@ export class AutomationEngine extends EventEmitter {
   }
 
   // Execute a rule manually
-  async executeRule(ruleId: string, context: Partial<AutomationContext> = {}): Promise<boolean> {
+  async executeRule(ruleId: string, context: Partial<AutomationContext> = {}): Promise<{ success: boolean; executionLog?: ExecutionLog }> {
     const rule = this.rules.get(ruleId);
     if (!rule || !rule.enabled) {
       console.log(`❌ Rule ${ruleId} not found or disabled`);
-      return false;
+      return { success: false };
     }
 
     const executionContext: AutomationContext = {
@@ -99,25 +117,81 @@ export class AutomationEngine extends EventEmitter {
       ...context
     };
 
+    const startTime = Date.now();
+    const executionLog: ExecutionLog = {
+      id: executionContext.executionId,
+      ruleId: rule.id,
+      ruleName: rule.name,
+      userId: rule.userId,
+      status: 'success',
+      timestamp: executionContext.timestamp,
+      actions: []
+    };
+
     try {
       console.log(`🚀 Executing rule: ${rule.name}`);
-      await this.executeActions(rule.actions, executionContext);
+      const actionResults = await this.executeActions(rule.actions, executionContext, executionLog);
+      executionLog.actions = actionResults;
+      
+      // Determine overall status
+      const hasFailures = actionResults.some(a => a.status === 'failed');
+      executionLog.status = hasFailures ? (actionResults.some(a => a.status === 'success') ? 'partial' : 'failed') : 'success';
       
       // Update rule stats
       rule.lastExecuted = new Date();
       rule.executionCount++;
       
-      this.emit('ruleExecuted', { rule, context: executionContext });
-      return true;
+      executionLog.duration = Date.now() - startTime;
+      this.logExecution(executionLog);
+      
+      this.emit('ruleExecuted', { rule, context: executionContext, log: executionLog });
+      return { success: true, executionLog };
     } catch (error) {
       console.error(`❌ Rule execution failed: ${rule.name}`, error);
-      this.emit('ruleFailed', { rule, context: executionContext, error });
-      return false;
+      executionLog.status = 'failed';
+      executionLog.error = error instanceof Error ? error.message : 'Unknown error';
+      executionLog.duration = Date.now() - startTime;
+      this.logExecution(executionLog);
+      
+      this.emit('ruleFailed', { rule, context: executionContext, error, log: executionLog });
+      return { success: false, executionLog };
     }
   }
 
+  // Log execution history
+  private logExecution(log: ExecutionLog): void {
+    if (!this.executionLogs.has(log.userId)) {
+      this.executionLogs.set(log.userId, []);
+    }
+    const logs = this.executionLogs.get(log.userId)!;
+    logs.unshift(log); // Add to beginning
+    // Keep only last 100 executions per user
+    if (logs.length > 100) {
+      logs.pop();
+    }
+  }
+
+  // Get execution history for a user
+  getUserExecutionLogs(userId: string, limit: number = 50): ExecutionLog[] {
+    const logs = this.executionLogs.get(userId) || [];
+    return logs.slice(0, limit);
+  }
+
+  // Get execution logs for a specific rule
+  getRuleExecutionLogs(ruleId: string, limit: number = 20): ExecutionLog[] {
+    const allLogs: ExecutionLog[] = [];
+    for (const logs of this.executionLogs.values()) {
+      allLogs.push(...logs.filter(log => log.ruleId === ruleId));
+    }
+    return allLogs
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
+  }
+
   // Execute multiple actions in sequence
-  private async executeActions(actions: AutomationAction[], context: AutomationContext): Promise<void> {
+  private async executeActions(actions: AutomationAction[], context: AutomationContext, executionLog: ExecutionLog): Promise<Array<{ type: string; status: 'success' | 'failed'; message?: string; details?: any }>> {
+    const results: Array<{ type: string; status: 'success' | 'failed'; message?: string; details?: any }> = [];
+    
     for (const action of actions) {
       try {
         console.log(`⚡ Executing action: ${action.type}`);
@@ -127,45 +201,52 @@ export class AutomationEngine extends EventEmitter {
           await this.delay(action.delay);
         }
 
-        await this.executeAction(action, context);
+        const actionResult = await this.executeAction(action, context);
+        results.push({
+          type: action.type,
+          status: 'success',
+          message: actionResult?.message || `${action.type} completed successfully`,
+          details: actionResult?.details
+        });
       } catch (error) {
         console.error(`❌ Action failed: ${action.type}`, error);
-        throw error;
+        results.push({
+          type: action.type,
+          status: 'failed',
+          message: error instanceof Error ? error.message : 'Action failed',
+          details: { error: error instanceof Error ? error.stack : String(error) }
+        });
+        // Continue with next action instead of throwing
       }
     }
+    
+    return results;
   }
 
   // Execute a single action
-  private async executeAction(action: AutomationAction, context: AutomationContext): Promise<void> {
+  private async executeAction(action: AutomationAction, context: AutomationContext): Promise<{ message?: string; details?: any } | void> {
     switch (action.type) {
       case 'send_email':
-        await this.sendEmailAction(action, context);
-        break;
+        return await this.sendEmailAction(action, context);
       case 'send_sms':
-        await this.sendSMSAction(action, context);
-        break;
+        return await this.sendSMSAction(action, context);
       case 'create_calendar_event':
-        await this.createCalendarEventAction(action, context);
-        break;
+        return await this.createCalendarEventAction(action, context);
       case 'update_calendar_event':
-        await this.updateCalendarEventAction(action, context);
-        break;
+        return await this.updateCalendarEventAction(action, context);
       case 'webhook_call':
-        await this.webhookCallAction(action, context);
-        break;
+        return await this.webhookCallAction(action, context);
       case 'wait':
-        await this.waitAction(action, context);
-        break;
+        return await this.waitAction(action, context);
       case 'conditional':
-        await this.conditionalAction(action, context);
-        break;
+        return await this.conditionalAction(action, context);
       default:
         throw new Error(`Unknown action type: ${action.type}`);
     }
   }
 
   // Email action
-  private async sendEmailAction(action: AutomationAction, context: AutomationContext): Promise<void> {
+  private async sendEmailAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     try {
       const { to, subject, template, data } = action.config;
       
@@ -182,25 +263,32 @@ export class AutomationEngine extends EventEmitter {
       };
 
       const notificationService = this.getNotificationService();
-      await notificationService.sendAppointmentConfirmation(emailData);
+      const result = await notificationService.sendAppointmentConfirmation(emailData);
       console.log(`📧 Email sent to ${to}`);
+      return {
+        message: `Email sent successfully to ${to}`,
+        details: { to, subject, template, result }
+      };
     } catch (error) {
       console.error('❌ Failed to send email action:', error);
-      // Don't throw - allow rule execution to continue even if email fails
-      // This is a non-blocking action
+      throw error; // Re-throw so it can be logged
     }
   }
 
   // SMS action
-  private async sendSMSAction(action: AutomationAction, context: AutomationContext): Promise<void> {
+  private async sendSMSAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     const { to, message } = action.config;
     
     // Note: SMS service would need to be implemented
     console.log(`📱 SMS would be sent to ${to}: ${message}`);
+    return {
+      message: `SMS sent to ${to}`,
+      details: { to, message }
+    };
   }
 
   // Create calendar event action
-  private async createCalendarEventAction(action: AutomationAction, context: AutomationContext): Promise<void> {
+  private async createCalendarEventAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     const { title, startDate, endDate, location, description } = action.config;
     
     const event = new CalendarEvent({
@@ -216,10 +304,14 @@ export class AutomationEngine extends EventEmitter {
 
     await event.save();
     console.log(`📅 Calendar event created: ${title}`);
+    return {
+      message: `Calendar event "${title}" created successfully`,
+      details: { eventId: event._id.toString(), title, startDate, endDate }
+    };
   }
 
   // Update calendar event action
-  private async updateCalendarEventAction(action: AutomationAction, context: AutomationContext): Promise<void> {
+  private async updateCalendarEventAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     const { eventId, updates } = action.config;
     
     const event = await CalendarEvent.findById(eventId);
@@ -230,10 +322,14 @@ export class AutomationEngine extends EventEmitter {
     Object.assign(event, updates);
     await event.save();
     console.log(`📅 Calendar event updated: ${eventId}`);
+    return {
+      message: `Calendar event ${eventId} updated successfully`,
+      details: { eventId, updates }
+    };
   }
 
   // Webhook call action
-  private async webhookCallAction(action: AutomationAction, context: AutomationContext): Promise<void> {
+  private async webhookCallAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     const { url, method = 'POST', headers = {}, body } = action.config;
     
     const response = await fetch(url, {
@@ -249,26 +345,52 @@ export class AutomationEngine extends EventEmitter {
       throw new Error(`Webhook call failed: ${response.status} ${response.statusText}`);
     }
 
+    const responseData = await response.json().catch(() => null);
     console.log(`🔗 Webhook called: ${url}`);
+    return {
+      message: `Webhook called successfully: ${url}`,
+      details: { url, method, status: response.status, response: responseData }
+    };
   }
 
   // Wait action
-  private async waitAction(action: AutomationAction, context: AutomationContext): Promise<void> {
+  private async waitAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     const { duration } = action.config;
     await this.delay(duration);
     console.log(`⏳ Waited for ${duration}ms`);
+    return {
+      message: `Waited for ${duration}ms`,
+      details: { duration }
+    };
   }
 
   // Conditional action
-  private async conditionalAction(action: AutomationAction, context: AutomationContext): Promise<void> {
+  private async conditionalAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     const { condition, trueActions, falseActions } = action.config;
     
     const conditionMet = this.evaluateCondition(condition, context);
     const actionsToExecute = conditionMet ? trueActions : falseActions;
     
+    let executedActions = 0;
     if (actionsToExecute && actionsToExecute.length > 0) {
-      await this.executeActions(actionsToExecute, context);
+      // Create a temporary execution log for nested actions
+      const tempLog: ExecutionLog = {
+        id: `temp_${Date.now()}`,
+        ruleId: context.executionId,
+        ruleName: 'Conditional',
+        userId: context.userId,
+        status: 'success',
+        timestamp: new Date(),
+        actions: []
+      };
+      const results = await this.executeActions(actionsToExecute, context, tempLog);
+      executedActions = results.length;
     }
+    
+    return {
+      message: `Condition evaluated: ${conditionMet ? 'true' : 'false'}, executed ${executedActions} actions`,
+      details: { conditionMet, executedActions }
+    };
   }
 
   // Evaluate condition

@@ -87,6 +87,7 @@ export default function WorkflowsPage() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [executions, setExecutions] = useState<any[]>([]);
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+  const [executionLogs, setExecutionLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('workflows');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -493,11 +494,27 @@ export default function WorkflowsPage() {
         body: JSON.stringify({ ruleId })
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        alert('Rule executed successfully!');
+        // Show detailed execution log
+        const log = data.executionLog;
+        if (log) {
+          const actionSummary = log.actions.map((a: any) => 
+            `${a.type}: ${a.status === 'success' ? '✅' : '❌'} ${a.message || ''}`
+          ).join('\n');
+          
+          alert(`Rule executed successfully!\n\nStatus: ${log.status}\nActions:\n${actionSummary}`);
+        } else {
+          alert('Rule executed successfully!');
+        }
         loadAutomationRules(); // Refresh to get updated execution count
+        loadExecutionLogs(); // Refresh execution logs
       } else {
-        alert('Failed to execute rule');
+        const errorMsg = data.executionLog 
+          ? `Failed to execute rule. Status: ${data.executionLog.status}\nActions: ${data.executionLog.actions.map((a: any) => `${a.type}: ${a.status}`).join(', ')}`
+          : 'Failed to execute rule';
+        alert(errorMsg);
       }
     } catch (error) {
       console.error('Error executing rule:', error);
@@ -505,9 +522,23 @@ export default function WorkflowsPage() {
     }
   };
 
+  const loadExecutionLogs = async () => {
+    try {
+      const response = await fetch('/api/automation/executions');
+      const data = await response.json();
+      
+      if (data.success) {
+        setExecutionLogs(data.logs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching execution logs:', error);
+    }
+  };
+
   // Load automation rules when component mounts
   useEffect(() => {
     loadAutomationRules();
+    loadExecutionLogs();
   }, []);
 
   if (loading) {
@@ -749,6 +780,74 @@ export default function WorkflowsPage() {
               ))
             )}
           </div>
+
+          {/* Execution Logs Section */}
+          {executionLogs.length > 0 && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Recent Executions
+                </CardTitle>
+                <CardDescription>
+                  View execution history and action results
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {executionLogs.slice(0, 10).map((log) => (
+                    <div key={log.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{log.ruleName}</h4>
+                            <Badge 
+                              variant={log.status === 'success' ? 'default' : log.status === 'partial' ? 'secondary' : 'destructive'}
+                            >
+                              {log.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {new Date(log.timestamp).toLocaleString()}
+                            {log.duration && ` • ${log.duration}ms`}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {log.actions && log.actions.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          <p className="text-sm font-medium">Actions:</p>
+                          {log.actions.map((action: any, idx: number) => (
+                            <div key={idx} className="flex items-start gap-2 text-sm bg-gray-50 p-2 rounded">
+                              <span className={action.status === 'success' ? 'text-green-600' : 'text-red-600'}>
+                                {action.status === 'success' ? '✅' : '❌'}
+                              </span>
+                              <div className="flex-1">
+                                <span className="font-medium capitalize">{action.type.replace('_', ' ')}:</span>
+                                <span className="ml-2 text-gray-600">{action.message || action.status}</span>
+                                {action.details && action.details.to && (
+                                  <span className="ml-2 text-xs text-gray-500">→ {action.details.to}</span>
+                                )}
+                                {action.details && action.details.title && (
+                                  <span className="ml-2 text-xs text-gray-500">"{action.details.title}"</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {log.error && (
+                        <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
+                          <strong>Error:</strong> {log.error}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="workflows" className="space-y-6">
