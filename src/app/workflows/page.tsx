@@ -88,6 +88,7 @@ export default function WorkflowsPage() {
   const [executions, setExecutions] = useState<any[]>([]);
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
   const [executionLogs, setExecutionLogs] = useState<any[]>([]);
+  const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('workflows');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -752,7 +753,7 @@ export default function WorkflowsPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
                         <span className="font-medium">Trigger:</span>
                         <p className="text-gray-600 capitalize">{rule.trigger.type}</p>
@@ -774,6 +775,90 @@ export default function WorkflowsPage() {
                           }
                         </p>
                       </div>
+                    </div>
+
+                    {/* Expandable Rule Details */}
+                    <div className="border-t pt-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newExpanded = new Set(expandedRules);
+                          if (newExpanded.has(rule.id)) {
+                            newExpanded.delete(rule.id);
+                          } else {
+                            newExpanded.add(rule.id);
+                          }
+                          setExpandedRules(newExpanded);
+                        }}
+                        className="w-full"
+                      >
+                        {expandedRules.has(rule.id) ? '▼ Hide Details' : '▶ Show Details'}
+                      </Button>
+
+                      {expandedRules.has(rule.id) && (
+                        <div className="mt-4 space-y-4 text-sm">
+                          {/* Trigger Details */}
+                          <div className="bg-gray-50 p-3 rounded">
+                            <h4 className="font-medium mb-2">Trigger Configuration:</h4>
+                            <pre className="text-xs overflow-x-auto bg-white p-2 rounded border">
+                              {JSON.stringify(rule.trigger, null, 2)}
+                            </pre>
+                          </div>
+
+                          {/* Actions Details */}
+                          <div className="bg-gray-50 p-3 rounded">
+                            <h4 className="font-medium mb-2">Actions ({rule.actions.length}):</h4>
+                            <div className="space-y-3">
+                              {rule.actions.map((action, idx) => (
+                                <div key={idx} className="bg-white p-3 rounded border">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-medium capitalize">{action.type.replace('_', ' ')}</span>
+                                  </div>
+                                  
+                                  {action.type === 'conditional' && action.config.condition && (
+                                    <div className="mb-2 p-2 bg-yellow-50 rounded border-l-2 border-yellow-400">
+                                      <p className="text-xs font-medium">Condition:</p>
+                                      <p className="text-xs">
+                                        {action.config.condition.type === 'contains' 
+                                          ? `Check if "${action.config.condition.field}" contains "${action.config.condition.value}"`
+                                          : JSON.stringify(action.config.condition, null, 2)
+                                        }
+                                      </p>
+                                      <p className="text-xs mt-1">
+                                        True Actions: {action.config.trueActions?.length || 0} | 
+                                        False Actions: {action.config.falseActions?.length || 0}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {action.type === 'send_email' && (
+                                    <div className="text-xs space-y-1">
+                                      <p><strong>To:</strong> {action.config.to || 'N/A'}</p>
+                                      <p><strong>Subject:</strong> {action.config.subject || 'N/A'}</p>
+                                      <p><strong>Template:</strong> {action.config.template || 'N/A'}</p>
+                                    </div>
+                                  )}
+
+                                  {action.type === 'create_calendar_event' && (
+                                    <div className="text-xs space-y-1">
+                                      <p><strong>Title:</strong> {action.config.title || 'N/A'}</p>
+                                      <p><strong>Location:</strong> {action.config.location || 'N/A'}</p>
+                                    </div>
+                                  )}
+
+                                  <details className="mt-2">
+                                    <summary className="text-xs cursor-pointer text-gray-600">Full Configuration</summary>
+                                    <pre className="text-xs mt-2 overflow-x-auto bg-gray-100 p-2 rounded">
+                                      {JSON.stringify(action.config, null, 2)}
+                                    </pre>
+                                  </details>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
