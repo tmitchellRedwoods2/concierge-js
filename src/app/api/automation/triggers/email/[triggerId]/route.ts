@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { emailTriggerService } from '@/lib/services/email-trigger';
 
 // DELETE /api/automation/triggers/email/[triggerId] - Delete email trigger
@@ -9,7 +8,7 @@ export async function DELETE(
   { params }: { params: { triggerId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
