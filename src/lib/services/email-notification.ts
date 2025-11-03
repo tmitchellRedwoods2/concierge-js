@@ -45,7 +45,22 @@ export class EmailNotificationService {
       },
     };
 
-    this.transporter = nodemailer.createTransport(this.config);
+    try {
+      this.transporter = nodemailer.createTransport(this.config);
+    } catch (error) {
+      console.error('Error creating email transporter:', error);
+      // Create a minimal transporter that will fail gracefully later
+      // This allows the service to be created even if config is incomplete
+      this.transporter = nodemailer.createTransport({
+        host: 'localhost',
+        port: 587,
+        secure: false,
+        auth: {
+          user: '',
+          pass: '',
+        },
+      });
+    }
   }
 
   async sendCalendarNotification(notification: CalendarEventNotification): Promise<{ success: boolean; messageId?: string; error?: string }> {

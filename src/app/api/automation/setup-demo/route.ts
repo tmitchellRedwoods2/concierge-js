@@ -211,8 +211,23 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error setting up demo automation:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : typeof error,
+      error: JSON.stringify(error, Object.getOwnPropertyNames(error))
+    });
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
     return NextResponse.json(
-      { error: 'Failed to set up demo automation' },
+      { 
+        error: 'Failed to set up demo automation',
+        details: errorMessage,
+        message: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     );
   }

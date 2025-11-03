@@ -1,361 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="40" failures="16" errors="0" time="0.518">
-  <testsuite name="EmailNotificationService" errors="0" failures="16" skipped="0" timestamp="2025-10-29T18:52:02" time="0.119" tests="16">
-    <testcase classname="EmailNotificationService constructor should initialize with environment variables" name="EmailNotificationService constructor should initialize with environment variables" time="0.001">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+<testsuites name="jest tests" tests="32" failures="0" errors="0" time="0.698">
+  <testsuite name="AutomationEngine" errors="0" failures="0" skipped="0" timestamp="2025-11-03T19:09:28" time="0.268" tests="13">
+    <testcase classname="AutomationEngine addRule should add a new automation rule" name="AutomationEngine addRule should add a new automation rule" time="0.006">
     </testcase>
-    <testcase classname="EmailNotificationService constructor should initialize with custom config" name="EmailNotificationService constructor should initialize with custom config" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine addRule should generate unique IDs for different rules" name="AutomationEngine addRule should generate unique IDs for different rules" time="0">
     </testcase>
-    <testcase classname="EmailNotificationService sendCalendarNotification should send appointment confirmation email successfully" name="EmailNotificationService sendCalendarNotification should send appointment confirmation email successfully" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine executeRule should execute a rule successfully" name="AutomationEngine executeRule should execute a rule successfully" time="0.002">
     </testcase>
-    <testcase classname="EmailNotificationService sendCalendarNotification should send appointment reminder email successfully" name="EmailNotificationService sendCalendarNotification should send appointment reminder email successfully" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine executeRule should return false for non-existent rule" name="AutomationEngine executeRule should return false for non-existent rule" time="0">
     </testcase>
-    <testcase classname="EmailNotificationService sendCalendarNotification should send appointment cancellation email successfully" name="EmailNotificationService sendCalendarNotification should send appointment cancellation email successfully" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine executeRule should return false for disabled rule" name="AutomationEngine executeRule should return false for disabled rule" time="0">
     </testcase>
-    <testcase classname="EmailNotificationService sendCalendarNotification should send appointment modification email successfully" name="EmailNotificationService sendCalendarNotification should send appointment modification email successfully" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine getUserRules should return rules for a specific user" name="AutomationEngine getUserRules should return rules for a specific user" time="0.001">
     </testcase>
-    <testcase classname="EmailNotificationService sendCalendarNotification should handle email sending failure" name="EmailNotificationService sendCalendarNotification should handle email sending failure" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine toggleRule should enable/disable a rule" name="AutomationEngine toggleRule should enable/disable a rule" time="0">
     </testcase>
-    <testcase classname="EmailNotificationService sendCalendarNotification should handle missing recipient email gracefully" name="EmailNotificationService sendCalendarNotification should handle missing recipient email gracefully" time="0.001">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine toggleRule should return false for non-existent rule" name="AutomationEngine toggleRule should return false for non-existent rule" time="0">
     </testcase>
-    <testcase classname="EmailNotificationService testConnection should verify SMTP connection successfully" name="EmailNotificationService testConnection should verify SMTP connection successfully" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine deleteRule should delete a rule" name="AutomationEngine deleteRule should delete a rule" time="0.001">
     </testcase>
-    <testcase classname="EmailNotificationService testConnection should handle connection verification failure" name="EmailNotificationService testConnection should handle connection verification failure" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine deleteRule should return false for non-existent rule" name="AutomationEngine deleteRule should return false for non-existent rule" time="0">
     </testcase>
-    <testcase classname="EmailNotificationService email templates should generate correct confirmation email template" name="EmailNotificationService email templates should generate correct confirmation email template" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine action execution should execute send_email action" name="AutomationEngine action execution should execute send_email action" time="0.001">
     </testcase>
-    <testcase classname="EmailNotificationService email templates should generate correct reminder email template" name="EmailNotificationService email templates should generate correct reminder email template" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine action execution should execute create_calendar_event action" name="AutomationEngine action execution should execute create_calendar_event action" time="0">
     </testcase>
-    <testcase classname="EmailNotificationService email templates should handle events without location" name="EmailNotificationService email templates should handle events without location" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
-    </testcase>
-    <testcase classname="EmailNotificationService email templates should handle events without description" name="EmailNotificationService email templates should handle events without description" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
-    </testcase>
-    <testcase classname="EmailNotificationService error handling should handle unknown errors gracefully" name="EmailNotificationService error handling should handle unknown errors gracefully" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
-    </testcase>
-    <testcase classname="EmailNotificationService error handling should handle network timeouts" name="EmailNotificationService error handling should handle network timeouts" time="0">
-      <failure>TypeError: _nodemailer.createTransport is not a function
-    at new createTransport (/Users/timmitchell/concierge-js/src/lib/services/email-notification.ts:48:35)
-    at Object.&lt;anonymous&gt; (/Users/timmitchell/concierge-js/src/__tests__/services/email-notification.test.ts:35:20)
-    at Promise.then.completed (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:298:28)
-    at new Promise (&lt;anonymous&gt;)
-    at callAsyncCircusFn (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/utils.js:231:10)
-    at _callCircusHook (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:281:40)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at _runTest (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:246:5)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:126:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at _runTestsForDescribeBlock (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:121:9)
-    at run (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/run.js:71:3)
-    at runAndTransformResultsToJestFormat (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AutomationEngine action execution should execute wait action" name="AutomationEngine action execution should execute wait action" time="0.103">
     </testcase>
   </testsuite>
-  <testsuite name="Email Notifications API" errors="0" failures="0" skipped="0" timestamp="2025-10-29T18:52:02" time="0.06" tests="11">
-    <testcase classname="Email Notifications API POST /api/notifications/email should send calendar notification successfully" name="Email Notifications API POST /api/notifications/email should send calendar notification successfully" time="0.002">
+  <testsuite name="/api/automation/rules" errors="0" failures="0" skipped="0" timestamp="2025-11-03T19:09:28" time="0.035" tests="6">
+    <testcase classname="/api/automation/rules GET should return automation rules for authenticated user" name="/api/automation/rules GET should return automation rules for authenticated user" time="0">
     </testcase>
-    <testcase classname="Email Notifications API POST /api/notifications/email should test email service connection successfully" name="Email Notifications API POST /api/notifications/email should test email service connection successfully" time="0.001">
+    <testcase classname="/api/automation/rules GET should return 401 for unauthenticated user" name="/api/automation/rules GET should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Email Notifications API POST /api/notifications/email should return 400 for missing notification data" name="Email Notifications API POST /api/notifications/email should return 400 for missing notification data" time="0">
+    <testcase classname="/api/automation/rules POST should create a new automation rule" name="/api/automation/rules POST should create a new automation rule" time="0">
     </testcase>
-    <testcase classname="Email Notifications API POST /api/notifications/email should return 400 for invalid action" name="Email Notifications API POST /api/notifications/email should return 400 for invalid action" time="0">
+    <testcase classname="/api/automation/rules POST should return 400 for missing required fields" name="/api/automation/rules POST should return 400 for missing required fields" time="0">
     </testcase>
-    <testcase classname="Email Notifications API POST /api/notifications/email should return 401 for unauthenticated user" name="Email Notifications API POST /api/notifications/email should return 401 for unauthenticated user" time="0">
+    <testcase classname="/api/automation/rules POST should return 401 for unauthenticated user" name="/api/automation/rules POST should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="Email Notifications API POST /api/notifications/email should handle email sending failure" name="Email Notifications API POST /api/notifications/email should handle email sending failure" time="0">
-    </testcase>
-    <testcase classname="Email Notifications API POST /api/notifications/email should handle email service connection failure" name="Email Notifications API POST /api/notifications/email should handle email service connection failure" time="0">
-    </testcase>
-    <testcase classname="Email Notifications API GET /api/notifications/email should return email service status successfully" name="Email Notifications API GET /api/notifications/email should return email service status successfully" time="0">
-    </testcase>
-    <testcase classname="Email Notifications API GET /api/notifications/email should return email service configuration issue" name="Email Notifications API GET /api/notifications/email should return email service configuration issue" time="0">
-    </testcase>
-    <testcase classname="Email Notifications API GET /api/notifications/email should return 401 for unauthenticated user" name="Email Notifications API GET /api/notifications/email should return 401 for unauthenticated user" time="0.001">
-    </testcase>
-    <testcase classname="Email Notifications API GET /api/notifications/email should handle service errors gracefully" name="Email Notifications API GET /api/notifications/email should handle service errors gracefully" time="0.006">
+    <testcase classname="/api/automation/rules POST should handle server errors gracefully" name="/api/automation/rules POST should handle server errors gracefully" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="NotificationService" errors="0" failures="0" skipped="0" timestamp="2025-10-29T18:52:02" time="0.038" tests="13">
-    <testcase classname="NotificationService scheduleAppointmentReminders should schedule confirmation and reminder notifications" name="NotificationService scheduleAppointmentReminders should schedule confirmation and reminder notifications" time="0.003">
+  <testsuite name="/api/automation/smart-schedule" errors="0" failures="0" skipped="0" timestamp="2025-11-03T19:09:28" time="0.035" tests="7">
+    <testcase classname="/api/automation/smart-schedule POST should auto-schedule an event successfully" name="/api/automation/smart-schedule POST should auto-schedule an event successfully" time="0.001">
     </testcase>
-    <testcase classname="NotificationService scheduleAppointmentReminders should handle email sending failure gracefully" name="NotificationService scheduleAppointmentReminders should handle email sending failure gracefully" time="0.001">
+    <testcase classname="/api/automation/smart-schedule POST should return 400 for missing required fields" name="/api/automation/smart-schedule POST should return 400 for missing required fields" time="0">
     </testcase>
-    <testcase classname="NotificationService scheduleAppointmentReminders should not schedule reminders for past events" name="NotificationService scheduleAppointmentReminders should not schedule reminders for past events" time="0.001">
+    <testcase classname="/api/automation/smart-schedule POST should return 400 when no optimal time found" name="/api/automation/smart-schedule POST should return 400 when no optimal time found" time="0">
     </testcase>
-    <testcase classname="NotificationService scheduleAppointmentReminders should handle events without attendees" name="NotificationService scheduleAppointmentReminders should handle events without attendees" time="0">
+    <testcase classname="/api/automation/smart-schedule POST should return 401 for unauthenticated user" name="/api/automation/smart-schedule POST should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="NotificationService sendAppointmentConfirmation should send confirmation email successfully" name="NotificationService sendAppointmentConfirmation should send confirmation email successfully" time="0.001">
+    <testcase classname="/api/automation/smart-schedule POST should handle server errors gracefully" name="/api/automation/smart-schedule POST should handle server errors gracefully" time="0.003">
     </testcase>
-    <testcase classname="NotificationService sendAppointmentConfirmation should handle email sending failure" name="NotificationService sendAppointmentConfirmation should handle email sending failure" time="0.001">
+    <testcase classname="/api/automation/smart-schedule POST should handle different event types" name="/api/automation/smart-schedule POST should handle different event types" time="0">
     </testcase>
-    <testcase classname="NotificationService sendAppointmentReminder should send reminder email successfully" name="NotificationService sendAppointmentReminder should send reminder email successfully" time="0">
+    <testcase classname="/api/automation/smart-schedule POST should handle flexible scheduling" name="/api/automation/smart-schedule POST should handle flexible scheduling" time="0">
     </testcase>
-    <testcase classname="NotificationService sendAppointmentCancellation should send cancellation email successfully" name="NotificationService sendAppointmentCancellation should send cancellation email successfully" time="0.001">
+  </testsuite>
+  <testsuite name="/api/automation/execute" errors="0" failures="0" skipped="0" timestamp="2025-11-03T19:09:28" time="0.032" tests="6">
+    <testcase classname="/api/automation/execute POST should execute a rule successfully" name="/api/automation/execute POST should execute a rule successfully" time="0">
     </testcase>
-    <testcase classname="NotificationService sendAppointmentModification should send modification email successfully" name="NotificationService sendAppointmentModification should send modification email successfully" time="0">
+    <testcase classname="/api/automation/execute POST should execute rule with default trigger data" name="/api/automation/execute POST should execute rule with default trigger data" time="0">
     </testcase>
-    <testcase classname="NotificationService testEmailService should test email service connection successfully" name="NotificationService testEmailService should test email service connection successfully" time="0">
+    <testcase classname="/api/automation/execute POST should return 400 for missing ruleId" name="/api/automation/execute POST should return 400 for missing ruleId" time="0">
     </testcase>
-    <testcase classname="NotificationService testEmailService should handle email service connection failure" name="NotificationService testEmailService should handle email service connection failure" time="0">
+    <testcase classname="/api/automation/execute POST should return 400 when rule execution fails" name="/api/automation/execute POST should return 400 when rule execution fails" time="0">
     </testcase>
-    <testcase classname="NotificationService error handling should handle unknown errors gracefully" name="NotificationService error handling should handle unknown errors gracefully" time="0.001">
+    <testcase classname="/api/automation/execute POST should return 401 for unauthenticated user" name="/api/automation/execute POST should return 401 for unauthenticated user" time="0">
     </testcase>
-    <testcase classname="NotificationService error handling should handle network timeouts" name="NotificationService error handling should handle network timeouts" time="0.002">
+    <testcase classname="/api/automation/execute POST should handle server errors gracefully" name="/api/automation/execute POST should handle server errors gracefully" time="0.002">
     </testcase>
   </testsuite>
 </testsuites>

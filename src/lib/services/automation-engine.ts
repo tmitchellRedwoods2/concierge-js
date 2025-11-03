@@ -33,14 +33,33 @@ export interface AutomationContext {
 
 export class AutomationEngine extends EventEmitter {
   private rules: Map<string, AutomationRule> = new Map();
-  private notificationService: NotificationService;
+  private notificationService: NotificationService | null = null;
   private isRunning: boolean = false;
   private executionQueue: Array<{ rule: AutomationRule; context: AutomationContext }> = [];
 
   constructor() {
     super();
-    this.notificationService = new NotificationService();
-    this.startExecutionLoop();
+    try {
+      this.notificationService = new NotificationService();
+      this.startExecutionLoop();
+    } catch (error) {
+      console.error('Error initializing AutomationEngine:', error);
+      // Continue without notification service if it fails
+      // This allows rules to be created even if email service isn't configured
+      this.notificationService = null;
+    }
+  }
+
+  private getNotificationService(): NotificationService {
+    if (!this.notificationService) {
+      try {
+        this.notificationService = new NotificationService();
+      } catch (error) {
+        console.error('Error creating NotificationService:', error);
+        throw new Error('Notification service not available');
+      }
+    }
+    return this.notificationService;
   }
 
   // Add a new automation rule
@@ -147,22 +166,29 @@ export class AutomationEngine extends EventEmitter {
 
   // Email action
   private async sendEmailAction(action: AutomationAction, context: AutomationContext): Promise<void> {
-    const { to, subject, template, data } = action.config;
-    
-    const emailData = {
-      type: template || 'appointment_confirmation',
-      recipientEmail: to,
-      recipientName: data?.recipientName || 'User',
-      title: data?.title || subject,
-      startDate: data?.startDate || new Date().toISOString(),
-      endDate: data?.endDate || new Date(Date.now() + 3600000).toISOString(),
-      location: data?.location || '',
-      description: data?.description || '',
-      ...data
-    };
+    try {
+      const { to, subject, template, data } = action.config;
+      
+      const emailData = {
+        type: template || 'appointment_confirmation',
+        recipientEmail: to,
+        recipientName: data?.recipientName || 'User',
+        title: data?.title || subject,
+        startDate: data?.startDate || new Date().toISOString(),
+        endDate: data?.endDate || new Date(Date.now() + 3600000).toISOString(),
+        location: data?.location || '',
+        description: data?.description || '',
+        ...data
+      };
 
-    await this.notificationService.sendAppointmentConfirmation(emailData);
-    console.log(`📧 Email sent to ${to}`);
+      const notificationService = this.getNotificationService();
+      await notificationService.sendAppointmentConfirmation(emailData);
+      console.log(`📧 Email sent to ${to}`);
+    } catch (error) {
+      console.error('❌ Failed to send email action:', error);
+      // Don't throw - allow rule execution to continue even if email fails
+      // This is a non-blocking action
+    }
   }
 
   // SMS action
@@ -352,5 +378,24 @@ export class AutomationEngine extends EventEmitter {
   }
 }
 
-// Singleton instance
-export const automationEngine = new AutomationEngine();
+// Singleton instance - with error handling for serverless environments
+let automationEngineInstance: AutomationEngine | null = null;
+
+function createAutomationEngine(): AutomationEngine {
+  try {
+    return new AutomationEngine();
+  } catch (error) {
+    console.error('Error creating AutomationEngine singleton:', error);
+    // Even if initialization partially fails, create instance
+    // The constructor will handle notification service failures gracefully
+    const engine = Object.create(AutomationEngine.prototype);
+    engine.rules = new Map();
+    engine.notificationService = null;
+    engine.isRunning = false;
+    engine.executionQueue = [];
+    engine.startExecutionLoop = () => {}; // No-op if it fails
+    return engine as AutomationEngine;
+  }
+}
+
+export const automationEngine = createAutomationEngine();

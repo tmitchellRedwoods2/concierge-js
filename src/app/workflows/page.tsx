@@ -431,15 +431,19 @@ export default function WorkflowsPage() {
         headers: { 'Content-Type': 'application/json' }
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         alert('Demo automation rules created successfully!');
         loadAutomationRules();
       } else {
-        alert('Failed to create demo automation rules');
+        const errorMessage = data.details || data.message || data.error || 'Failed to create demo automation rules';
+        console.error('Failed to create demo rules:', data);
+        alert(`Failed to create demo automation rules: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error setting up demo automation:', error);
-      alert('Error setting up demo automation');
+      alert(`Error setting up demo automation: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
