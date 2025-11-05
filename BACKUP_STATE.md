@@ -82,3 +82,4 @@ git log --oneline backup/pre-cursor-2.0
 - Safe to upgrade Cursor 2.0
 - Can restore from backup if needed
 
+
