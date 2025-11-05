@@ -556,6 +556,10 @@ export default function WorkflowsPage() {
     }
 
     try {
+      // Clean up triggerConditions - remove patternsString before sending
+      const cleanedConditions = { ...newRule.triggerConditions };
+      delete cleanedConditions.patternsString;
+
       const response = await fetch('/api/automation/rules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -564,7 +568,7 @@ export default function WorkflowsPage() {
           description: newRule.description,
           trigger: {
             type: newRule.triggerType,
-            conditions: newRule.triggerConditions
+            conditions: cleanedConditions
           },
           actions: newRule.actions,
           enabled: true
@@ -580,7 +584,7 @@ export default function WorkflowsPage() {
           name: '',
           description: '',
           triggerType: 'email',
-          triggerConditions: {},
+          triggerConditions: { patternsString: '' },
           actions: []
         });
         loadAutomationRules();
@@ -1619,7 +1623,7 @@ export default function WorkflowsPage() {
                   onChange={(e) => setNewRule(prev => ({ 
                     ...prev, 
                     triggerType: e.target.value as any,
-                    triggerConditions: {} // Reset conditions when type changes
+                    triggerConditions: { patternsString: '' } // Reset conditions when type changes
                   }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -1637,14 +1641,18 @@ export default function WorkflowsPage() {
                   <label className="block text-sm font-medium mb-1">Email Patterns (comma-separated)</label>
                   <input
                     type="text"
-                    value={newRule.triggerConditions.patterns?.join(', ') || ''}
-                    onChange={(e) => setNewRule(prev => ({
-                      ...prev,
-                      triggerConditions: {
-                        ...prev.triggerConditions,
-                        patterns: e.target.value.split(',').map(p => p.trim()).filter(p => p)
-                      }
-                    }))}
+                    value={newRule.triggerConditions.patternsString || (newRule.triggerConditions.patterns?.join(', ') || '')}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      setNewRule(prev => ({
+                        ...prev,
+                        triggerConditions: {
+                          ...prev.triggerConditions,
+                          patternsString: inputValue,
+                          patterns: inputValue.split(',').map(p => p.trim()).filter(p => p)
+                        }
+                      }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="appointment, doctor, medical"
                   />
