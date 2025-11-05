@@ -50,6 +50,24 @@ interface Monitor {
   lastCheck: string;
 }
 
+interface AutomationRule {
+  id: string;
+  name: string;
+  description: string;
+  trigger: {
+    type: string;
+    conditions: Record<string, any>;
+  };
+  actions: Array<{
+    type: string;
+    config: Record<string, any>;
+  }>;
+  enabled: boolean;
+  executionCount: number;
+  lastExecuted?: string;
+  createdAt: string;
+}
+
 interface Approval {
   id: string;
   workflowId: string;
@@ -68,6 +86,9 @@ export default function WorkflowsPage() {
   const [monitors, setMonitors] = useState<Monitor[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [executions, setExecutions] = useState<any[]>([]);
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+  const [executionLogs, setExecutionLogs] = useState<any[]>([]);
+  const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('workflows');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -83,6 +104,14 @@ export default function WorkflowsPage() {
   const [recipientEmail, setRecipientEmail] = useState('');
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
+  const [showCreateRuleModal, setShowCreateRuleModal] = useState(false);
+  const [newRule, setNewRule] = useState({
+    name: '',
+    description: '',
+    triggerType: 'email' as 'email' | 'schedule' | 'calendar_event' | 'webhook' | 'time_based',
+    triggerConditions: {} as Record<string, any>,
+    actions: [] as Array<{ type: string; config: Record<string, any> }>
+  });
 
   useEffect(() => {
     loadData();
@@ -391,6 +420,211 @@ export default function WorkflowsPage() {
     }
   };
 
+  // Automation functions
+  const loadAutomationRules = async () => {
+    try {
+      const response = await fetch('/api/automation/rules');
+      const data = await response.json();
+      
+      if (data.success) {
+        setAutomationRules(data.rules);
+      }
+    } catch (error) {
+      console.error('Error fetching automation rules:', error);
+    }
+  };
+
+  const setupDemoAutomation = async () => {
+    try {
+      const response = await fetch('/api/automation/setup-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Demo automation rules created successfully!');
+        loadAutomationRules();
+      } else {
+        const errorMessage = data.details || data.message || data.error || 'Failed to create demo automation rules';
+        console.error('Failed to create demo rules:', data);
+        alert(`Failed to create demo automation rules: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('Error setting up demo automation:', error);
+      alert(`Error setting up demo automation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const toggleRule = async (ruleId: string, enabled: boolean) => {
+    try {
+      const response = await fetch(`/api/automation/rules/${ruleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled })
+      });
+
+      if (response.ok) {
+        setAutomationRules(rules => 
+          rules.map(rule => 
+            rule.id === ruleId ? { ...rule, enabled } : rule
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling rule:', error);
+    }
+  };
+
+  const deleteRule = async (ruleId: string) => {
+    if (!confirm('Are you sure you want to delete this automation rule?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/automation/rules/${ruleId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setAutomationRules(rules => rules.filter(rule => rule.id !== ruleId));
+      }
+    } catch (error) {
+      console.error('Error deleting rule:', error);
+    }
+  };
+
+  const executeRule = async (ruleId: string) => {
+    try {
+      const response = await fetch('/api/automation/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruleId })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Show detailed execution log
+        const log = data.executionLog;
+        if (log) {
+          const actionSummary = log.actions.map((a: any) => 
+            `${a.type}: ${a.status === 'success' ? '✅' : '❌'} ${a.message || ''}`
+          ).join('\n');
+          
+          alert(`Rule executed successfully!\n\nStatus: ${log.status}\nActions:\n${actionSummary}`);
+        } else {
+          alert('Rule executed successfully!');
+        }
+        loadAutomationRules(); // Refresh to get updated execution count
+        loadExecutionLogs(); // Refresh execution logs
+      } else {
+        const errorMsg = data.executionLog 
+          ? `Failed to execute rule. Status: ${data.executionLog.status}\nActions: ${data.executionLog.actions.map((a: any) => `${a.type}: ${a.status}`).join(', ')}`
+          : 'Failed to execute rule';
+        alert(errorMsg);
+      }
+    } catch (error) {
+      console.error('Error executing rule:', error);
+      alert('Error executing rule');
+    }
+  };
+
+  const loadExecutionLogs = async () => {
+    try {
+      const response = await fetch('/api/automation/executions');
+      const data = await response.json();
+      
+      if (data.success) {
+        setExecutionLogs(data.logs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching execution logs:', error);
+    }
+  };
+
+  const createRule = async () => {
+    if (!newRule.name.trim()) {
+      alert('Please enter a rule name');
+      return;
+    }
+
+    if (newRule.actions.length === 0) {
+      alert('Please add at least one action');
+      return;
+    }
+
+    try {
+      // Clean up triggerConditions - remove patternsString before sending
+      const { patternsString, ...cleanedConditions } = newRule.triggerConditions;
+
+      const response = await fetch('/api/automation/rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newRule.name,
+          description: newRule.description,
+          trigger: {
+            type: newRule.triggerType,
+            conditions: cleanedConditions
+          },
+          actions: newRule.actions,
+          enabled: true
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Automation rule created successfully!');
+        setShowCreateRuleModal(false);
+        setNewRule({
+          name: '',
+          description: '',
+          triggerType: 'email',
+          triggerConditions: { patternsString: '' },
+          actions: []
+        });
+        loadAutomationRules();
+      } else {
+        alert(`Failed to create rule: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating rule:', error);
+      alert('Error creating rule');
+    }
+  };
+
+  const addAction = () => {
+    setNewRule(prev => ({
+      ...prev,
+      actions: [...prev.actions, { type: 'send_email', config: {} }]
+    }));
+  };
+
+  const updateAction = (index: number, field: string, value: any) => {
+    setNewRule(prev => ({
+      ...prev,
+      actions: prev.actions.map((action, i) => 
+        i === index ? { ...action, [field]: value } : action
+      )
+    }));
+  };
+
+  const removeAction = (index: number) => {
+    setNewRule(prev => ({
+      ...prev,
+      actions: prev.actions.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Load automation rules when component mounts
+  useEffect(() => {
+    loadAutomationRules();
+    loadExecutionLogs();
+  }, []);
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -526,13 +760,270 @@ export default function WorkflowsPage() {
         </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="workflows">Workflows</TabsTrigger>
+          <TabsTrigger value="automation">Automation Rules</TabsTrigger>
           <TabsTrigger value="executions">Executions</TabsTrigger>
           <TabsTrigger value="monitors">Event Monitors</TabsTrigger>
           <TabsTrigger value="approvals">Pending Approvals</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="automation" className="space-y-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Automation Rules</h2>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowCreateRuleModal(true)} 
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4" />
+                Create Rule
+              </Button>
+              <Button onClick={() => setupDemoAutomation()} className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                <Zap className="w-4 h-4" />
+                Setup Demo Rules
+              </Button>
+              <Button onClick={() => setActiveTab('workflows')} variant="outline">
+                <Activity className="w-4 h-4 mr-2" />
+                Test Workflows
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid gap-4">
+            {automationRules.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <Zap className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Automation Rules</h3>
+                  <p className="text-gray-600 mb-4">
+                    Create automation rules to automatically handle emails, schedule events, and more
+                  </p>
+                  <Button onClick={() => setupDemoAutomation()}>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Setup Demo Rules
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              automationRules.map((rule) => (
+                <Card key={rule.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          {rule.name}
+                          <Badge variant={rule.enabled ? 'default' : 'secondary'}>
+                            {rule.enabled ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription>{rule.description}</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={rule.enabled}
+                          onCheckedChange={(enabled) => toggleRule(rule.id, enabled)}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => executeRule(rule.id)}
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deleteRule(rule.id)}
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                      <div>
+                        <span className="font-medium">Trigger:</span>
+                        <p className="text-gray-600 capitalize">{rule.trigger.type}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Actions:</span>
+                        <p className="text-gray-600">{rule.actions.length}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Executions:</span>
+                        <p className="text-gray-600">{rule.executionCount}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Last Run:</span>
+                        <p className="text-gray-600">
+                          {rule.lastExecuted 
+                            ? new Date(rule.lastExecuted).toLocaleDateString()
+                            : 'Never'
+                          }
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Expandable Rule Details */}
+                    <div className="border-t pt-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newExpanded = new Set(expandedRules);
+                          if (newExpanded.has(rule.id)) {
+                            newExpanded.delete(rule.id);
+                          } else {
+                            newExpanded.add(rule.id);
+                          }
+                          setExpandedRules(newExpanded);
+                        }}
+                        className="w-full"
+                      >
+                        {expandedRules.has(rule.id) ? '▼ Hide Details' : '▶ Show Details'}
+                      </Button>
+
+                      {expandedRules.has(rule.id) && (
+                        <div className="mt-4 space-y-4 text-sm">
+                          {/* Trigger Details */}
+                          <div className="bg-gray-50 p-3 rounded">
+                            <h4 className="font-medium mb-2">Trigger Configuration:</h4>
+                            <pre className="text-xs overflow-x-auto bg-white p-2 rounded border">
+                              {JSON.stringify(rule.trigger, null, 2)}
+                            </pre>
+                          </div>
+
+                          {/* Actions Details */}
+                          <div className="bg-gray-50 p-3 rounded">
+                            <h4 className="font-medium mb-2">Actions ({rule.actions.length}):</h4>
+                            <div className="space-y-3">
+                              {rule.actions.map((action, idx) => (
+                                <div key={idx} className="bg-white p-3 rounded border">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="font-medium capitalize">{action.type.replace('_', ' ')}</span>
+                                  </div>
+                                  
+                                  {action.type === 'conditional' && action.config.condition && (
+                                    <div className="mb-2 p-2 bg-yellow-50 rounded border-l-2 border-yellow-400">
+                                      <p className="text-xs font-medium">Condition:</p>
+                                      <p className="text-xs">
+                                        {action.config.condition.type === 'contains' 
+                                          ? `Check if "${action.config.condition.field}" contains "${action.config.condition.value}"`
+                                          : JSON.stringify(action.config.condition, null, 2)
+                                        }
+                                      </p>
+                                      <p className="text-xs mt-1">
+                                        True Actions: {action.config.trueActions?.length || 0} | 
+                                        False Actions: {action.config.falseActions?.length || 0}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {action.type === 'send_email' && (
+                                    <div className="text-xs space-y-1">
+                                      <p><strong>To:</strong> {action.config.to || 'N/A'}</p>
+                                      <p><strong>Subject:</strong> {action.config.subject || 'N/A'}</p>
+                                      <p><strong>Template:</strong> {action.config.template || 'N/A'}</p>
+                                    </div>
+                                  )}
+
+                                  {action.type === 'create_calendar_event' && (
+                                    <div className="text-xs space-y-1">
+                                      <p><strong>Title:</strong> {action.config.title || 'N/A'}</p>
+                                      <p><strong>Location:</strong> {action.config.location || 'N/A'}</p>
+                                    </div>
+                                  )}
+
+                                  <details className="mt-2">
+                                    <summary className="text-xs cursor-pointer text-gray-600">Full Configuration</summary>
+                                    <pre className="text-xs mt-2 overflow-x-auto bg-gray-100 p-2 rounded">
+                                      {JSON.stringify(action.config, null, 2)}
+                                    </pre>
+                                  </details>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Execution Logs Section */}
+          {executionLogs.length > 0 && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Recent Executions
+                </CardTitle>
+                <CardDescription>
+                  View execution history and action results
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {executionLogs.slice(0, 10).map((log) => (
+                    <div key={log.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{log.ruleName}</h4>
+                            <Badge 
+                              variant={log.status === 'success' ? 'default' : log.status === 'partial' ? 'secondary' : 'destructive'}
+                            >
+                              {log.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {new Date(log.timestamp).toLocaleString()}
+                            {log.duration && ` • ${log.duration}ms`}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {log.actions && log.actions.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          <p className="text-sm font-medium">Actions:</p>
+                          {log.actions.map((action: any, idx: number) => (
+                            <div key={idx} className="flex items-start gap-2 text-sm bg-gray-50 p-2 rounded">
+                              <span className={action.status === 'success' ? 'text-green-600' : 'text-red-600'}>
+                                {action.status === 'success' ? '✅' : '❌'}
+                              </span>
+                              <div className="flex-1">
+                                <span className="font-medium capitalize">{action.type.replace('_', ' ')}:</span>
+                                <span className="ml-2 text-gray-600">{action.message || action.status}</span>
+                                {action.details && action.details.to && (
+                                  <span className="ml-2 text-xs text-gray-500">→ {action.details.to}</span>
+                                )}
+                                {action.details && action.details.title && (
+                                  <span className="ml-2 text-xs text-gray-500">"{action.details.title}"</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {log.error && (
+                        <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
+                          <strong>Error:</strong> {log.error}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="workflows" className="space-y-6">
           <div className="flex justify-between items-center mb-4">
@@ -1082,6 +1573,274 @@ export default function WorkflowsPage() {
                 </Button>
                 <Button onClick={executeWorkflow} disabled={!recipientEmail.includes('@')}>
                   Execute Workflow
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Create Rule Modal */}
+      {showCreateRuleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <Card className="w-full max-w-2xl mx-4 my-8 max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Create Automation Rule</CardTitle>
+              <CardDescription>
+                Create a new automation rule to automatically handle events
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Basic Info */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Rule Name *</label>
+                <input
+                  type="text"
+                  value={newRule.name}
+                  onChange={(e) => setNewRule(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Send appointment reminder"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  value={newRule.description}
+                  onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                  placeholder="Describe what this rule does..."
+                />
+              </div>
+
+              {/* Trigger Configuration */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Trigger Type *</label>
+                <select
+                  value={newRule.triggerType}
+                  onChange={(e) => setNewRule(prev => ({ 
+                    ...prev, 
+                    triggerType: e.target.value as any,
+                    triggerConditions: { patternsString: '' } // Reset conditions when type changes
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="email">Email</option>
+                  <option value="schedule">Schedule</option>
+                  <option value="calendar_event">Calendar Event</option>
+                  <option value="webhook">Webhook</option>
+                  <option value="time_based">Time Based</option>
+                </select>
+              </div>
+
+              {/* Trigger Conditions */}
+              {newRule.triggerType === 'email' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email Patterns (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={
+                      (newRule.triggerConditions?.patternsString as string) || 
+                      (newRule.triggerConditions?.patterns?.join(', ') as string) || 
+                      ''
+                    }
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      setNewRule(prev => ({
+                        ...prev,
+                        triggerConditions: {
+                          ...prev.triggerConditions,
+                          patternsString: inputValue,
+                          patterns: inputValue.split(',').map(p => p.trim()).filter(p => p)
+                        }
+                      }));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="appointment, doctor, medical"
+                  />
+                </div>
+              )}
+
+              {newRule.triggerType === 'schedule' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Cron Expression</label>
+                  <input
+                    type="text"
+                    value={newRule.triggerConditions.cron || ''}
+                    onChange={(e) => setNewRule(prev => ({
+                      ...prev,
+                      triggerConditions: {
+                        ...prev.triggerConditions,
+                        cron: e.target.value
+                      }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0 9 * * * (9 AM daily)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Example: 0 9 * * * = 9 AM daily</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium">Actions *</label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addAction}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Action
+                  </Button>
+                </div>
+
+                {newRule.actions.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-4 border border-dashed rounded">
+                    No actions added. Click "Add Action" to add one.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {newRule.actions.map((action, index) => (
+                      <div key={index} className="border rounded-lg p-3 bg-gray-50">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-sm font-medium">Action {index + 1}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeAction(index)}
+                          >
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Action Type</label>
+                            <select
+                              value={action.type}
+                              onChange={(e) => updateAction(index, 'type', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="send_email">Send Email</option>
+                              <option value="send_sms">Send SMS</option>
+                              <option value="create_calendar_event">Create Calendar Event</option>
+                              <option value="update_calendar_event">Update Calendar Event</option>
+                              <option value="webhook_call">Webhook Call</option>
+                              <option value="wait">Wait/Delay</option>
+                            </select>
+                          </div>
+
+                          {/* Email Action Config */}
+                          {action.type === 'send_email' && (
+                            <>
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Recipient Email</label>
+                                <input
+                                  type="email"
+                                  value={action.config.to || ''}
+                                  onChange={(e) => updateAction(index, 'config', { ...action.config, to: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="recipient@example.com"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Subject</label>
+                                <input
+                                  type="text"
+                                  value={action.config.subject || ''}
+                                  onChange={(e) => updateAction(index, 'config', { ...action.config, subject: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Email subject"
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Calendar Event Action Config */}
+                          {action.type === 'create_calendar_event' && (
+                            <>
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Event Title</label>
+                                <input
+                                  type="text"
+                                  value={action.config.title || ''}
+                                  onChange={(e) => updateAction(index, 'config', { ...action.config, title: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Event title"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Location</label>
+                                <input
+                                  type="text"
+                                  value={action.config.location || ''}
+                                  onChange={(e) => updateAction(index, 'config', { ...action.config, location: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Event location"
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Wait Action Config */}
+                          {action.type === 'wait' && (
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Duration (milliseconds)</label>
+                              <input
+                                type="number"
+                                value={action.config.duration || ''}
+                                onChange={(e) => updateAction(index, 'config', { ...action.config, duration: parseInt(e.target.value) || 0 })}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="5000"
+                              />
+                            </div>
+                          )}
+
+                          {/* Webhook Action Config */}
+                          {action.type === 'webhook_call' && (
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Webhook URL</label>
+                              <input
+                                type="url"
+                                value={action.config.url || ''}
+                                onChange={(e) => updateAction(index, 'config', { ...action.config, url: e.target.value })}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="https://example.com/webhook"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowCreateRuleModal(false);
+                    setNewRule({
+                      name: '',
+                      description: '',
+                      triggerType: 'email',
+                      triggerConditions: {},
+                      actions: []
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={createRule} 
+                  disabled={!newRule.name.trim() || newRule.actions.length === 0}
+                >
+                  Create Rule
                 </Button>
               </div>
             </CardContent>

@@ -1,0 +1,169 @@
+{
+  "testUsers": [
+    {
+      "id": "user-001",
+      "email": "test.user@example.com",
+      "name": "Test User",
+      "phone": "+1234567890",
+      "preferences": {
+        "email": true,
+        "sms": true,
+        "reminderMinutes": [15, 60, 1440]
+      }
+    },
+    {
+      "id": "user-002", 
+      "email": "automation.test@example.com",
+      "name": "Automation Test User",
+      "phone": "+1987654321",
+      "preferences": {
+        "email": true,
+        "sms": false,
+        "reminderMinutes": [30, 120]
+      }
+    }
+  ],
+  "testAppointments": [
+    {
+      "id": "apt-001",
+      "title": "Doctor Appointment",
+      "description": "Annual checkup with Dr. Smith",
+      "startDate": "2025-11-01T17:00:00.000Z",
+      "endDate": "2025-11-01T17:30:00.000Z",
+      "location": "123 Main St, City, State 12345",
+      "type": "medical",
+      "attendees": ["test.user@example.com"]
+    },
+    {
+      "id": "apt-002",
+      "title": "Business Meeting",
+      "description": "Quarterly review meeting",
+      "startDate": "2025-11-02T14:00:00.000Z",
+      "endDate": "2025-11-02T15:00:00.000Z",
+      "location": "Virtual - Zoom",
+      "type": "business",
+      "attendees": ["automation.test@example.com"]
+    },
+    {
+      "id": "apt-003",
+      "title": "Dentist Appointment",
+      "description": "Regular cleaning and checkup",
+      "startDate": "2025-11-03T10:00:00.000Z",
+      "endDate": "2025-11-03T10:45:00.000Z",
+      "location": "456 Oak Ave, City, State 12345",
+      "type": "medical",
+      "attendees": ["test.user@example.com"]
+    }
+  ],
+  "testWorkflows": [
+    {
+      "id": "workflow-001",
+      "name": "Medical Appointment Scheduler",
+      "description": "Creates medical appointments with email notifications",
+      "type": "appointment",
+      "parameters": {
+        "appointmentType": "medical",
+        "defaultDuration": 30,
+        "sendNotifications": true
+      }
+    },
+    {
+      "id": "workflow-002",
+      "name": "Business Meeting Creator",
+      "description": "Creates business meetings with SMS notifications",
+      "type": "meeting",
+      "parameters": {
+        "appointmentType": "business",
+        "defaultDuration": 60,
+        "sendNotifications": true
+      }
+    }
+  ],
+  "testScenarios": [
+    {
+      "name": "Email Confirmation Flow",
+      "description": "Test complete email confirmation workflow",
+      "steps": [
+        "Create appointment via workflow",
+        "Verify email notification sent",
+        "Check MailHog for email content",
+        "Validate email template rendering"
+      ],
+      "expectedResults": {
+        "emailSent": true,
+        "templateType": "confirmation",
+        "recipientCount": 1
+      }
+    },
+    {
+      "name": "SMS Reminder Flow",
+      "description": "Test SMS reminder notification",
+      "steps": [
+        "Create appointment with SMS enabled",
+        "Trigger reminder notification",
+        "Verify SMS sent to correct number",
+        "Check Twilio logs for delivery"
+      ],
+      "expectedResults": {
+        "smsSent": true,
+        "messageSid": "SM[0-9a-f]+",
+        "deliveryStatus": "delivered"
+      }
+    },
+    {
+      "name": "Error Handling Flow",
+      "description": "Test error scenarios and recovery",
+      "steps": [
+        "Send notification with invalid email",
+        "Verify error response format",
+        "Test with missing required fields",
+        "Validate error logging"
+      ],
+      "expectedResults": {
+        "errorResponse": true,
+        "statusCode": 400,
+        "errorMessage": "string"
+      }
+    }
+  ],
+  "performanceTestData": {
+    "loadTest": {
+      "concurrentUsers": 100,
+      "requestsPerSecond": 50,
+      "duration": "5m",
+      "endpoints": [
+        "/api/notifications/email",
+        "/api/test-sms",
+        "/api/workflows/execute"
+      ]
+    },
+    "stressTest": {
+      "concurrentUsers": 500,
+      "requestsPerSecond": 200,
+      "duration": "10m",
+      "rampUpTime": "2m"
+    }
+  },
+  "environmentConfigs": {
+    "development": {
+      "baseUrl": "http://localhost:3000",
+      "mailhogUrl": "http://localhost:8025",
+      "smtpHost": "localhost",
+      "smtpPort": 1025,
+      "database": "mongodb://localhost:27017/concierge-js-test"
+    },
+    "staging": {
+      "baseUrl": "https://concierge-js-staging.vercel.app",
+      "mailhogUrl": "https://staging-mailhog.example.com",
+      "smtpHost": "smtp.mailtrap.io",
+      "smtpPort": 2525,
+      "database": "mongodb+srv://staging:password@cluster.mongodb.net/concierge-js-staging"
+    },
+    "production": {
+      "baseUrl": "https://concierge-js.vercel.app",
+      "smtpHost": "smtp.sendgrid.net",
+      "smtpPort": 587,
+      "database": "mongodb+srv://prod:password@cluster.mongodb.net/concierge-js-prod"
+    }
+  }
+}
