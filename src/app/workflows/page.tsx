@@ -104,6 +104,14 @@ export default function WorkflowsPage() {
   const [recipientEmail, setRecipientEmail] = useState('');
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
+  const [showCreateRuleModal, setShowCreateRuleModal] = useState(false);
+  const [newRule, setNewRule] = useState({
+    name: '',
+    description: '',
+    triggerType: 'email' as 'email' | 'schedule' | 'calendar_event' | 'webhook' | 'time_based',
+    triggerConditions: {} as Record<string, any>,
+    actions: [] as Array<{ type: string; config: Record<string, any> }>
+  });
 
   useEffect(() => {
     loadData();
@@ -536,6 +544,78 @@ export default function WorkflowsPage() {
     }
   };
 
+  const createRule = async () => {
+    if (!newRule.name.trim()) {
+      alert('Please enter a rule name');
+      return;
+    }
+
+    if (newRule.actions.length === 0) {
+      alert('Please add at least one action');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/automation/rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newRule.name,
+          description: newRule.description,
+          trigger: {
+            type: newRule.triggerType,
+            conditions: newRule.triggerConditions
+          },
+          actions: newRule.actions,
+          enabled: true
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Automation rule created successfully!');
+        setShowCreateRuleModal(false);
+        setNewRule({
+          name: '',
+          description: '',
+          triggerType: 'email',
+          triggerConditions: {},
+          actions: []
+        });
+        loadAutomationRules();
+      } else {
+        alert(`Failed to create rule: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating rule:', error);
+      alert('Error creating rule');
+    }
+  };
+
+  const addAction = () => {
+    setNewRule(prev => ({
+      ...prev,
+      actions: [...prev.actions, { type: 'send_email', config: {} }]
+    }));
+  };
+
+  const updateAction = (index: number, field: string, value: any) => {
+    setNewRule(prev => ({
+      ...prev,
+      actions: prev.actions.map((action, i) => 
+        i === index ? { ...action, [field]: value } : action
+      )
+    }));
+  };
+
+  const removeAction = (index: number) => {
+    setNewRule(prev => ({
+      ...prev,
+      actions: prev.actions.filter((_, i) => i !== index)
+    }));
+  };
+
   // Load automation rules when component mounts
   useEffect(() => {
     loadAutomationRules();
@@ -690,6 +770,13 @@ export default function WorkflowsPage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Automation Rules</h2>
             <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowCreateRuleModal(true)} 
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4" />
+                Create Rule
+              </Button>
               <Button onClick={() => setupDemoAutomation()} className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
                 <Zap className="w-4 h-4" />
                 Setup Demo Rules
@@ -1483,6 +1570,266 @@ export default function WorkflowsPage() {
                 </Button>
                 <Button onClick={executeWorkflow} disabled={!recipientEmail.includes('@')}>
                   Execute Workflow
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Create Rule Modal */}
+      {showCreateRuleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+          <Card className="w-full max-w-2xl mx-4 my-8 max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Create Automation Rule</CardTitle>
+              <CardDescription>
+                Create a new automation rule to automatically handle events
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Basic Info */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Rule Name *</label>
+                <input
+                  type="text"
+                  value={newRule.name}
+                  onChange={(e) => setNewRule(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Send appointment reminder"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  value={newRule.description}
+                  onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                  placeholder="Describe what this rule does..."
+                />
+              </div>
+
+              {/* Trigger Configuration */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Trigger Type *</label>
+                <select
+                  value={newRule.triggerType}
+                  onChange={(e) => setNewRule(prev => ({ 
+                    ...prev, 
+                    triggerType: e.target.value as any,
+                    triggerConditions: {} // Reset conditions when type changes
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="email">Email</option>
+                  <option value="schedule">Schedule</option>
+                  <option value="calendar_event">Calendar Event</option>
+                  <option value="webhook">Webhook</option>
+                  <option value="time_based">Time Based</option>
+                </select>
+              </div>
+
+              {/* Trigger Conditions */}
+              {newRule.triggerType === 'email' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Email Patterns (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={newRule.triggerConditions.patterns?.join(', ') || ''}
+                    onChange={(e) => setNewRule(prev => ({
+                      ...prev,
+                      triggerConditions: {
+                        ...prev.triggerConditions,
+                        patterns: e.target.value.split(',').map(p => p.trim()).filter(p => p)
+                      }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="appointment, doctor, medical"
+                  />
+                </div>
+              )}
+
+              {newRule.triggerType === 'schedule' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Cron Expression</label>
+                  <input
+                    type="text"
+                    value={newRule.triggerConditions.cron || ''}
+                    onChange={(e) => setNewRule(prev => ({
+                      ...prev,
+                      triggerConditions: {
+                        ...prev.triggerConditions,
+                        cron: e.target.value
+                      }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0 9 * * * (9 AM daily)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Example: 0 9 * * * = 9 AM daily</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium">Actions *</label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addAction}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Action
+                  </Button>
+                </div>
+
+                {newRule.actions.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-4 border border-dashed rounded">
+                    No actions added. Click "Add Action" to add one.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {newRule.actions.map((action, index) => (
+                      <div key={index} className="border rounded-lg p-3 bg-gray-50">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-sm font-medium">Action {index + 1}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeAction(index)}
+                          >
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-xs font-medium mb-1">Action Type</label>
+                            <select
+                              value={action.type}
+                              onChange={(e) => updateAction(index, 'type', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="send_email">Send Email</option>
+                              <option value="send_sms">Send SMS</option>
+                              <option value="create_calendar_event">Create Calendar Event</option>
+                              <option value="update_calendar_event">Update Calendar Event</option>
+                              <option value="webhook_call">Webhook Call</option>
+                              <option value="wait">Wait/Delay</option>
+                            </select>
+                          </div>
+
+                          {/* Email Action Config */}
+                          {action.type === 'send_email' && (
+                            <>
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Recipient Email</label>
+                                <input
+                                  type="email"
+                                  value={action.config.to || ''}
+                                  onChange={(e) => updateAction(index, 'config', { ...action.config, to: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="recipient@example.com"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Subject</label>
+                                <input
+                                  type="text"
+                                  value={action.config.subject || ''}
+                                  onChange={(e) => updateAction(index, 'config', { ...action.config, subject: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Email subject"
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Calendar Event Action Config */}
+                          {action.type === 'create_calendar_event' && (
+                            <>
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Event Title</label>
+                                <input
+                                  type="text"
+                                  value={action.config.title || ''}
+                                  onChange={(e) => updateAction(index, 'config', { ...action.config, title: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Event title"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Location</label>
+                                <input
+                                  type="text"
+                                  value={action.config.location || ''}
+                                  onChange={(e) => updateAction(index, 'config', { ...action.config, location: e.target.value })}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Event location"
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {/* Wait Action Config */}
+                          {action.type === 'wait' && (
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Duration (milliseconds)</label>
+                              <input
+                                type="number"
+                                value={action.config.duration || ''}
+                                onChange={(e) => updateAction(index, 'config', { ...action.config, duration: parseInt(e.target.value) || 0 })}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="5000"
+                              />
+                            </div>
+                          )}
+
+                          {/* Webhook Action Config */}
+                          {action.type === 'webhook_call' && (
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Webhook URL</label>
+                              <input
+                                type="url"
+                                value={action.config.url || ''}
+                                onChange={(e) => updateAction(index, 'config', { ...action.config, url: e.target.value })}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="https://example.com/webhook"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowCreateRuleModal(false);
+                    setNewRule({
+                      name: '',
+                      description: '',
+                      triggerType: 'email',
+                      triggerConditions: {},
+                      actions: []
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={createRule} 
+                  disabled={!newRule.name.trim() || newRule.actions.length === 0}
+                >
+                  Create Rule
                 </Button>
               </div>
             </CardContent>
