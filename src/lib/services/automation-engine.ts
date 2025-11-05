@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import { NotificationService } from './notification-service';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
+import { AutomationRule as AutomationRuleModel } from '@/lib/models/AutomationRule';
+import connectDB from '@/lib/db/mongodb';
 
 export interface AutomationRule {
   id: string;
@@ -60,11 +62,50 @@ export class AutomationEngine extends EventEmitter {
     try {
       this.notificationService = new NotificationService();
       this.startExecutionLoop();
+      // Load rules from database asynchronously
+      this.loadRulesFromDB().catch(err => {
+        console.error('Error loading rules from database:', err);
+      });
     } catch (error) {
       console.error('Error initializing AutomationEngine:', error);
       // Continue without notification service if it fails
       // This allows rules to be created even if email service isn't configured
       this.notificationService = null;
+    }
+  }
+
+  // Load rules from MongoDB
+  private async loadRulesFromDB(): Promise<void> {
+    try {
+      await connectDB();
+      const rules = await AutomationRuleModel.find({}).lean();
+      
+      for (const ruleDoc of rules) {
+        const rule: AutomationRule = {
+          id: ruleDoc._id.toString(),
+          name: ruleDoc.name,
+          description: ruleDoc.description,
+          trigger: ruleDoc.trigger,
+          actions: ruleDoc.actions as AutomationAction[],
+          enabled: ruleDoc.enabled,
+          userId: ruleDoc.userId,
+          createdAt: ruleDoc.createdAt || new Date(),
+          lastExecuted: ruleDoc.lastExecuted,
+          executionCount: ruleDoc.executionCount || 0
+        };
+        
+        this.rules.set(rule.id, rule);
+        
+        // Schedule time-based rules
+        if (rule.trigger.type === 'schedule') {
+          this.scheduleRule(rule);
+        }
+      }
+      
+      console.log(`📦 Loaded ${rules.length} automation rules from database`);
+    } catch (error) {
+      console.error('Error loading rules from database:', error);
+      // Continue without loading - rules will be created fresh
     }
   }
 
@@ -82,28 +123,85 @@ export class AutomationEngine extends EventEmitter {
 
   // Add a new automation rule
   async addRule(rule: Omit<AutomationRule, 'id' | 'createdAt' | 'executionCount'>): Promise<string> {
-    const id = `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const newRule: AutomationRule = {
-      ...rule,
-      id,
-      createdAt: new Date(),
-      executionCount: 0
-    };
+    try {
+      await connectDB();
+      
+      // Create rule in MongoDB
+      const ruleDoc = new AutomationRuleModel({
+        userId: rule.userId,
+        name: rule.name,
+        description: rule.description,
+        trigger: rule.trigger,
+        actions: rule.actions,
+        enabled: rule.enabled,
+        executionCount: 0
+      });
+      
+      const savedRule = await ruleDoc.save();
+      const id = savedRule._id.toString();
+      
+      // Add to in-memory Map
+      const newRule: AutomationRule = {
+        ...rule,
+        id,
+        createdAt: savedRule.createdAt || new Date(),
+        executionCount: 0
+      };
+      
+      this.rules.set(id, newRule);
+      console.log(`🤖 Added automation rule: ${newRule.name} (ID: ${id})`);
+      
+      // If it's a time-based rule, schedule it
+      if (newRule.trigger.type === 'schedule') {
+        this.scheduleRule(newRule);
+      }
 
-    this.rules.set(id, newRule);
-    console.log(`🤖 Added automation rule: ${newRule.name}`);
-    
-    // If it's a time-based rule, schedule it
-    if (newRule.trigger.type === 'schedule') {
-      this.scheduleRule(newRule);
+      return id;
+    } catch (error) {
+      console.error('Error saving rule to database:', error);
+      // Fallback to in-memory only if DB save fails
+      const id = `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newRule: AutomationRule = {
+        ...rule,
+        id,
+        createdAt: new Date(),
+        executionCount: 0
+      };
+      this.rules.set(id, newRule);
+      console.log(`🤖 Added automation rule (in-memory only): ${newRule.name}`);
+      return id;
     }
-
-    return id;
   }
 
   // Execute a rule manually
   async executeRule(ruleId: string, context: Partial<AutomationContext> = {}): Promise<{ success: boolean; executionLog?: ExecutionLog }> {
-    const rule = this.rules.get(ruleId);
+    let rule = this.rules.get(ruleId);
+    
+    // If rule not in memory, try loading from database
+    if (!rule) {
+      try {
+        await connectDB();
+        const ruleDoc = await AutomationRuleModel.findById(ruleId).lean();
+        if (ruleDoc) {
+          rule = {
+            id: ruleDoc._id.toString(),
+            name: ruleDoc.name,
+            description: ruleDoc.description,
+            trigger: ruleDoc.trigger,
+            actions: ruleDoc.actions as AutomationAction[],
+            enabled: ruleDoc.enabled,
+            userId: ruleDoc.userId,
+            createdAt: ruleDoc.createdAt || new Date(),
+            lastExecuted: ruleDoc.lastExecuted,
+            executionCount: ruleDoc.executionCount || 0
+          };
+          this.rules.set(rule.id, rule);
+        }
+      } catch (error) {
+        console.error('Error loading rule from database:', error);
+      }
+    }
+    
     if (!rule || !rule.enabled) {
       console.log(`❌ Rule ${ruleId} not found or disabled`);
       return { success: false };
@@ -140,6 +238,18 @@ export class AutomationEngine extends EventEmitter {
       // Update rule stats
       rule.lastExecuted = new Date();
       rule.executionCount++;
+      
+      // Persist stats to database
+      try {
+        await connectDB();
+        await AutomationRuleModel.findByIdAndUpdate(rule.id, {
+          lastExecuted: rule.lastExecuted,
+          executionCount: rule.executionCount
+        });
+      } catch (error) {
+        console.error('Error updating rule stats in database:', error);
+        // Continue - in-memory update already done
+      }
       
       executionLog.duration = Date.now() - startTime;
       this.logExecution(executionLog);
@@ -470,8 +580,40 @@ export class AutomationEngine extends EventEmitter {
   }
 
   // Get all rules for a user
-  getUserRules(userId: string): AutomationRule[] {
-    return Array.from(this.rules.values()).filter(rule => rule.userId === userId);
+  async getUserRules(userId: string): Promise<AutomationRule[]> {
+    try {
+      await connectDB();
+      
+      // Load from database first to ensure we have latest
+      const rules = await AutomationRuleModel.find({ userId }).lean();
+      
+      // Update in-memory Map
+      for (const ruleDoc of rules) {
+        const id = ruleDoc._id.toString();
+        if (!this.rules.has(id)) {
+          const rule: AutomationRule = {
+            id,
+            name: ruleDoc.name,
+            description: ruleDoc.description,
+            trigger: ruleDoc.trigger,
+            actions: ruleDoc.actions as AutomationAction[],
+            enabled: ruleDoc.enabled,
+            userId: ruleDoc.userId,
+            createdAt: ruleDoc.createdAt || new Date(),
+            lastExecuted: ruleDoc.lastExecuted,
+            executionCount: ruleDoc.executionCount || 0
+          };
+          this.rules.set(id, rule);
+        }
+      }
+      
+      // Return from in-memory Map (filtered by userId)
+      return Array.from(this.rules.values()).filter(rule => rule.userId === userId);
+    } catch (error) {
+      console.error('Error loading rules from database:', error);
+      // Fallback to in-memory only
+      return Array.from(this.rules.values()).filter(rule => rule.userId === userId);
+    }
   }
 
   // Enable/disable a rule
@@ -480,17 +622,39 @@ export class AutomationEngine extends EventEmitter {
     if (!rule) return false;
     
     rule.enabled = enabled;
-    console.log(`🔄 Rule ${ruleId} ${enabled ? 'enabled' : 'disabled'}`);
+    
+    try {
+      await connectDB();
+      await AutomationRuleModel.findByIdAndUpdate(ruleId, { enabled });
+      console.log(`🔄 Rule ${ruleId} ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error updating rule in database:', error);
+      // Continue - in-memory update already done
+    }
+    
     return true;
   }
 
   // Delete a rule
   async deleteRule(ruleId: string): Promise<boolean> {
-    const deleted = this.rules.delete(ruleId);
-    if (deleted) {
+    const rule = this.rules.get(ruleId);
+    if (!rule) return false;
+    
+    try {
+      await connectDB();
+      await AutomationRuleModel.findByIdAndDelete(ruleId);
+      this.rules.delete(ruleId);
       console.log(`🗑️ Rule ${ruleId} deleted`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting rule from database:', error);
+      // Fallback to in-memory only
+      const deleted = this.rules.delete(ruleId);
+      if (deleted) {
+        console.log(`🗑️ Rule ${ruleId} deleted (in-memory only)`);
+      }
+      return deleted;
     }
-    return deleted;
   }
 
   // Stop the automation engine

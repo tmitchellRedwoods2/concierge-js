@@ -166,8 +166,41 @@ export async function POST(request: NextRequest) {
     });
     createdRules.push(medicationRuleId);
 
-    // 5. Smart Scheduling Rule
-    const schedulingRuleId = smartScheduler.addRule({
+    // 5. Smart Scheduling Rule (as automation rule)
+    const schedulingRuleId = await automationEngine.addRule({
+      name: 'Work Hours Scheduling',
+      description: 'Prefers scheduling during work hours (9 AM - 5 PM)',
+      trigger: {
+        type: 'time_based',
+        conditions: {
+          scheduling: true,
+          preferences: {
+            timeOfDay: { start: '09:00', end: '17:00' },
+            daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+            preferredTimes: ['10:00', '14:00', '15:00'],
+            avoidTimes: ['12:00', '13:00'] // Avoid lunch time
+          }
+        }
+      },
+      actions: [
+        {
+          type: 'create_calendar_event',
+          config: {
+            title: 'Automatically Scheduled Meeting',
+            startDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+            endDate: new Date(Date.now() + 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(), // 1 hour duration
+            location: 'Office',
+            description: 'Automatically scheduled using smart scheduling preferences'
+          }
+        }
+      ],
+      enabled: true,
+      userId
+    });
+    createdRules.push(schedulingRuleId);
+    
+    // Also add to smart scheduler for actual scheduling functionality
+    smartScheduler.addRule({
       name: 'Work Hours Scheduling',
       description: 'Prefers scheduling during work hours (9 AM - 5 PM)',
       conditions: {
@@ -184,16 +217,44 @@ export async function POST(request: NextRequest) {
       enabled: true,
       userId
     });
-    createdRules.push(schedulingRuleId);
 
-    // 6. Email Trigger for Doctor Communications
-    const emailTriggerId = emailTriggerService.addTrigger({
+    // 6. Email Trigger for Doctor Communications (as automation rule)
+    const emailTriggerRuleId = await automationEngine.addRule({
+      name: 'Doctor Communication Email Trigger',
+      description: 'Automatically processes emails from doctors and medical offices',
+      trigger: {
+        type: 'email',
+        conditions: {
+          patterns: ['appointment', 'doctor', 'medical', 'physical', 'checkup', 'annual', 'prescription', 'refill']
+        }
+      },
+      actions: [
+        {
+          type: 'send_email',
+          config: {
+            to: 'user@example.com',
+            subject: 'Medical Communication Received',
+            template: 'health_reminder',
+            data: {
+              title: 'Medical Communication',
+              message: 'A medical communication has been received and processed.',
+              recipientName: 'User'
+            }
+          }
+        }
+      ],
+      enabled: true,
+      userId
+    });
+    createdRules.push(emailTriggerRuleId);
+    
+    // Also add to email trigger service for actual email processing
+    emailTriggerService.addTrigger({
       userId,
       patterns: ['appointment', 'doctor', 'medical', 'physical', 'checkup', 'annual', 'prescription', 'refill'],
-      ruleId: appointmentRuleId,
+      ruleId: appointmentRuleId, // Link to the medical appointment detection rule
       enabled: true
     });
-    createdRules.push(emailTriggerId);
 
     return NextResponse.json({
       success: true,
@@ -204,7 +265,7 @@ export async function POST(request: NextRequest) {
         meetingRuleId,
         medicationRuleId,
         schedulingRuleId,
-        emailTriggerId
+        emailTriggerRuleId
       },
       count: createdRules.length
     });

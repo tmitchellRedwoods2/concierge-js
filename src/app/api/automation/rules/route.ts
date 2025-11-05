@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const rules = automationEngine.getUserRules(session.user.id);
+    const rules = await automationEngine.getUserRules(session.user.id);
     
     return NextResponse.json({
       success: true,

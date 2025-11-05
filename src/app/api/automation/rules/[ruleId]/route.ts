@@ -13,7 +13,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const rules = automationEngine.getUserRules(session.user.id);
+    const rules = await automationEngine.getUserRules(session.user.id);
     const rule = rules.find(r => r.id === params.ruleId);
 
     if (!rule) {
