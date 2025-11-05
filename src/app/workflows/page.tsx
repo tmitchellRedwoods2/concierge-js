@@ -557,8 +557,7 @@ export default function WorkflowsPage() {
 
     try {
       // Clean up triggerConditions - remove patternsString before sending
-      const cleanedConditions = { ...newRule.triggerConditions };
-      delete cleanedConditions.patternsString;
+      const { patternsString, ...cleanedConditions } = newRule.triggerConditions;
 
       const response = await fetch('/api/automation/rules', {
         method: 'POST',
@@ -1641,7 +1640,11 @@ export default function WorkflowsPage() {
                   <label className="block text-sm font-medium mb-1">Email Patterns (comma-separated)</label>
                   <input
                     type="text"
-                    value={newRule.triggerConditions.patternsString || (newRule.triggerConditions.patterns?.join(', ') || '')}
+                    value={
+                      (newRule.triggerConditions?.patternsString as string) || 
+                      (newRule.triggerConditions?.patterns?.join(', ') as string) || 
+                      ''
+                    }
                     onChange={(e) => {
                       const inputValue = e.target.value;
                       setNewRule(prev => ({
