@@ -138,6 +138,12 @@ async function executeAutomationRuleNode(
           executionCount: rule.executionCount,
           lastExecuted
         });
+        const updatedRule = await AutomationRuleModel.findById(ruleId).lean();
+        console.log('📊 Updated rule stats:', {
+          ruleId,
+          executionCount: updatedRule?.executionCount,
+          lastExecuted: updatedRule?.lastExecuted,
+        });
       } catch (trackError) {
         console.error('Error tracking automation rule execution:', trackError);
         // Don't fail the execution if tracking fails
