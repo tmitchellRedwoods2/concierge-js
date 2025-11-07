@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
-import { InAppCalendarService } from '@/lib/services/in-app-calendar';
 import { CalendarSyncService } from '@/lib/services/calendar-sync';
 import { WorkflowExecution } from '@/lib/models/WorkflowExecution';
-import { NotificationService } from '@/lib/services/notification-service';
+import { CalendarEvent } from '@/lib/models/CalendarEvent';
+import { automationEngine } from '@/lib/services/automation-engine';
 
 // Mock workflow execution for demo purposes
 export async function POST(request: NextRequest) {
@@ -58,78 +58,139 @@ export async function POST(request: NextRequest) {
           }
         };
 
-        // Step 3: Create internal calendar event
-        let calendarResult;
+        // Step 3: Create calendar event using AutomationEngine action
+        let calendarResult: any = { success: false };
+        let calendarEventId: string | null = null;
+        
         try {
-          console.log('📅 Creating internal calendar event...');
-          const inAppCalendarService = new InAppCalendarService();
+          console.log('📅 Creating calendar event using automation action...');
           
           const startDate = new Date(`${aiResult.result.date}T${aiResult.result.time}`);
           const endDate = new Date(startDate.getTime() + (aiResult.result.duration * 60000));
           
-          const eventData = {
-            title: aiResult.result.title,
-            description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
-            startDate: startDate,
-            endDate: endDate,
-            location: aiResult.result.location,
-            attendees: [aiResult.result.attendee],
-            reminders: {
-              email: true,
-              popup: true,
-              minutes: 15
-            },
-            source: 'workflow' as const,
-            workflowExecutionId: executionId
-          };
-
-          console.log('📅 Internal calendar event data:', eventData);
-          
-          calendarResult = await inAppCalendarService.createEvent(eventData, session.user.id);
-          console.log('✅ Internal calendar result:', calendarResult);
-          
-          // Sync to external calendar if enabled
-          if (calendarResult.success && calendarResult.event) {
-            const syncService = new CalendarSyncService();
-            const syncResult = await syncService.syncEventIfEnabled(calendarResult.event, session.user.id);
-            console.log('🔄 External calendar sync result:', syncResult);
-          }
-
-          // Send email notification
-          if (calendarResult.success && calendarResult.event) {
-            try {
-              console.log('📧 Sending email notification...');
-              const notificationService = new NotificationService();
-              const notificationResult = await notificationService.sendAppointmentConfirmation(
-                {
-                  _id: calendarResult.eventId,
-                  title: aiResult.result.title,
-                  description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
-                  startDate: startDate.toISOString(),
-                  endDate: endDate.toISOString(),
-                  location: aiResult.result.location,
-                  attendees: [aiResult.result.attendee],
-                },
-                session.user.id,
-                aiResult.result.attendee,
-                'Customer'
-              );
-
-              if (notificationResult.success) {
-                console.log('✅ Email notification sent successfully');
-              } else {
-                console.log('⚠️ Failed to send email notification:', notificationResult.error);
+          // Use AutomationEngine to create calendar event
+          const calendarActionResult = await automationEngine.executeSingleAction(
+            {
+              type: 'create_calendar_event',
+              config: {
+                title: aiResult.result.title,
+                description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                location: aiResult.result.location,
+                attendees: [aiResult.result.attendee],
+                allDay: false
               }
-            } catch (emailError) {
-              console.error('❌ Email notification error (non-blocking):', emailError);
+            },
+            {
+              userId: session.user.id,
+              triggerData: {
+                workflowExecutionId: executionId,
+                workflowStep: 'api-1',
+                ...triggerResult.result,
+                ...aiResult.result
+              },
+              executionId: executionId,
+              timestamp: new Date()
             }
+          );
+
+          if (calendarActionResult?.details?.eventId) {
+            calendarEventId = calendarActionResult.details.eventId;
+            calendarResult = {
+              success: true,
+              eventId: calendarEventId,
+              eventUrl: `/calendar/event/${calendarEventId}`,
+              message: calendarActionResult.message || 'Calendar event created',
+              event: calendarActionResult.details
+            };
+            console.log('✅ Calendar event created via automation action:', calendarEventId);
+            
+            // Sync to external calendar if enabled
+            if (calendarEventId) {
+              try {
+                const event = await CalendarEvent.findById(calendarEventId);
+                if (event) {
+                  const syncService = new CalendarSyncService();
+                  const syncResult = await syncService.syncEventIfEnabled(event, session.user.id);
+                  if (syncResult.success) {
+                    console.log('🔄 External calendar sync successful:', syncResult);
+                  } else {
+                    console.log('⚠️ External calendar sync not enabled or failed:', syncResult.error);
+                  }
+                }
+              } catch (syncError) {
+                console.error('❌ Calendar sync error (non-blocking):', syncError);
+              }
+            }
+          } else {
+            throw new Error('Calendar event creation failed - no event ID returned');
           }
         } catch (error) {
-          console.error('❌ Internal calendar error:', error);
+          console.error('❌ Calendar event creation error:', error);
           calendarResult = {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'
           };
+        }
+
+        // Step 4: Send email notification using AutomationEngine action
+        let emailResult: any = { success: false };
+        if (calendarResult.success && calendarEventId) {
+          try {
+            console.log('📧 Sending email notification using automation action...');
+            
+            const startDate = new Date(`${aiResult.result.date}T${aiResult.result.time}`);
+            const endDate = new Date(startDate.getTime() + (aiResult.result.duration * 60000));
+            
+            // Use AutomationEngine to send email
+            const emailActionResult = await automationEngine.executeSingleAction(
+              {
+                type: 'send_email',
+                config: {
+                  to: aiResult.result.attendee,
+                  subject: `Appointment Confirmation: ${aiResult.result.title}`,
+                  template: 'appointment_confirmation',
+                  data: {
+                    title: aiResult.result.title,
+                    recipientName: 'Customer',
+                    recipientEmail: aiResult.result.attendee,
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    location: aiResult.result.location,
+                    description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`
+                  }
+                }
+              },
+              {
+                userId: session.user.id,
+                triggerData: {
+                  workflowExecutionId: executionId,
+                  workflowStep: 'api-1',
+                  calendarEventId: calendarEventId,
+                  ...triggerResult.result,
+                  ...aiResult.result
+                },
+                executionId: executionId,
+                timestamp: new Date()
+              }
+            );
+
+            if (emailActionResult) {
+              emailResult = {
+                success: true,
+                message: emailActionResult.message || 'Email sent successfully'
+              };
+              console.log('✅ Email notification sent via automation action');
+            }
+          } catch (emailError) {
+            console.error('❌ Email notification error (non-blocking):', emailError);
+            // Don't fail the workflow if email fails
+            emailResult = {
+              success: false,
+              error: emailError instanceof Error ? emailError.message : 'Unknown error'
+            };
+          }
         }
         
         const apiResult = {
@@ -142,7 +203,8 @@ export async function POST(request: NextRequest) {
             status: 'scheduled',
             message: calendarResult.message || 'Calendar event created',
             calendarEventCreated: true,
-            eventDetails: calendarResult.event
+            eventDetails: calendarResult.event,
+            emailSent: emailResult.success
           } : {
             error: calendarResult.error,
             status: 'failed',

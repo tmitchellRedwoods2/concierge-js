@@ -401,6 +401,10 @@ export class AutomationEngine extends EventEmitter {
   private async createCalendarEventAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     const { title, startDate, endDate, location, description } = action.config;
     
+    // Determine source and workflowExecutionId from context
+    const source = context.triggerData?.workflowExecutionId ? 'workflow' : 'manual';
+    const workflowExecutionId = context.triggerData?.workflowExecutionId || undefined;
+    
     const event = new CalendarEvent({
       title,
       startDate: new Date(startDate),
@@ -409,14 +413,18 @@ export class AutomationEngine extends EventEmitter {
       description: description || '',
       userId: context.userId,
       attendees: action.config.attendees || [],
-      allDay: action.config.allDay || false
+      allDay: action.config.allDay || false,
+      source: source as 'workflow' | 'manual' | 'import',
+      workflowExecutionId: workflowExecutionId,
+      createdBy: context.userId,
+      status: 'confirmed'
     });
 
     await event.save();
-    console.log(`📅 Calendar event created: ${title}`);
+    console.log(`📅 Calendar event created: ${title} (source: ${source})`);
     return {
       message: `Calendar event "${title}" created successfully`,
-      details: { eventId: event._id.toString(), title, startDate, endDate }
+      details: { eventId: event._id.toString(), title, startDate, endDate, source, workflowExecutionId }
     };
   }
 
@@ -698,6 +706,24 @@ export class AutomationEngine extends EventEmitter {
         console.log(`🗑️ Rule ${ruleId} deleted (in-memory only)`);
       }
       return deleted;
+    }
+  }
+
+  // Execute a single action (public method for workflows to use)
+  async executeSingleAction(action: AutomationAction, context: Partial<AutomationContext>): Promise<{ message?: string; details?: any } | void> {
+    const fullContext: AutomationContext = {
+      userId: context.userId || '',
+      triggerData: context.triggerData || {},
+      executionId: context.executionId || `workflow_${Date.now()}`,
+      timestamp: context.timestamp || new Date(),
+      ...context
+    };
+    
+    try {
+      return await this.executeAction(action, fullContext);
+    } catch (error) {
+      console.error(`❌ Failed to execute action ${action.type}:`, error);
+      throw error;
     }
   }
 
