@@ -369,7 +369,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, trigger, steps, approvalRequired, autoExecute } = body;
+    const { name, description, trigger, steps, nodes, edges, approvalRequired, autoExecute } = body;
 
     await connectDB();
 
@@ -380,6 +380,8 @@ export async function POST(request: NextRequest) {
       description,
       trigger,
       steps: steps || [],
+      nodes: nodes || [],
+      edges: edges || [],
       approvalRequired: approvalRequired || false,
       autoExecute: autoExecute || false,
       timeoutMs: 300000,
@@ -418,7 +420,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, isActive } = body;
+    const { id, isActive, nodes, edges, steps, name, description, trigger, approvalRequired, autoExecute } = body;
 
     await connectDB();
 
@@ -431,7 +433,15 @@ export async function PUT(request: NextRequest) {
     // Update workflow
     mockWorkflows[workflowIndex] = {
       ...mockWorkflows[workflowIndex],
+      name: name !== undefined ? name : mockWorkflows[workflowIndex].name,
+      description: description !== undefined ? description : mockWorkflows[workflowIndex].description,
+      trigger: trigger !== undefined ? trigger : mockWorkflows[workflowIndex].trigger,
+      steps: steps !== undefined ? steps : mockWorkflows[workflowIndex].steps,
+      nodes: nodes !== undefined ? nodes : mockWorkflows[workflowIndex].nodes,
+      edges: edges !== undefined ? edges : mockWorkflows[workflowIndex].edges,
       isActive: isActive !== undefined ? isActive : mockWorkflows[workflowIndex].isActive,
+      approvalRequired: approvalRequired !== undefined ? approvalRequired : mockWorkflows[workflowIndex].approvalRequired,
+      autoExecute: autoExecute !== undefined ? autoExecute : mockWorkflows[workflowIndex].autoExecute,
       updatedAt: new Date()
     };
 

@@ -263,22 +263,25 @@ export default function WorkflowsPage() {
       const workflowName = workflowData.name || `Workflow ${new Date().toLocaleString()}`;
       const workflowDescription = workflowData.description || 'Workflow created from visual designer';
 
+      const payload = {
+        id: workflowData.id,
+        name: workflowName,
+        description: workflowDescription,
+        trigger: 'email', // Default trigger type
+        steps: workflowData.nodes || [],
+        nodes: workflowData.nodes || [],
+        edges: workflowData.edges || [],
+        approvalRequired: false,
+        autoExecute: false,
+        isActive: false
+      };
+
       const response = await fetch('/api/workflows', {
-        method: 'POST',
+        method: workflowData.id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: workflowName,
-          description: workflowDescription,
-          trigger: 'email', // Default trigger type
-          steps: workflowData.nodes || [],
-          nodes: workflowData.nodes || [],
-          edges: workflowData.edges || [],
-          approvalRequired: false,
-          autoExecute: false,
-          isActive: false
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {

@@ -228,6 +228,7 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
 
   const saveWorkflow = useCallback(() => {
     const workflowData = {
+      id: workflow?.id,
       name: workflow?.name || 'New Workflow',
       description: workflow?.description || '',
       nodes: nodes.map(node => ({
