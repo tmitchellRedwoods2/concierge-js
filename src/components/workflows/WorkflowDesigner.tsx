@@ -59,12 +59,9 @@ const edgeTypes: EdgeTypes = {
   approval: ApprovalEdge,
 };
 
-interface WorkflowStep {
-  id: string;
-  type: string;
-  name: string;
-  config: any;
-  position: { x: number; y: number };
+interface WorkflowNodeData {
+  label: string;
+  [key: string]: any;
 }
 
 interface WorkflowDesignerProps {
@@ -234,9 +231,8 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
       nodes: nodes.map(node => ({
         id: node.id,
         type: node.type,
-        name: node.data.label,
-        config: node.data,
-        position: node.position
+        position: node.position,
+        data: node.data
       })),
       edges: edges.map(edge => ({
         id: edge.id,
@@ -253,9 +249,8 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
       nodes: nodes.map(node => ({
         id: node.id,
         type: node.type,
-        name: node.data.label,
-        config: node.data,
-        position: node.position
+        position: node.position,
+        data: node.data
       })),
       edges: edges.map(edge => ({
         id: edge.id,
