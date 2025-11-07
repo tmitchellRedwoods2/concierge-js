@@ -1842,12 +1842,15 @@ export default function WorkflowsPage() {
                               <div>
                                 <label className="block text-xs font-medium mb-1">Recipient Email</label>
                                 <input
-                                  type="email"
+                                  type="text"
                                   value={action.config.to || ''}
                                   onChange={(e) => updateAction(index, 'config', { ...action.config, to: e.target.value })}
                                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  placeholder="recipient@example.com"
+                                  placeholder="recipient@example.com or {aiResult.attendee}"
                                 />
+                                <p className="text-[10px] text-gray-500 mt-1">
+                                  Supports template variables like {'{aiResult.attendee}'} or {'{triggerResult.email}'}.
+                                </p>
                               </div>
                               <div>
                                 <label className="block text-xs font-medium mb-1">Subject</label>

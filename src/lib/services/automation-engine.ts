@@ -358,11 +358,16 @@ export class AutomationEngine extends EventEmitter {
   // Email action
   private async sendEmailAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     try {
-      const { to, subject, template, data } = action.config;
+      const { to, recipientEmail, subject, template, data } = action.config;
+      const resolvedRecipient = to || recipientEmail;
+
+      if (!resolvedRecipient) {
+        throw new Error('Recipient email is required for send_email action');
+      }
       
       const emailData = {
         type: template || 'appointment_confirmation',
-        recipientEmail: to,
+        recipientEmail: resolvedRecipient,
         recipientName: data?.recipientName || 'User',
         title: data?.title || subject,
         startDate: data?.startDate || new Date().toISOString(),
@@ -374,10 +379,10 @@ export class AutomationEngine extends EventEmitter {
 
       const notificationService = this.getNotificationService();
       const result = await notificationService.sendAppointmentConfirmation(emailData);
-      console.log(`📧 Email sent to ${to}`);
+      console.log(`📧 Email sent to ${resolvedRecipient}`);
       return {
-        message: `Email sent successfully to ${to}`,
-        details: { to, subject, template, result }
+        message: `Email sent successfully to ${resolvedRecipient}`,
+        details: { to: resolvedRecipient, subject, template, result }
       };
     } catch (error) {
       console.error('❌ Failed to send email action:', error);
@@ -595,24 +600,22 @@ export class AutomationEngine extends EventEmitter {
       // Load from database first to ensure we have latest
       const rules = await AutomationRuleModel.find({ userId }).lean();
       
-      // Update in-memory Map
+      this.rules = new Map();
       for (const ruleDoc of rules) {
         const id = ruleDoc._id.toString();
-        if (!this.rules.has(id)) {
-          const rule: AutomationRule = {
-            id,
-            name: ruleDoc.name,
-            description: ruleDoc.description,
-            trigger: ruleDoc.trigger,
-            actions: ruleDoc.actions as AutomationAction[],
-            enabled: ruleDoc.enabled,
-            userId: ruleDoc.userId,
-            createdAt: ruleDoc.createdAt || new Date(),
-            lastExecuted: ruleDoc.lastExecuted,
-            executionCount: ruleDoc.executionCount || 0
-          };
-          this.rules.set(id, rule);
-        }
+        const rule: AutomationRule = {
+          id,
+          name: ruleDoc.name,
+          description: ruleDoc.description,
+          trigger: ruleDoc.trigger,
+          actions: ruleDoc.actions as AutomationAction[],
+          enabled: ruleDoc.enabled,
+          userId: ruleDoc.userId,
+          createdAt: ruleDoc.createdAt || new Date(),
+          lastExecuted: ruleDoc.lastExecuted,
+          executionCount: ruleDoc.executionCount || 0
+        };
+        this.rules.set(id, rule);
       }
       
       // Return from in-memory Map (filtered by userId)

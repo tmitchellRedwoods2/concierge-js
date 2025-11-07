@@ -104,6 +104,9 @@ async function executeAutomationRuleNode(
         };
 
         console.log(`📋 Executing action ${action.type} with resolved config:`, JSON.stringify(resolvedAction.config, null, 2));
+        if (templateContext.aiResult) {
+          console.log('🧠 AI Context for automation action:', JSON.stringify(templateContext.aiResult, null, 2));
+        }
 
         const actionResult = await automationEngine.executeSingleAction(
           resolvedAction,
