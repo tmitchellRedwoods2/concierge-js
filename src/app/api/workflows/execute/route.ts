@@ -124,24 +124,28 @@ async function executeAutomationRuleNode(
       }
     }
 
-    // Update execution count and last executed timestamp
-    try {
-      const lastExecuted = new Date();
-      rule.executionCount = (rule.executionCount || 0) + 1;
-      rule.lastExecuted = lastExecuted;
+    const success = results.some(r => r.success);
 
-      await connectDB();
-      await AutomationRuleModel.findByIdAndUpdate(ruleId, {
-        executionCount: rule.executionCount,
-        lastExecuted
-      });
-    } catch (trackError) {
-      console.error('Error tracking automation rule execution:', trackError);
-      // Don't fail the execution if tracking fails
+    // Update execution count and last executed timestamp
+    if (success) {
+      try {
+        const lastExecuted = new Date();
+        rule.executionCount = (rule.executionCount || 0) + 1;
+        rule.lastExecuted = lastExecuted;
+
+        await connectDB();
+        await AutomationRuleModel.findByIdAndUpdate(ruleId, {
+          executionCount: rule.executionCount,
+          lastExecuted
+        });
+      } catch (trackError) {
+        console.error('Error tracking automation rule execution:', trackError);
+        // Don't fail the execution if tracking fails
+      }
     }
 
     return {
-      success: results.some(r => r.success),
+      success,
       ruleId,
       ruleName: rule.name,
       actionsExecuted: results.length,
