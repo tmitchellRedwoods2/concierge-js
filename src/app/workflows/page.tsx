@@ -335,6 +335,7 @@ export default function WorkflowsPage() {
         setRecipientEmail('');
         setEmailContent('');
         loadExecutions(); // Reload executions
+        loadAutomationRules(); // Refresh automation rule stats
         alert('Workflow executed successfully! Email notification sent to ' + recipientEmail);
       } else {
         alert('Failed to execute workflow');

@@ -126,17 +126,15 @@ async function executeAutomationRuleNode(
 
     // Update execution count and last executed timestamp
     try {
-      await automationEngine.updateRule(ruleId, {
-        // Update execution tracking
+      const lastExecuted = new Date();
+      rule.executionCount = (rule.executionCount || 0) + 1;
+      rule.lastExecuted = lastExecuted;
+
+      await connectDB();
+      await AutomationRuleModel.findByIdAndUpdate(ruleId, {
+        executionCount: rule.executionCount,
+        lastExecuted
       });
-      
-      // Manually update execution count since updateRule doesn't handle it
-      const ruleDoc = await AutomationRuleModel.findById(ruleId);
-      if (ruleDoc) {
-        ruleDoc.executionCount = (ruleDoc.executionCount || 0) + 1;
-        ruleDoc.lastExecuted = new Date();
-        await ruleDoc.save();
-      }
     } catch (trackError) {
       console.error('Error tracking automation rule execution:', trackError);
       // Don't fail the execution if tracking fails
