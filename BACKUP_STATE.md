@@ -82,6 +82,7 @@ git log --oneline backup/pre-cursor-2.0
 - Safe to upgrade Cursor 2.0
 - Can restore from backup if needed
 - 2025-11-07: Triggered preview redeploy to sync SMTP credentials on develop
+- 2025-11-07: Triggered additional build to pick up automation rule fix on preview
 
 
 
