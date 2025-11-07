@@ -12,6 +12,13 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, Trash2 } from 'lucide-react';
 
+interface AutomationRule {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+}
+
 interface NodeConfigModalProps {
   node: Node | null;
   isOpen: boolean;
@@ -21,12 +28,37 @@ interface NodeConfigModalProps {
 
 export default function NodeConfigModal({ node, isOpen, onClose, onSave }: NodeConfigModalProps) {
   const [config, setConfig] = useState<any>({});
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+  const [loadingRules, setLoadingRules] = useState(false);
 
   useEffect(() => {
     if (node) {
       setConfig({ ...node.data });
     }
   }, [node]);
+
+  // Load automation rules when modal opens for automation_rule node
+  useEffect(() => {
+    if (isOpen && node?.type === 'automation_rule') {
+      loadAutomationRules();
+    }
+  }, [isOpen, node]);
+
+  const loadAutomationRules = async () => {
+    try {
+      setLoadingRules(true);
+      const response = await fetch('/api/automation/rules');
+      const data = await response.json();
+      
+      if (data.success) {
+        setAutomationRules(data.rules || []);
+      }
+    } catch (error) {
+      console.error('Error loading automation rules:', error);
+    } finally {
+      setLoadingRules(false);
+    }
+  };
 
   if (!isOpen || !node) return null;
 
@@ -411,6 +443,59 @@ export default function NodeConfigModal({ node, isOpen, onClose, onSave }: NodeC
     </div>
   );
 
+  const renderAutomationRuleConfig = () => (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="ruleId">Select Automation Rule *</Label>
+        {loadingRules ? (
+          <div className="text-sm text-gray-500 py-2">Loading automation rules...</div>
+        ) : (
+          <Select
+            value={config.ruleId || ''}
+            onValueChange={(value) => {
+              const selectedRule = automationRules.find(r => r.id === value);
+              setConfig(prev => ({ 
+                ...prev, 
+                ruleId: value,
+                ruleName: selectedRule?.name || ''
+              }));
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select an automation rule" />
+            </SelectTrigger>
+            <SelectContent>
+              {automationRules.length === 0 ? (
+                <SelectItem value="" disabled>No automation rules available</SelectItem>
+              ) : (
+                automationRules.map((rule) => (
+                  <SelectItem key={rule.id} value={rule.id}>
+                    {rule.name} {!rule.enabled && <Badge variant="secondary" className="ml-2">Disabled</Badge>}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        )}
+        <p className="text-xs text-gray-500 mt-1">
+          Select an automation rule to execute as part of this workflow step.
+          The rule will use the workflow context (trigger data, AI results, etc.).
+        </p>
+      </div>
+
+      {config.ruleId && (
+        <div className="p-3 bg-blue-50 rounded border border-blue-200">
+          <p className="text-sm font-medium text-blue-900">Selected Rule:</p>
+          <p className="text-sm text-blue-700">{config.ruleName || 'Unknown'}</p>
+          <p className="text-xs text-blue-600 mt-1">
+            This rule will execute when the workflow reaches this step.
+            It will have access to all workflow context data.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
   const renderEndConfig = () => (
     <div className="space-y-4">
       <div>
@@ -456,6 +541,8 @@ export default function NodeConfigModal({ node, isOpen, onClose, onSave }: NodeC
         return renderConditionConfig();
       case 'approval':
         return renderApprovalConfig();
+      case 'automation_rule':
+        return renderAutomationRuleConfig();
       case 'end':
         return renderEndConfig();
       default:

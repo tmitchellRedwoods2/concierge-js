@@ -246,6 +246,94 @@ let mockWorkflows = [
     createdAt: new Date(),
     updatedAt: new Date(),
     isActive: true
+  },
+  {
+    id: 'test-automation-rule-workflow',
+    name: 'Test Workflow with Automation Rule',
+    description: 'Test workflow that uses an automation rule for Google Calendar/Gmail integration',
+    trigger: {
+      type: 'email',
+      conditions: [
+        { field: 'content', operator: 'contains', value: 'appointment' }
+      ]
+    },
+    nodes: [
+      {
+        id: 'trigger-1',
+        type: 'trigger',
+        position: { x: 100, y: 100 },
+        data: {
+          label: 'Email Trigger',
+          triggerType: 'email',
+          conditions: [{ field: 'content', operator: 'contains', value: 'appointment' }]
+        }
+      },
+      {
+        id: 'ai-1',
+        type: 'ai',
+        position: { x: 300, y: 100 },
+        data: {
+          label: 'AI Processing',
+          prompt: 'Extract appointment details from email',
+          model: 'claude-3-sonnet',
+          temperature: 0.3
+        }
+      },
+      {
+        id: 'automation-rule-1',
+        type: 'automation_rule',
+        position: { x: 500, y: 100 },
+        data: {
+          label: 'Create Calendar Event',
+          ruleId: '', // Will be set when user selects a rule
+          ruleName: 'Medical Appointment Detection' // Example rule name
+        }
+      },
+      {
+        id: 'end-1',
+        type: 'end',
+        position: { x: 700, y: 100 },
+        data: {
+          label: 'End',
+          result: 'success'
+        }
+      }
+    ],
+    edges: [
+      { id: 'e1-2', source: 'trigger-1', target: 'ai-1', type: 'default' },
+      { id: 'e2-3', source: 'ai-1', target: 'automation-rule-1', type: 'default' },
+      { id: 'e3-4', source: 'automation-rule-1', target: 'end-1', type: 'default' }
+    ],
+    steps: [
+      {
+        id: 'extract_details',
+        name: 'Extract Appointment Details',
+        type: 'ai_processing',
+        config: {
+          prompt: 'Extract appointment details from: {intent.content}'
+        },
+        dependencies: []
+      },
+      {
+        id: 'execute_automation_rule',
+        name: 'Execute Automation Rule',
+        type: 'automation_rule',
+        config: {
+          ruleId: 'medical-appointment-detection' // Example rule ID
+        },
+        dependencies: ['extract_details']
+      }
+    ],
+    approvalRequired: false,
+    autoExecute: false,
+    isActive: false, // Start inactive for testing
+    timeoutMs: 300000,
+    retryPolicy: {
+      maxRetries: 3,
+      backoffMs: 5000
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 

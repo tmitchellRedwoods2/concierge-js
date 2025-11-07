@@ -40,6 +40,7 @@ import APINode from './nodes/APINode';
 import ConditionNode from './nodes/ConditionNode';
 import ApprovalNode from './nodes/ApprovalNode';
 import EndNode from './nodes/EndNode';
+import AutomationRuleNode from './nodes/AutomationRuleNode';
 
 // Custom Edge Types
 import ApprovalEdge from './edges/ApprovalEdge';
@@ -51,6 +52,7 @@ const nodeTypes: NodeTypes = {
   condition: ConditionNode,
   approval: ApprovalNode,
   end: EndNode,
+  automation_rule: AutomationRuleNode,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -372,6 +374,15 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
               variant="outline"
               size="sm"
               className="w-full justify-start"
+              onClick={() => addNode('automation_rule')}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Automation Rule
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
               onClick={() => addNode('end')}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -500,6 +511,11 @@ function getDefaultNodeData(type: string) {
       return {
         approvers: [],
         timeout: 24 * 60 * 60 * 1000 // 24 hours
+      };
+    case 'automation_rule':
+      return {
+        ruleId: '',
+        ruleName: ''
       };
     case 'end':
       return {
