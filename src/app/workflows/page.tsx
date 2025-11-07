@@ -102,6 +102,7 @@ export default function WorkflowsPage() {
     autoExecute: true
   });
   const [recipientEmail, setRecipientEmail] = useState('');
+  const [emailContent, setEmailContent] = useState('');
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
   const [showCreateRuleModal, setShowCreateRuleModal] = useState(false);
@@ -322,7 +323,7 @@ export default function WorkflowsPage() {
           workflowId: selectedWorkflowId,
           triggerData: {
             email: recipientEmail,
-            content: 'I need to schedule an appointment for tomorrow at 2 PM'
+            content: emailContent || 'I need to schedule an appointment for tomorrow at 2 PM'
           }
         }),
       });
@@ -332,6 +333,7 @@ export default function WorkflowsPage() {
         console.log('Workflow executed:', result);
         setShowEmailModal(false);
         setRecipientEmail('');
+        setEmailContent('');
         loadExecutions(); // Reload executions
         alert('Workflow executed successfully! Email notification sent to ' + recipientEmail);
       } else {
@@ -1628,9 +1630,9 @@ export default function WorkflowsPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <CardTitle>Enter Recipient Email</CardTitle>
+              <CardTitle>Execute Workflow</CardTitle>
               <CardDescription>
-                Email address to receive appointment confirmation
+                Enter email and content to trigger the workflow
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1645,14 +1647,29 @@ export default function WorkflowsPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium mb-1">Email Content</label>
+                <textarea
+                  value={emailContent}
+                  onChange={(e) => setEmailContent(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="I need to schedule an appointment with Dr. Smith on January 15th at 2 PM"
+                  rows={4}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This content will be parsed by the AI node to extract appointment details
+                </p>
+              </div>
+
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={() => {
                   setShowEmailModal(false);
                   setRecipientEmail('');
+                  setEmailContent('');
                 }}>
                   Cancel
                 </Button>
-                <Button onClick={executeWorkflow} disabled={!recipientEmail.includes('@')}>
+                <Button onClick={executeWorkflow} disabled={!recipientEmail.includes('@') || !emailContent.trim()}>
                   Execute Workflow
                 </Button>
               </div>

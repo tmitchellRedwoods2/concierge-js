@@ -5,6 +5,7 @@ import { CalendarSyncService } from '@/lib/services/calendar-sync';
 import { WorkflowExecution } from '@/lib/models/WorkflowExecution';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
 import { automationEngine } from '@/lib/services/automation-engine';
+import { AutomationRule as AutomationRuleModel } from '@/lib/models/AutomationRule';
 
 // Helper function to resolve template variables in action configs
 // Supports variables like: {aiResult.date}, {aiResult.time}, {triggerResult.email}, etc.
@@ -121,6 +122,24 @@ async function executeAutomationRuleNode(
           error: actionError instanceof Error ? actionError.message : 'Unknown error'
         });
       }
+    }
+
+    // Update execution count and last executed timestamp
+    try {
+      await automationEngine.updateRule(ruleId, {
+        // Update execution tracking
+      });
+      
+      // Manually update execution count since updateRule doesn't handle it
+      const ruleDoc = await AutomationRuleModel.findById(ruleId);
+      if (ruleDoc) {
+        ruleDoc.executionCount = (ruleDoc.executionCount || 0) + 1;
+        ruleDoc.lastExecuted = new Date();
+        await ruleDoc.save();
+      }
+    } catch (trackError) {
+      console.error('Error tracking automation rule execution:', trackError);
+      // Don't fail the execution if tracking fails
     }
 
     return {
