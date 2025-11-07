@@ -635,6 +635,50 @@ export class AutomationEngine extends EventEmitter {
     return true;
   }
 
+  // Update an existing rule
+  async updateRule(ruleId: string, updates: Partial<Omit<AutomationRule, 'id' | 'userId' | 'createdAt' | 'executionCount' | 'lastExecuted'>>): Promise<boolean> {
+    const rule = this.rules.get(ruleId);
+    if (!rule) return false;
+    
+    try {
+      await connectDB();
+      
+      // Update in database
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.trigger !== undefined) updateData.trigger = updates.trigger;
+      if (updates.actions !== undefined) updateData.actions = updates.actions;
+      if (updates.enabled !== undefined) updateData.enabled = updates.enabled;
+      
+      await AutomationRuleModel.findByIdAndUpdate(ruleId, updateData);
+      
+      // Update in-memory rule
+      if (updates.name !== undefined) rule.name = updates.name;
+      if (updates.description !== undefined) rule.description = updates.description;
+      if (updates.trigger !== undefined) rule.trigger = updates.trigger;
+      if (updates.actions !== undefined) rule.actions = updates.actions;
+      if (updates.enabled !== undefined) rule.enabled = updates.enabled;
+      
+      // If trigger type changed to schedule, reschedule
+      if (updates.trigger && updates.trigger.type === 'schedule') {
+        this.scheduleRule(rule);
+      }
+      
+      console.log(`✏️ Rule ${ruleId} updated: ${updates.name || rule.name}`);
+      return true;
+    } catch (error) {
+      console.error('Error updating rule in database:', error);
+      // Fallback to in-memory only
+      if (updates.name !== undefined) rule.name = updates.name;
+      if (updates.description !== undefined) rule.description = updates.description;
+      if (updates.trigger !== undefined) rule.trigger = updates.trigger;
+      if (updates.actions !== undefined) rule.actions = updates.actions;
+      if (updates.enabled !== undefined) rule.enabled = updates.enabled;
+      return true;
+    }
+  }
+
   // Delete a rule
   async deleteRule(ruleId: string): Promise<boolean> {
     const rule = this.rules.get(ruleId);
