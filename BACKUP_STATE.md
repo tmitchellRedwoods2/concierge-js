@@ -81,6 +81,7 @@ git log --oneline backup/pre-cursor-2.0
 - Backup branch and tag created on remote
 - Safe to upgrade Cursor 2.0
 - Can restore from backup if needed
+- 2025-11-07: Triggered preview redeploy to sync SMTP credentials on develop
 
 
 
