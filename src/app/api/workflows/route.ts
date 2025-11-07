@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
+import { WorkflowModel } from '@/lib/models/Workflow';
 
 // Mock workflow data - in production this would come from database
 let mockWorkflows = [
@@ -337,6 +338,36 @@ let mockWorkflows = [
   }
 ];
 
+async function seedDefaultWorkflows(userId: string) {
+  try {
+    const seedDocs = mockWorkflows.map((workflow) => ({
+      _id: workflow.id,
+      userId,
+      name: workflow.name,
+      description: workflow.description,
+      trigger: workflow.trigger,
+      steps: workflow.steps || [],
+      nodes: workflow.nodes || [],
+      edges: workflow.edges || [],
+      approvalRequired: workflow.approvalRequired || false,
+      autoExecute: workflow.autoExecute || false,
+      isActive: workflow.isActive ?? true,
+    }));
+
+    if (seedDocs.length > 0) {
+      await WorkflowModel.insertMany(seedDocs, { ordered: false });
+    }
+  } catch (error) {
+    // Ignore duplicate errors (already seeded)
+    if (
+      !(error instanceof Error) ||
+      !error.message.toLowerCase().includes('duplicate')
+    ) {
+      console.error('Error seeding default workflows:', error);
+    }
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
@@ -346,10 +377,36 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    // Return available workflows
+    let workflows = await WorkflowModel.find({ userId: session.user.id })
+      .lean()
+      .exec();
+
+    if (!workflows || workflows.length === 0) {
+      // Seed defaults for first-time user
+      await seedDefaultWorkflows(session.user.id);
+      workflows = await WorkflowModel.find({ userId: session.user.id })
+        .lean()
+        .exec();
+    }
+
+    const formatted = workflows.map((workflow) => ({
+      id: workflow._id,
+      name: workflow.name,
+      description: workflow.description,
+      trigger: workflow.trigger,
+      steps: workflow.steps || [],
+      nodes: workflow.nodes || [],
+      edges: workflow.edges || [],
+      approvalRequired: workflow.approvalRequired,
+      autoExecute: workflow.autoExecute,
+      isActive: workflow.isActive,
+      createdAt: workflow.createdAt,
+      updatedAt: workflow.updatedAt,
+    }));
+
     return NextResponse.json({
       success: true,
-      workflows: mockWorkflows
+      workflows: formatted,
     });
 
   } catch (error) {
@@ -369,13 +426,26 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, trigger, steps, nodes, edges, approvalRequired, autoExecute } = body;
+    const {
+      id,
+      name,
+      description,
+      trigger,
+      steps,
+      nodes,
+      edges,
+      approvalRequired,
+      autoExecute,
+      isActive,
+    } = body;
 
     await connectDB();
 
-    // Create new workflow
-    const newWorkflow = {
-      id: `workflow_${Date.now()}`,
+    const workflowId = id || `workflow_${Date.now()}`;
+
+    const newWorkflow = await WorkflowModel.create({
+      _id: workflowId,
+      userId: session.user.id,
       name,
       description,
       trigger,
@@ -384,23 +454,26 @@ export async function POST(request: NextRequest) {
       edges: edges || [],
       approvalRequired: approvalRequired || false,
       autoExecute: autoExecute || false,
-      timeoutMs: 300000,
-      retryPolicy: {
-        maxRetries: 3,
-        backoffMs: 5000
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isActive: false // New workflows start inactive
-    };
-
-    // Add to mock workflows array (in production, save to database)
-    mockWorkflows.push(newWorkflow);
+      isActive: isActive ?? false,
+    });
 
     return NextResponse.json({
       success: true,
-      workflow: newWorkflow,
-      message: 'Workflow created successfully'
+      workflow: {
+        id: newWorkflow._id,
+        name: newWorkflow.name,
+        description: newWorkflow.description,
+        trigger: newWorkflow.trigger,
+        steps: newWorkflow.steps,
+        nodes: newWorkflow.nodes,
+        edges: newWorkflow.edges,
+        approvalRequired: newWorkflow.approvalRequired,
+        autoExecute: newWorkflow.autoExecute,
+        isActive: newWorkflow.isActive,
+        createdAt: newWorkflow.createdAt,
+        updatedAt: newWorkflow.updatedAt,
+      },
+      message: 'Workflow created successfully',
     });
 
   } catch (error) {
@@ -420,35 +493,63 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, isActive, nodes, edges, steps, name, description, trigger, approvalRequired, autoExecute } = body;
+    const {
+      id,
+      isActive,
+      nodes,
+      edges,
+      steps,
+      name,
+      description,
+      trigger,
+      approvalRequired,
+      autoExecute,
+    } = body;
 
     await connectDB();
 
-    // Find and update workflow
-    const workflowIndex = mockWorkflows.findIndex(w => w.id === id);
-    if (workflowIndex === -1) {
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (trigger !== undefined) updateData.trigger = trigger;
+    if (steps !== undefined) updateData.steps = steps;
+    if (nodes !== undefined) updateData.nodes = nodes;
+    if (edges !== undefined) updateData.edges = edges;
+    if (approvalRequired !== undefined)
+      updateData.approvalRequired = approvalRequired;
+    if (autoExecute !== undefined) updateData.autoExecute = autoExecute;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    const updatedWorkflow = await WorkflowModel.findOneAndUpdate(
+      { _id: id, userId: session.user.id },
+      updateData,
+      { new: true }
+    ).lean();
+
+    if (!updatedWorkflow) {
       return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
     }
 
-    // Update workflow
-    mockWorkflows[workflowIndex] = {
-      ...mockWorkflows[workflowIndex],
-      name: name !== undefined ? name : mockWorkflows[workflowIndex].name,
-      description: description !== undefined ? description : mockWorkflows[workflowIndex].description,
-      trigger: trigger !== undefined ? trigger : mockWorkflows[workflowIndex].trigger,
-      steps: steps !== undefined ? steps : mockWorkflows[workflowIndex].steps,
-      nodes: nodes !== undefined ? nodes : mockWorkflows[workflowIndex].nodes,
-      edges: edges !== undefined ? edges : mockWorkflows[workflowIndex].edges,
-      isActive: isActive !== undefined ? isActive : mockWorkflows[workflowIndex].isActive,
-      approvalRequired: approvalRequired !== undefined ? approvalRequired : mockWorkflows[workflowIndex].approvalRequired,
-      autoExecute: autoExecute !== undefined ? autoExecute : mockWorkflows[workflowIndex].autoExecute,
-      updatedAt: new Date()
-    };
-
     return NextResponse.json({
       success: true,
-      workflow: mockWorkflows[workflowIndex],
-      message: 'Workflow updated successfully'
+      workflow: {
+        id: updatedWorkflow._id,
+        name: updatedWorkflow.name,
+        description: updatedWorkflow.description,
+        trigger: updatedWorkflow.trigger,
+        steps: updatedWorkflow.steps,
+        nodes: updatedWorkflow.nodes,
+        edges: updatedWorkflow.edges,
+        approvalRequired: updatedWorkflow.approvalRequired,
+        autoExecute: updatedWorkflow.autoExecute,
+        isActive: updatedWorkflow.isActive,
+        createdAt: updatedWorkflow.createdAt,
+        updatedAt: updatedWorkflow.updatedAt,
+      },
+      message: 'Workflow updated successfully',
     });
 
   } catch (error) {
