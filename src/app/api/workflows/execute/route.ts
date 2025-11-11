@@ -6,6 +6,7 @@ import { WorkflowExecution } from '@/lib/models/WorkflowExecution';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
 import { automationEngine } from '@/lib/services/automation-engine';
 import { AutomationRule as AutomationRuleModel } from '@/lib/models/AutomationRule';
+import { WorkflowModel } from '@/lib/models/Workflow';
 
 // Helper function to resolve template variables in action configs
 // Supports variables like: {aiResult.date}, {aiResult.time}, {triggerResult.email}, etc.
@@ -186,16 +187,22 @@ export async function POST(request: NextRequest) {
     console.log('Starting workflow execution for:', workflowId);
     await connectDB();
 
-    // Load workflow definition
+    // Load workflow definition directly from MongoDB
     let workflow: any = null;
     try {
-      const workflowResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/workflows`);
-      const workflowData = await workflowResponse.json();
-      if (workflowData.success) {
-        workflow = workflowData.workflows.find((w: any) => w.id === workflowId);
+      workflow = await WorkflowModel.findOne({ _id: workflowId, userId: session.user.id })
+        .lean()
+        .exec();
+
+      if (!workflow) {
+        workflow = await WorkflowModel.findOne({ _id: workflowId }).lean().exec();
       }
     } catch (error) {
-      console.error('Error loading workflow:', error);
+      console.error('Error loading workflow definition:', error);
+    }
+
+    if (!workflow) {
+      console.warn(`Workflow definition not found for ${workflowId}. Proceeding with fallback execution.`);
     }
 
     // Check if workflow has automation_rule nodes and execute them
