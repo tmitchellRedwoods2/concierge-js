@@ -11,6 +11,8 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Map bson ES module to CommonJS version for Jest
+    '^bson$': '<rootDir>/node_modules/bson/lib/bson.cjs',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(next-auth|@auth|@panva|bson|mongodb|mongoose)/)',

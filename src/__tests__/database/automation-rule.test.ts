@@ -2,6 +2,15 @@
  * Database Unit Tests for AutomationRule Model
  * Tests actual database operations using in-memory MongoDB
  */
+
+/**
+ * @jest-environment node
+ */
+
+// Unmock database modules for real database testing
+jest.unmock('@/lib/db/mongodb');
+jest.unmock('@/lib/models/AutomationRule');
+
 import { AutomationRule } from '@/lib/models/AutomationRule';
 import {
   setupTestDatabase,
@@ -13,8 +22,10 @@ import {
 
 describe('AutomationRule Model - Database Tests', () => {
   beforeAll(async () => {
+    // Increase timeout for MongoDB binary download (can take 30+ seconds first time)
+    jest.setTimeout(60000);
     await setupTestDatabase();
-  });
+  }, 60000);
 
   afterEach(async () => {
     await clearTestDatabase();
@@ -27,6 +38,7 @@ describe('AutomationRule Model - Database Tests', () => {
   describe('Create Operations', () => {
     it('should create an automation rule in the database', async () => {
       const ruleData = {
+        _id: 'medical-appointment-detection',
         userId: 'user-123',
         name: 'Medical Appointment Detection',
         description: 'Detects medical appointments in emails',
@@ -74,6 +86,7 @@ describe('AutomationRule Model - Database Tests', () => {
 
     it('should create rule with template variables in action config', async () => {
       const ruleData = {
+        _id: 'template-variable-rule',
         userId: 'user-123',
         name: 'Template Variable Rule',
         description: 'Rule with template variables',
@@ -109,6 +122,7 @@ describe('AutomationRule Model - Database Tests', () => {
       await seedTestDatabase({
         automationrules: [
           {
+            _id: 'rule-1',
             userId: 'user-123',
             name: 'Rule 1',
             description: 'First rule',
@@ -119,6 +133,7 @@ describe('AutomationRule Model - Database Tests', () => {
             lastExecuted: new Date('2024-01-01'),
           },
           {
+            _id: 'rule-2',
             userId: 'user-123',
             name: 'Rule 2',
             description: 'Second rule',
@@ -128,6 +143,7 @@ describe('AutomationRule Model - Database Tests', () => {
             executionCount: 0,
           },
           {
+            _id: 'rule-3',
             userId: 'user-456',
             name: 'Rule 3',
             description: 'Third rule',
@@ -173,6 +189,7 @@ describe('AutomationRule Model - Database Tests', () => {
       await seedTestDatabase({
         automationrules: [
           {
+            _id: 'update-test-rule',
             userId: 'user-123',
             name: 'Update Test Rule',
             description: 'To be updated',
@@ -242,6 +259,7 @@ describe('AutomationRule Model - Database Tests', () => {
       await seedTestDatabase({
         automationrules: [
           {
+            _id: 'delete-test-rule',
             userId: 'user-123',
             name: 'Delete Test Rule',
             description: 'To be deleted',

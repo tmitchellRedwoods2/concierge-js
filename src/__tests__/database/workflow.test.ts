@@ -2,6 +2,15 @@
  * Database Unit Tests for Workflow Model
  * Tests actual database operations using in-memory MongoDB
  */
+
+/**
+ * @jest-environment node
+ */
+
+// Unmock database modules for real database testing
+jest.unmock('@/lib/db/mongodb');
+jest.unmock('@/lib/models/Workflow');
+
 import { WorkflowModel } from '@/lib/models/Workflow';
 import {
   setupTestDatabase,
@@ -15,8 +24,10 @@ import {
 
 describe('Workflow Model - Database Tests', () => {
   beforeAll(async () => {
+    // Increase timeout for MongoDB binary download (can take 30+ seconds first time)
+    jest.setTimeout(60000);
     await setupTestDatabase();
-  });
+  }, 60000);
 
   afterEach(async () => {
     await clearTestDatabase();
