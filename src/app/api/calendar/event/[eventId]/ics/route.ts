@@ -18,10 +18,13 @@ export async function GET(
     // Generate .ics file content
     const icsContent = generateICSFile(event);
 
+    // Set headers to trigger Calendar.app on macOS
+    // macOS will automatically open .ics files in Calendar.app
     return new NextResponse(icsContent, {
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
         'Content-Disposition': `attachment; filename="event-${params.eventId}.ics"`,
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {
