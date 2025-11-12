@@ -236,4 +236,41 @@ export class CalendarSyncService {
       };
     }
   }
+
+  /**
+   * Automatically sync event to Apple Calendar if configured
+   * This bypasses user preferences and always attempts sync if Apple Calendar is configured
+   */
+  async syncToAppleCalendarIfConfigured(event: any, userId: string): Promise<CalendarSyncResult> {
+    try {
+      const preferences = await this.getUserCalendarPreferences(userId);
+      const appleConfig = preferences?.calendarPreferences?.appleCalendarConfig;
+      
+      if (!appleConfig || !appleConfig.serverUrl || !appleConfig.username) {
+        console.log('🍎 Apple Calendar not configured, skipping auto-sync');
+        return { 
+          success: false, 
+          error: 'Apple Calendar not configured' 
+        };
+      }
+
+      // Attempt to sync to Apple Calendar
+      console.log('🍎 Auto-syncing event to Apple Calendar...');
+      const syncResult = await this.syncToAppleCalendar(event, userId);
+      
+      if (syncResult.success) {
+        console.log('✅ Event auto-synced to Apple Calendar:', syncResult.externalEventId);
+      } else {
+        console.log('⚠️ Apple Calendar auto-sync failed (non-blocking):', syncResult.error);
+      }
+
+      return syncResult;
+    } catch (error) {
+      console.error('❌ Error in auto-sync to Apple Calendar:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Auto-sync failed'
+      };
+    }
+  }
 }

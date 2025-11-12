@@ -304,16 +304,24 @@ export async function POST(request: NextRequest) {
             };
             console.log('✅ Calendar event created via automation action:', calendarEventId);
             
-            // Sync to external calendar if enabled
+            // Automatically sync to Apple Calendar if configured (bypasses user preferences)
             if (calendarEventId) {
               try {
                 const event = await CalendarEvent.findById(calendarEventId);
                 if (event) {
                   const syncService = new CalendarSyncService();
+                  
+                  // First, try automatic Apple Calendar sync
+                  const appleSyncResult = await syncService.syncToAppleCalendarIfConfigured(event, session.user.id);
+                  if (appleSyncResult.success) {
+                    console.log('🍎 Apple Calendar auto-sync successful:', appleSyncResult);
+                  }
+                  
+                  // Also try user-configured sync (for other providers or if Apple sync failed)
                   const syncResult = await syncService.syncEventIfEnabled(event, session.user.id);
-                  if (syncResult.success) {
+                  if (syncResult.success && !appleSyncResult.success) {
                     console.log('🔄 External calendar sync successful:', syncResult);
-                  } else {
+                  } else if (!syncResult.success && !appleSyncResult.success) {
                     console.log('⚠️ External calendar sync not enabled or failed:', syncResult.error);
                   }
                 }
