@@ -11,20 +11,12 @@ interface CalendarEventPageProps {
 }
 
 export default async function CalendarEventPage({ params }: CalendarEventPageProps) {
-  const session = await auth();
-  
-  if (!session?.user?.id) {
-    // Preserve the current URL so user can return after login
-    const currentUrl = `/calendar/event/${params.eventId}`;
-    redirect(`/login?callbackUrl=${encodeURIComponent(currentUrl)}`);
-  }
-
   await connectDB();
 
   try {
+    // Allow public access to calendar events - no authentication required
     const event = await CalendarEvent.findOne({ 
-      _id: params.eventId, 
-      userId: session.user.id 
+      _id: params.eventId
     });
 
     if (!event) {
