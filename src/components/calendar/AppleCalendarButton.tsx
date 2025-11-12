@@ -18,49 +18,27 @@ interface AppleCalendarButtonProps {
 export default function AppleCalendarButton({ eventId, appleEventUrl, event }: AppleCalendarButtonProps) {
   const [loading, setLoading] = useState(false);
 
-  const handleClick = async (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      // Fetch the .ics file content
-      const response = await fetch(`/api/calendar/event/${eventId}/ics`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch calendar file');
-      }
-
-      // Get the .ics file as a blob with the correct MIME type
-      const blob = await response.blob();
-      
-      // Create a blob URL - this is more reliable than data URIs
-      // and works better with macOS Calendar.app
-      const blobUrl = window.URL.createObjectURL(blob);
-      
-      // Create a temporary link element
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `event-${eventId}.ics`;
-      link.style.display = 'none';
-      
-      // Append to body, click, then remove
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up the blob URL after a short delay
-      // This gives the browser time to process the download
-      setTimeout(() => {
-        window.URL.revokeObjectURL(blobUrl);
-      }, 100);
-      
-    } catch (error) {
-      console.error('Error downloading calendar file:', error);
-      // Fallback: try direct navigation to the API endpoint
-      // The server will send proper headers for download
-      window.location.href = `/api/calendar/event/${eventId}/ics`;
-    } finally {
+    // Use a direct link to the API endpoint
+    // The Content-Disposition header will set the filename
+    // macOS will recognize .ics files and open them in Calendar.app
+    const link = document.createElement('a');
+    link.href = `/api/calendar/event/${eventId}/ics`;
+    link.download = `event-${eventId}.ics`;
+    link.style.display = 'none';
+    
+    // Append, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Reset loading state
+    setTimeout(() => {
       setLoading(false);
-    }
+    }, 500);
   };
 
   return (
