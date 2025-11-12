@@ -23,6 +23,9 @@ interface AppleCalendarButtonProps {
 
 export default function AppleCalendarButton({ eventId, appleEventUrl, event }: AppleCalendarButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
+
+  const icsUrl = `/api/calendar/event/${eventId}/ics`;
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -32,12 +35,12 @@ export default function AppleCalendarButton({ eventId, appleEventUrl, event }: A
     try {
       // Use absolute URL to avoid Next.js routing issues
       const baseUrl = window.location.origin;
-      const icsUrl = `${baseUrl}/api/calendar/event/${eventId}/ics`;
+      const fullUrl = `${baseUrl}${icsUrl}`;
       
-      console.log('Attempting to download ICS file from:', icsUrl);
+      console.log('Attempting to download ICS file from:', fullUrl);
       
       // Fetch the file as a blob
-      const response = await fetch(icsUrl, {
+      const response = await fetch(fullUrl, {
         method: 'GET',
         headers: {
           'Accept': 'text/calendar, */*',
@@ -83,23 +86,55 @@ export default function AppleCalendarButton({ eventId, appleEventUrl, event }: A
     } catch (error) {
       console.error('Error downloading calendar file:', error);
       setLoading(false);
-      
-      // Show user-friendly error
-      alert('Failed to download calendar file. Please try right-clicking the button and selecting "Save Link As" or contact support.');
+      setShowFallback(true);
     }
   };
 
+  // If fallback is shown, provide a direct link
+  if (showFallback) {
+    return (
+      <div className="flex flex-col gap-2">
+        <a
+          href={icsUrl}
+          download={`event-${eventId}.ics`}
+          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors inline-flex items-center gap-2 text-center"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowFallback(false);
+          }}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Download .ics File
+        </a>
+        <p className="text-xs text-gray-500">Right-click and "Save Link As" if download doesn't start</p>
+      </div>
+    );
+  }
+
   return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-      {loading ? 'Opening...' : appleEventUrl ? 'View in Apple Calendar' : 'Add to Apple Calendar'}
-    </button>
+    <>
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        {loading ? 'Opening...' : appleEventUrl ? 'View in Apple Calendar' : 'Add to Apple Calendar'}
+      </button>
+      {/* Hidden direct link for right-click option */}
+      <a
+        href={icsUrl}
+        download={`event-${eventId}.ics`}
+        className="hidden"
+        id={`ics-download-${eventId}`}
+      >
+        Download
+      </a>
+    </>
   );
 }
 
