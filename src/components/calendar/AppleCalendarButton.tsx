@@ -29,24 +29,34 @@ export default function AppleCalendarButton({ eventId, appleEventUrl, event }: A
         throw new Error('Failed to fetch calendar file');
       }
 
+      // Get the .ics file as a blob with the correct MIME type
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
       
-      // Create a temporary link and trigger download
+      // Create a blob URL - this is more reliable than data URIs
+      // and works better with macOS Calendar.app
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link element
       const link = document.createElement('a');
-      link.href = url;
+      link.href = blobUrl;
       link.download = `event-${eventId}.ics`;
+      link.style.display = 'none';
+      
+      // Append to body, click, then remove
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      // Clean up the object URL
-      window.URL.revokeObjectURL(url);
+      // Clean up the blob URL after a short delay
+      // This gives the browser time to process the download
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
       
-      // On macOS, the downloaded .ics file should automatically open in Calendar.app
     } catch (error) {
       console.error('Error downloading calendar file:', error);
-      // Fallback: try direct navigation
+      // Fallback: try direct navigation to the API endpoint
+      // The server will send proper headers for download
       window.location.href = `/api/calendar/event/${eventId}/ics`;
     } finally {
       setLoading(false);

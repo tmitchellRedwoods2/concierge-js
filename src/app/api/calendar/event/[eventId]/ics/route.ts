@@ -46,32 +46,48 @@ function generateICSFile(event: any): string {
   const startDate = formatDate(new Date(event.startDate));
   const endDate = formatDate(new Date(event.endDate));
 
+  // Build attendees list with proper line breaks
   const attendees = event.attendees?.map((email: string) => 
     `ATTENDEE;CN=${email}:mailto:${email}`
   ).join('\r\n') || '';
 
-  const location = event.location ? `LOCATION:${event.location.replace(/,/g, '\\,')}` : '';
-  const description = event.description 
-    ? `DESCRIPTION:${event.description.replace(/\n/g, '\\n').replace(/,/g, '\\,')}` 
-    : '';
+  // Escape special characters for iCalendar format
+  const escapeICS = (text: string): string => {
+    return text
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\n/g, '\\n');
+  };
 
-  return `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Concierge AI//Calendar Integration//EN
-CALSCALE:GREGORIAN
-METHOD:PUBLISH
-BEGIN:VEVENT
-UID:${uid}
-DTSTAMP:${now}
-DTSTART:${startDate}
-DTEND:${endDate}
-SUMMARY:${event.title.replace(/,/g, '\\,')}
-${description}
-${location}
-${attendees}
-STATUS:CONFIRMED
-SEQUENCE:0
-END:VEVENT
-END:VCALENDAR`;
+  const location = event.location ? `LOCATION:${escapeICS(event.location)}\r\n` : '';
+  const description = event.description 
+    ? `DESCRIPTION:${escapeICS(event.description)}\r\n` 
+    : '';
+  const summary = escapeICS(event.title);
+
+  // Build the .ics file with proper line breaks (\r\n is required for iCalendar format)
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Concierge AI//Calendar Integration//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${now}`,
+    `DTSTART:${startDate}`,
+    `DTEND:${endDate}`,
+    `SUMMARY:${summary}`,
+    description,
+    location,
+    attendees ? `${attendees}\r\n` : '',
+    'STATUS:CONFIRMED',
+    'SEQUENCE:0',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(line => line !== ''); // Remove empty lines
+
+  return lines.join('\r\n');
 }
 
