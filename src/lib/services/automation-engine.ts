@@ -361,24 +361,37 @@ export class AutomationEngine extends EventEmitter {
       const { to, recipientEmail, subject, template, data } = action.config;
       const resolvedRecipient = to || recipientEmail;
 
-      if (!resolvedRecipient) {
+      console.log(`📧 Email action config:`, { to, recipientEmail, subject, template, data });
+      console.log(`📧 Resolved recipient: ${resolvedRecipient}`);
+
+      if (!resolvedRecipient || resolvedRecipient.trim() === '') {
         throw new Error('Recipient email is required for send_email action');
       }
       
-      const emailData = {
-        type: template || 'appointment_confirmation',
-        recipientEmail: resolvedRecipient,
-        recipientName: data?.recipientName || 'User',
-        title: data?.title || subject,
+      // Construct event object for sendAppointmentConfirmation
+      const eventData = {
+        _id: data?.eventId || context.triggerData?.calendarEventId || `event_${Date.now()}`,
+        id: data?.eventId || context.triggerData?.calendarEventId || `event_${Date.now()}`,
+        title: data?.title || subject || 'Appointment',
+        description: data?.description || '',
         startDate: data?.startDate || new Date().toISOString(),
         endDate: data?.endDate || new Date(Date.now() + 3600000).toISOString(),
         location: data?.location || '',
-        description: data?.description || '',
-        ...data
+        attendees: data?.attendees || [resolvedRecipient],
       };
 
       const notificationService = this.getNotificationService();
-      const result = await notificationService.sendAppointmentConfirmation(emailData);
+      const result = await notificationService.sendAppointmentConfirmation(
+        eventData,
+        context.userId,
+        resolvedRecipient,
+        data?.recipientName || 'User'
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send email');
+      }
+      
       console.log(`📧 Email sent to ${resolvedRecipient}`);
       return {
         message: `Email sent successfully to ${resolvedRecipient}`,
