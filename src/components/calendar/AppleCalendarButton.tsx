@@ -59,19 +59,32 @@ export default function AppleCalendarButton({ eventId, appleEventUrl, event }: A
         console.warn('Unexpected Content-Type:', contentType);
       }
 
-      // Don't fetch as blob - use direct navigation to API endpoint
-      // This allows the Content-Disposition header to set the filename properly
-      // The server sends: Content-Disposition: attachment; filename="event-[id].ics"
-      console.log('Navigating directly to API endpoint for download');
+      // Use a hidden iframe to download without navigating away
+      // This preserves the Content-Disposition filename
+      console.log('Downloading via hidden iframe');
       
-      // Use direct navigation - browser will handle Content-Disposition header
-      // This is the most reliable way to preserve the .ics extension
-      window.location.href = fullUrl;
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = fullUrl;
+      document.body.appendChild(iframe);
       
-      // Reset loading after navigation starts
+      // Clean up iframe after download starts
       setTimeout(() => {
+        document.body.removeChild(iframe);
         setLoading(false);
-      }, 500);
+      }, 2000);
+      
+      // Also try direct link as backup
+      const link = document.createElement('a');
+      link.href = fullUrl;
+      link.download = `event-${eventId}.ics`;
+      link.target = '_blank';
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 100);
       
     } catch (error) {
       console.error('Error downloading calendar file:', error);

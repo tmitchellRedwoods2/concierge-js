@@ -20,10 +20,14 @@ export async function GET(
 
     // Set headers to trigger Calendar.app on macOS
     // macOS will automatically open .ics files in Calendar.app when downloaded
+    // Use RFC 5987 encoding for filename to ensure .ics extension is preserved
+    const filename = `event-${params.eventId}.ics`;
+    const encodedFilename = encodeURIComponent(filename);
+    
     return new NextResponse(icsContent, {
       headers: {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': `attachment; filename="event-${params.eventId}.ics"`,
+        'Content-Disposition': `attachment; filename="${filename}"; filename*=UTF-8''${encodedFilename}`,
         'Content-Transfer-Encoding': 'binary',
         'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
