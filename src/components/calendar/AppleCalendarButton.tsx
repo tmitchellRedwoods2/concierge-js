@@ -30,52 +30,62 @@ export default function AppleCalendarButton({ eventId, appleEventUrl, event }: A
     setLoading(true);
 
     try {
-      const icsUrl = `/api/calendar/event/${eventId}/ics`;
+      // Use absolute URL to avoid Next.js routing issues
+      const baseUrl = window.location.origin;
+      const icsUrl = `${baseUrl}/api/calendar/event/${eventId}/ics`;
       
-      // First, verify the API endpoint works
+      console.log('Attempting to download ICS file from:', icsUrl);
+      
+      // Fetch the file as a blob
       const response = await fetch(icsUrl, {
-        method: 'HEAD', // Just check if it exists
+        method: 'GET',
+        headers: {
+          'Accept': 'text/calendar, */*',
+        },
       });
 
       if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
 
       // Verify Content-Type
       const contentType = response.headers.get('Content-Type');
+      console.log('Content-Type:', contentType);
+      
       if (!contentType || !contentType.includes('text/calendar')) {
         console.warn('Unexpected Content-Type:', contentType);
       }
 
-      // Strategy: For macOS, try to trigger download which should auto-open Calendar.app
-      // For other platforms, use standard download
-      if (isMacOS()) {
-        // On macOS, create a download link - macOS should auto-open .ics files in Calendar.app
-        const link = document.createElement('a');
-        link.href = icsUrl;
-        link.download = `event-${eventId}.ics`;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        
-        // Clean up after a delay
-        setTimeout(() => {
-          document.body.removeChild(link);
-        }, 100);
-      } else {
-        // For non-macOS, use window.open as fallback
-        window.open(icsUrl, '_blank');
-      }
+      // Get the blob
+      const blob = await response.blob();
+      console.log('Blob received, size:', blob.size, 'type:', blob.type);
+      
+      // Create a blob URL with the correct MIME type
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `event-${eventId}.ics`;
+      link.style.display = 'none';
+      
+      // Append to body and click
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+        setLoading(false);
+      }, 200);
       
     } catch (error) {
-      console.error('Error opening calendar file:', error);
-      // Last resort: try direct navigation
-      window.location.href = `/api/calendar/event/${eventId}/ics`;
-    } finally {
-      // Reset loading state
-      setTimeout(() => {
-        setLoading(false);
-      }, 1000);
+      console.error('Error downloading calendar file:', error);
+      setLoading(false);
+      
+      // Show user-friendly error
+      alert('Failed to download calendar file. Please try right-clicking the button and selecting "Save Link As" or contact support.');
     }
   };
 
