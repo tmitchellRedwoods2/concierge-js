@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
 import { notFound, redirect } from 'next/navigation';
+import AppleCalendarButton from '@/components/calendar/AppleCalendarButton';
 
 interface CalendarEventPageProps {
   params: {
@@ -186,16 +187,18 @@ export default async function CalendarEventPage({ params }: CalendarEventPagePro
               {/* Actions */}
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="flex flex-wrap gap-4">
-                  <a
-                    href={`/api/calendar/event/${params.eventId}/ics`}
-                    download
-                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors inline-flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Add to Apple Calendar
-                  </a>
+                  <AppleCalendarButton
+                    eventId={params.eventId}
+                    appleEventUrl={event.appleEventUrl}
+                    event={{
+                      title: event.title,
+                      startDate: event.startDate,
+                      endDate: event.endDate,
+                      location: event.location,
+                      description: event.description,
+                      attendees: event.attendees
+                    }}
+                  />
                   <a 
                     href="/calendar" 
                     className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
