@@ -59,29 +59,40 @@ export default function AppleCalendarButton({ eventId, appleEventUrl, event }: A
         console.warn('Unexpected Content-Type:', contentType);
       }
 
-      // Get the blob
-      const blob = await response.blob();
-      console.log('Blob received, size:', blob.size, 'type:', blob.type);
+      // Get the file content as text to ensure proper handling
+      const icsText = await response.text();
+      console.log('ICS content received, length:', icsText.length);
       
-      // Create a blob URL with the correct MIME type
-      const blobUrl = window.URL.createObjectURL(blob);
+      // Create a blob with explicit .ics MIME type
+      const icsBlob = new Blob([icsText], { 
+        type: 'text/calendar; charset=utf-8' 
+      });
       
-      // Create download link
+      // Create blob URL
+      const blobUrl = window.URL.createObjectURL(icsBlob);
+      
+      // Create download link with .ics extension explicitly in filename
+      const filename = `event-${eventId}.ics`;
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `event-${eventId}.ics`;
+      link.download = filename;
+      link.setAttribute('download', filename); // Ensure download attribute is set
       link.style.display = 'none';
       
-      // Append to body and click
+      // Append to body
       document.body.appendChild(link);
+      
+      // Trigger download
       link.click();
       
-      // Clean up
+      console.log('Download triggered for:', filename);
+      
+      // Clean up after download starts
       setTimeout(() => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
         setLoading(false);
-      }, 200);
+      }, 1000);
       
     } catch (error) {
       console.error('Error downloading calendar file:', error);
