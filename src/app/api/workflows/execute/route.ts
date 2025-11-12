@@ -240,6 +240,8 @@ export async function POST(request: NextRequest) {
         };
 
         // Step 2: AI Processing (extract appointment details)
+        // Use actual email from trigger data, or fallback to a valid placeholder
+        const recipientEmail = triggerData?.email || triggerResult.result.email || 'user@example.com';
         const aiResult = {
           id: 'ai-1',
           type: 'ai',
@@ -248,7 +250,7 @@ export async function POST(request: NextRequest) {
             date: '2024-01-15',
             time: '14:00',
             duration: 60,
-            attendee: 'john.doe@example.com',
+            attendee: recipientEmail, // Use actual recipient email from trigger data
             location: 'Conference Room A',
             title: 'AI Scheduled Appointment'
           }

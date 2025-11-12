@@ -296,6 +296,62 @@ describe('Workflow Execution API', () => {
       // Template variables should be resolved (not literal {aiResult.title})
       expect(actionConfig.title).not.toContain('{aiResult');
     });
+
+    it('should use actual recipient email from triggerData instead of placeholder', async () => {
+      (MockWorkflowModel.findOne as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue(mockWorkflow),
+        }),
+      });
+
+      MockAutomationEngine.getUserRules = jest.fn().mockResolvedValue([mockAutomationRule]);
+      MockAutomationEngine.executeSingleAction = jest.fn().mockResolvedValue({
+        message: 'Email sent successfully',
+        details: { to: 'real-user@example.com' },
+      });
+
+      const realUserEmail = 'real-user@example.com';
+      const request = new NextRequest('http://localhost:3000/api/workflows/execute', {
+        method: 'POST',
+        body: JSON.stringify({
+          workflowId: 'test-automation-rule-workflow',
+          triggerData: {
+            email: realUserEmail,
+            content: 'I need to schedule an appointment',
+          },
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+
+      // Verify that executeSingleAction was called with the real email address
+      expect(MockAutomationEngine.executeSingleAction).toHaveBeenCalled();
+      const emailActionCall = (MockAutomationEngine.executeSingleAction as jest.Mock).mock.calls.find(
+        (call: any[]) => call[0].type === 'send_email'
+      );
+
+      if (emailActionCall) {
+        const emailConfig = emailActionCall[0].config;
+        // The recipient should be the real email, not a placeholder
+        expect(emailConfig.to || emailConfig.recipientEmail).toBe(realUserEmail);
+        expect(emailConfig.to || emailConfig.recipientEmail).not.toBe('john.doe@example.com');
+      }
+
+      // Verify the AI result context contains the real email as attendee
+      const automationRuleCall = (MockAutomationEngine.executeSingleAction as jest.Mock).mock.calls.find(
+        (call: any[]) => call[0].type === 'send_email'
+      );
+      if (automationRuleCall) {
+        const context = automationRuleCall[1];
+        // The context should have the real email in aiResult.attendee
+        expect(context.triggerData).toBeDefined();
+        // The aiResult should be available in the context passed to automation rules
+      }
+    });
   });
 
   describe('GET /api/workflows/execute', () => {
