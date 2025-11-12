@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,14 +13,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [callbackUrl, setCallbackUrl] = useState('/dashboard');
 
-  // Get the callback URL from query params (NextAuth uses 'callbackUrl')
-  const callbackUrl = searchParams.get('callbackUrl') || searchParams.get('redirect') || '/dashboard';
+  // Get the callback URL from query params on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const url = params.get('callbackUrl') || params.get('redirect') || '/dashboard';
+      setCallbackUrl(url);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
