@@ -189,6 +189,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Connect to database
+    const connectDB = (await import('@/lib/db/mongodb')).default;
+    await connectDB();
+
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
