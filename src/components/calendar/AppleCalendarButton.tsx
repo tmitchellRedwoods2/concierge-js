@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 
+// Helper to detect macOS
+const isMacOS = () => {
+  if (typeof window === 'undefined') return false;
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+};
+
 interface AppleCalendarButtonProps {
   eventId: string;
   appleEventUrl?: string;
@@ -18,27 +24,59 @@ interface AppleCalendarButtonProps {
 export default function AppleCalendarButton({ eventId, appleEventUrl, event }: AppleCalendarButtonProps) {
   const [loading, setLoading] = useState(false);
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setLoading(true);
 
-    // Use a direct link to the API endpoint
-    // The Content-Disposition header will set the filename
-    // macOS will recognize .ics files and open them in Calendar.app
-    const link = document.createElement('a');
-    link.href = `/api/calendar/event/${eventId}/ics`;
-    link.download = `event-${eventId}.ics`;
-    link.style.display = 'none';
-    
-    // Append, click, and remove
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Reset loading state
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    try {
+      const icsUrl = `/api/calendar/event/${eventId}/ics`;
+      
+      // First, verify the API endpoint works
+      const response = await fetch(icsUrl, {
+        method: 'HEAD', // Just check if it exists
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
+
+      // Verify Content-Type
+      const contentType = response.headers.get('Content-Type');
+      if (!contentType || !contentType.includes('text/calendar')) {
+        console.warn('Unexpected Content-Type:', contentType);
+      }
+
+      // Strategy: For macOS, try to trigger download which should auto-open Calendar.app
+      // For other platforms, use standard download
+      if (isMacOS()) {
+        // On macOS, create a download link - macOS should auto-open .ics files in Calendar.app
+        const link = document.createElement('a');
+        link.href = icsUrl;
+        link.download = `event-${eventId}.ics`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up after a delay
+        setTimeout(() => {
+          document.body.removeChild(link);
+        }, 100);
+      } else {
+        // For non-macOS, use window.open as fallback
+        window.open(icsUrl, '_blank');
+      }
+      
+    } catch (error) {
+      console.error('Error opening calendar file:', error);
+      // Last resort: try direct navigation
+      window.location.href = `/api/calendar/event/${eventId}/ics`;
+    } finally {
+      // Reset loading state
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000);
+    }
   };
 
   return (
