@@ -190,19 +190,26 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const maxResults = parseInt(searchParams.get('maxResults') || '10');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
-    const calendarService = new CalendarService();
-    const result = await calendarService.listEvents('primary', maxResults);
+    // Use InAppCalendarService to fetch events from MongoDB
+    const { InAppCalendarService } = await import('@/lib/services/in-app-calendar');
+    const calendarService = new InAppCalendarService();
+    const result = await calendarService.getEvents(
+      session.user.id,
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined
+    );
 
     if (result.success) {
       return NextResponse.json({
         success: true,
-        events: result.events,
+        events: result.events || [],
       });
     } else {
       return NextResponse.json(
-        { error: result.error },
+        { error: result.error || 'Failed to fetch events' },
         { status: 500 }
       );
     }
