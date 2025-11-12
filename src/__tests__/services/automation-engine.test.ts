@@ -1,9 +1,11 @@
 import { AutomationEngine } from '@/lib/services/automation-engine';
 
 // Mock the notification service
+const mockSendAppointmentConfirmation = jest.fn().mockResolvedValue({ success: true, messageId: 'test-message-id' });
+
 jest.mock('@/lib/services/notification-service', () => ({
   NotificationService: jest.fn().mockImplementation(() => ({
-    sendAppointmentConfirmation: jest.fn().mockResolvedValue({ success: true }),
+    sendAppointmentConfirmation: mockSendAppointmentConfirmation,
     sendAppointmentReminder: jest.fn().mockResolvedValue({ success: true }),
     sendAppointmentCancellation: jest.fn().mockResolvedValue({ success: true }),
   })),
@@ -25,6 +27,7 @@ describe('AutomationEngine', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    mockSendAppointmentConfirmation.mockClear();
   });
 
   describe('addRule', () => {
@@ -278,6 +281,135 @@ describe('AutomationEngine', () => {
       const endTime = Date.now();
       expect(result).toBe(true);
       expect(endTime - startTime).toBeGreaterThanOrEqual(100);
+    });
+  });
+
+  describe('executeSingleAction - send_email', () => {
+    it('should call sendAppointmentConfirmation with correct parameters', async () => {
+      const action = {
+        type: 'send_email' as const,
+        config: {
+          to: 'recipient@example.com',
+          subject: 'Test Subject',
+          template: 'appointment_confirmation',
+          data: {
+            title: 'Test Appointment',
+            startDate: '2024-01-15T14:00:00Z',
+            endDate: '2024-01-15T15:00:00Z',
+            location: 'Test Location',
+            description: 'Test Description',
+            recipientName: 'Test User',
+            eventId: 'test-event-id'
+          }
+        }
+      };
+
+      const context = {
+        userId: 'test-user-id',
+        triggerData: {
+          calendarEventId: 'test-event-id'
+        },
+        executionId: 'test-execution-id',
+        timestamp: new Date()
+      };
+
+      const result = await automationEngine.executeSingleAction(action, context);
+
+      // Verify sendAppointmentConfirmation was called
+      expect(mockSendAppointmentConfirmation).toHaveBeenCalledTimes(1);
+      
+      // Verify it was called with correct parameters
+      const callArgs = mockSendAppointmentConfirmation.mock.calls[0];
+      expect(callArgs[0]).toMatchObject({
+        _id: 'test-event-id',
+        id: 'test-event-id',
+        title: 'Test Appointment',
+        description: 'Test Description',
+        startDate: '2024-01-15T14:00:00Z',
+        endDate: '2024-01-15T15:00:00Z',
+        location: 'Test Location',
+        attendees: ['recipient@example.com']
+      });
+      expect(callArgs[1]).toBe('test-user-id'); // userId
+      expect(callArgs[2]).toBe('recipient@example.com'); // recipientEmail
+      expect(callArgs[3]).toBe('Test User'); // recipientName
+
+      // Verify result
+      expect(result).toBeDefined();
+      expect(result?.message).toContain('Email sent successfully');
+    });
+
+    it('should handle missing recipient email', async () => {
+      const action = {
+        type: 'send_email' as const,
+        config: {
+          subject: 'Test Subject',
+          // Missing 'to' or 'recipientEmail'
+        }
+      };
+
+      const context = {
+        userId: 'test-user-id',
+        triggerData: {},
+        executionId: 'test-execution-id',
+        timestamp: new Date()
+      };
+
+      await expect(automationEngine.executeSingleAction(action, context)).rejects.toThrow(
+        'Recipient email is required for send_email action'
+      );
+    });
+
+    it('should use recipientEmail if to is not provided', async () => {
+      const action = {
+        type: 'send_email' as const,
+        config: {
+          recipientEmail: 'recipient2@example.com',
+          subject: 'Test Subject'
+        }
+      };
+
+      const context = {
+        userId: 'test-user-id',
+        triggerData: {},
+        executionId: 'test-execution-id',
+        timestamp: new Date()
+      };
+
+      await automationEngine.executeSingleAction(action, context);
+
+      expect(mockSendAppointmentConfirmation).toHaveBeenCalledTimes(1);
+      const callArgs = mockSendAppointmentConfirmation.mock.calls[0];
+      expect(callArgs[2]).toBe('recipient2@example.com'); // recipientEmail
+    });
+
+    it('should construct event object with fallbacks when data is missing', async () => {
+      const action = {
+        type: 'send_email' as const,
+        config: {
+          to: 'recipient@example.com',
+          subject: 'Test Subject'
+          // Minimal config - no data object
+        }
+      };
+
+      const context = {
+        userId: 'test-user-id',
+        triggerData: {},
+        executionId: 'test-execution-id',
+        timestamp: new Date()
+      };
+
+      await automationEngine.executeSingleAction(action, context);
+
+      expect(mockSendAppointmentConfirmation).toHaveBeenCalledTimes(1);
+      const callArgs = mockSendAppointmentConfirmation.mock.calls[0];
+      const eventData = callArgs[0];
+      
+      // Verify fallback values are used
+      expect(eventData.title).toBe('Test Subject'); // Uses subject as title fallback
+      expect(eventData.attendees).toContain('recipient@example.com');
+      expect(eventData._id).toBeDefined(); // Should have generated ID
     });
   });
 });
