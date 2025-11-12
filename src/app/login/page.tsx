@@ -3,9 +3,9 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Get the callback URL from query params (NextAuth uses 'callbackUrl')
+  const callbackUrl = searchParams.get('callbackUrl') || searchParams.get('redirect') || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,12 +32,14 @@ export default function LoginPage() {
         username,
         password,
         redirect: false,
+        callbackUrl: callbackUrl,
       });
 
       if (result?.error) {
         setError("Invalid username or password");
       } else {
-        router.push("/dashboard");
+        // Redirect to the original destination or dashboard
+        router.push(callbackUrl);
         router.refresh();
       }
     } catch {

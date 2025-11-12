@@ -14,7 +14,9 @@ export default async function CalendarEventPage({ params }: CalendarEventPagePro
   const session = await auth();
   
   if (!session?.user?.id) {
-    redirect('/login');
+    // Preserve the current URL so user can return after login
+    const currentUrl = `/calendar/event/${params.eventId}`;
+    redirect(`/login?callbackUrl=${encodeURIComponent(currentUrl)}`);
   }
 
   await connectDB();
