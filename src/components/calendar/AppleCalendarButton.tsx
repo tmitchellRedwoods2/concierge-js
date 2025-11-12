@@ -113,26 +113,39 @@ export default function AppleCalendarButton({ eventId, appleEventUrl, event }: A
     );
   }
 
+  // Debug: Log on component render
+  console.log('AppleCalendarButton rendered for eventId:', eventId, 'icsUrl:', icsUrl);
+
   return (
     <>
       <button
-        onClick={handleClick}
+        onClick={(e) => {
+          console.log('Button clicked!', e);
+          handleClick(e);
+        }}
+        onMouseDown={(e) => {
+          console.log('Button mouse down!', e);
+        }}
         disabled={loading}
         className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        type="button"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
         {loading ? 'Opening...' : appleEventUrl ? 'View in Apple Calendar' : 'Add to Apple Calendar'}
       </button>
-      {/* Hidden direct link for right-click option */}
+      {/* Also provide a direct link as backup */}
       <a
         href={icsUrl}
         download={`event-${eventId}.ics`}
-        className="hidden"
-        id={`ics-download-${eventId}`}
+        className="ml-2 text-sm text-blue-600 hover:text-blue-800 underline"
+        onClick={(e) => {
+          console.log('Direct link clicked!', e);
+          e.stopPropagation();
+        }}
       >
-        Download
+        (Direct Download)
       </a>
     </>
   );
