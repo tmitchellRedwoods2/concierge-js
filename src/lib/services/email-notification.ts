@@ -27,6 +27,7 @@ export interface CalendarEventNotification {
   reminderType: 'appointment_reminder' | 'appointment_confirmation' | 'appointment_cancelled' | 'appointment_modified';
   recipientEmail: string;
   recipientName?: string;
+  eventUrl?: string; // URL to view the calendar event
 }
 
 export class EmailNotificationService {
@@ -95,7 +96,7 @@ export class EmailNotificationService {
   }
 
   private getEmailTemplate(type: string, notification: CalendarEventNotification): EmailTemplate {
-    const { title, startDate, endDate, location, description } = notification;
+    const { title, startDate, endDate, location, description, eventUrl } = notification;
     const startTime = startDate.toLocaleString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -117,8 +118,8 @@ export class EmailNotificationService {
       case 'appointment_confirmation':
         return {
           subject: `✅ Confirmed: ${title} - ${startTime}`,
-          html: this.getConfirmationEmailHTML(title, startDate, endDate, location, description),
-          text: this.getConfirmationEmailText(title, startDate, endDate, location, description),
+          html: this.getConfirmationEmailHTML(title, startDate, endDate, location, description, eventUrl),
+          text: this.getConfirmationEmailText(title, startDate, endDate, location, description, eventUrl),
         };
 
       case 'appointment_cancelled':
@@ -219,7 +220,7 @@ If you need to make changes, please contact us or use the calendar app.
     `.trim();
   }
 
-  private getConfirmationEmailHTML(title: string, startDate: Date, endDate: Date, location?: string, description?: string): string {
+  private getConfirmationEmailHTML(title: string, startDate: Date, endDate: Date, location?: string, description?: string, eventUrl?: string): string {
     const startTime = startDate.toLocaleString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -258,6 +259,11 @@ If you need to make changes, please contact us or use the calendar app.
             <p class="time">📅 ${startTime}</p>
             ${location ? `<p class="location">📍 ${location}</p>` : ''}
             ${description ? `<p>${description}</p>` : ''}
+            ${eventUrl ? `
+              <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                <a href="${eventUrl}" style="display: inline-block; padding: 12px 24px; background: #007bff; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold;">View Calendar Event</a>
+              </div>
+            ` : ''}
           </div>
           
           <div class="footer">
@@ -270,7 +276,7 @@ If you need to make changes, please contact us or use the calendar app.
     `;
   }
 
-  private getConfirmationEmailText(title: string, startDate: Date, endDate: Date, location?: string, description?: string): string {
+  private getConfirmationEmailText(title: string, startDate: Date, endDate: Date, location?: string, description?: string, eventUrl?: string): string {
     const startTime = startDate.toLocaleString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -288,6 +294,7 @@ ${title}
 📅 ${startTime}
 ${location ? `📍 ${location}` : ''}
 ${description ? `\n${description}` : ''}
+${eventUrl ? `\n\nView Calendar Event: ${eventUrl}` : ''}
 
 This confirmation was sent by your Concierge AI assistant.
 You will receive a reminder before your appointment.

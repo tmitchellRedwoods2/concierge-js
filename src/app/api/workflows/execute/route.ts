@@ -342,6 +342,7 @@ export async function POST(request: NextRequest) {
             const endDate = new Date(startDate.getTime() + (aiResult.result.duration * 60000));
             
             // Use AutomationEngine to send email
+            const eventUrl = `/calendar/event/${calendarEventId}`;
             const emailActionResult = await automationEngine.executeSingleAction(
               {
                 type: 'send_email',
@@ -356,7 +357,9 @@ export async function POST(request: NextRequest) {
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),
                     location: aiResult.result.location,
-                    description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`
+                    description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
+                    eventId: calendarEventId,
+                    eventUrl: eventUrl
                   }
                 }
               },

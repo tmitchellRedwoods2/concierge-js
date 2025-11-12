@@ -369,9 +369,10 @@ export class AutomationEngine extends EventEmitter {
       }
       
       // Construct event object for sendAppointmentConfirmation
+      const eventId = data?.eventId || context.triggerData?.calendarEventId || `event_${Date.now()}`;
       const eventData = {
-        _id: data?.eventId || context.triggerData?.calendarEventId || `event_${Date.now()}`,
-        id: data?.eventId || context.triggerData?.calendarEventId || `event_${Date.now()}`,
+        _id: eventId,
+        id: eventId,
         title: data?.title || subject || 'Appointment',
         description: data?.description || '',
         startDate: data?.startDate || new Date().toISOString(),
@@ -380,12 +381,16 @@ export class AutomationEngine extends EventEmitter {
         attendees: data?.attendees || [resolvedRecipient],
       };
 
+      // Construct event URL
+      const eventUrl = data?.eventUrl || `/calendar/event/${eventId}`;
+
       const notificationService = this.getNotificationService();
       const result = await notificationService.sendAppointmentConfirmation(
         eventData,
         context.userId,
         resolvedRecipient,
-        data?.recipientName || 'User'
+        data?.recipientName || 'User',
+        eventUrl
       );
       
       if (!result.success) {

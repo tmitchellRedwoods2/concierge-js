@@ -109,9 +109,18 @@ export class NotificationService {
     }
   }
 
-  async sendAppointmentConfirmation(event: any, userId: string, recipientEmail: string, recipientName?: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendAppointmentConfirmation(event: any, userId: string, recipientEmail: string, recipientName?: string, eventUrl?: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       console.log('📧 Sending appointment confirmation:', event.title);
+      
+      // Construct full URL if relative URL is provided
+      let fullEventUrl = eventUrl;
+      if (eventUrl && eventUrl.startsWith('/')) {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
+          || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+          || 'http://localhost:3000';
+        fullEventUrl = `${baseUrl}${eventUrl}`;
+      }
       
       const notification: CalendarEventNotification = {
         eventId: event._id || event.id,
@@ -124,6 +133,7 @@ export class NotificationService {
         reminderType: 'appointment_confirmation',
         recipientEmail,
         recipientName,
+        eventUrl: fullEventUrl,
       };
 
       const result = await this.emailService.sendCalendarNotification(notification);

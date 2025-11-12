@@ -1,75 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="32" failures="0" errors="0" time="0.698">
-  <testsuite name="AutomationEngine" errors="0" failures="0" skipped="0" timestamp="2025-11-03T19:09:28" time="0.268" tests="13">
-    <testcase classname="AutomationEngine addRule should add a new automation rule" name="AutomationEngine addRule should add a new automation rule" time="0.006">
+<testsuites name="jest tests" tests="9" failures="4" errors="0" time="21.756">
+  <testsuite name="Workflow Execution API" errors="0" failures="4" skipped="0" timestamp="2025-11-12T18:05:15" time="21.405" tests="9">
+    <testcase classname="Workflow Execution API POST /api/workflows/execute should execute workflow with automation rule node" name="Workflow Execution API POST /api/workflows/execute should execute workflow with automation rule node" time="5.002">
+      <failure>Error: thrown: &quot;Exceeded timeout of 5000 ms for a test.
+Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.&quot;
+    at it (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:150:5)
+    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
+    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
+    at describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:149:3)
+    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
+    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
+    at Object.describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:31:1)
+    at Runtime._execModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1439:24)
+    at Runtime._loadModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1022:12)
+    at Runtime.requireModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:882:12)
+    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:77:13)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
     </testcase>
-    <testcase classname="AutomationEngine addRule should generate unique IDs for different rules" name="AutomationEngine addRule should generate unique IDs for different rules" time="0">
+    <testcase classname="Workflow Execution API POST /api/workflows/execute should include automation_rule step in execution results" name="Workflow Execution API POST /api/workflows/execute should include automation_rule step in execution results" time="5.001">
+      <failure>Error: thrown: &quot;Exceeded timeout of 5000 ms for a test.
+Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.&quot;
+    at it (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:181:5)
+    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
+    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
+    at describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:149:3)
+    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
+    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
+    at Object.describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:31:1)
+    at Runtime._execModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1439:24)
+    at Runtime._loadModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1022:12)
+    at Runtime.requireModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:882:12)
+    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:77:13)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
     </testcase>
-    <testcase classname="AutomationEngine executeRule should execute a rule successfully" name="AutomationEngine executeRule should execute a rule successfully" time="0.002">
+    <testcase classname="Workflow Execution API POST /api/workflows/execute should handle workflow not found gracefully" name="Workflow Execution API POST /api/workflows/execute should handle workflow not found gracefully" time="0.013">
     </testcase>
-    <testcase classname="AutomationEngine executeRule should return false for non-existent rule" name="AutomationEngine executeRule should return false for non-existent rule" time="0">
+    <testcase classname="Workflow Execution API POST /api/workflows/execute should return 401 for unauthenticated user" name="Workflow Execution API POST /api/workflows/execute should return 401 for unauthenticated user" time="0.001">
     </testcase>
-    <testcase classname="AutomationEngine executeRule should return false for disabled rule" name="AutomationEngine executeRule should return false for disabled rule" time="0">
+    <testcase classname="Workflow Execution API POST /api/workflows/execute should handle automation rule execution errors gracefully" name="Workflow Execution API POST /api/workflows/execute should handle automation rule execution errors gracefully" time="0.011">
     </testcase>
-    <testcase classname="AutomationEngine getUserRules should return rules for a specific user" name="AutomationEngine getUserRules should return rules for a specific user" time="0.001">
+    <testcase classname="Workflow Execution API POST /api/workflows/execute should resolve template variables in automation rule actions" name="Workflow Execution API POST /api/workflows/execute should resolve template variables in automation rule actions" time="5">
+      <failure>Error: thrown: &quot;Exceeded timeout of 5000 ms for a test.
+Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.&quot;
+    at it (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:277:5)
+    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
+    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
+    at describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:149:3)
+    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
+    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
+    at Object.describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:31:1)
+    at Runtime._execModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1439:24)
+    at Runtime._loadModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1022:12)
+    at Runtime.requireModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:882:12)
+    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:77:13)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
     </testcase>
-    <testcase classname="AutomationEngine toggleRule should enable/disable a rule" name="AutomationEngine toggleRule should enable/disable a rule" time="0">
+    <testcase classname="Workflow Execution API POST /api/workflows/execute should use actual recipient email from triggerData instead of placeholder" name="Workflow Execution API POST /api/workflows/execute should use actual recipient email from triggerData instead of placeholder" time="5.002">
+      <failure>Error: thrown: &quot;Exceeded timeout of 5000 ms for a test.
+Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.&quot;
+    at it (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:300:5)
+    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
+    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
+    at describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:149:3)
+    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
+    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
+    at Object.describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:31:1)
+    at Runtime._execModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1439:24)
+    at Runtime._loadModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1022:12)
+    at Runtime.requireModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:882:12)
+    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:77:13)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
     </testcase>
-    <testcase classname="AutomationEngine toggleRule should return false for non-existent rule" name="AutomationEngine toggleRule should return false for non-existent rule" time="0">
+    <testcase classname="Workflow Execution API GET /api/workflows/execute should return execution history" name="Workflow Execution API GET /api/workflows/execute should return execution history" time="0.003">
     </testcase>
-    <testcase classname="AutomationEngine deleteRule should delete a rule" name="AutomationEngine deleteRule should delete a rule" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine deleteRule should return false for non-existent rule" name="AutomationEngine deleteRule should return false for non-existent rule" time="0">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should execute send_email action" name="AutomationEngine action execution should execute send_email action" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should execute create_calendar_event action" name="AutomationEngine action execution should execute create_calendar_event action" time="0">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should execute wait action" name="AutomationEngine action execution should execute wait action" time="0.103">
-    </testcase>
-  </testsuite>
-  <testsuite name="/api/automation/rules" errors="0" failures="0" skipped="0" timestamp="2025-11-03T19:09:28" time="0.035" tests="6">
-    <testcase classname="/api/automation/rules GET should return automation rules for authenticated user" name="/api/automation/rules GET should return automation rules for authenticated user" time="0">
-    </testcase>
-    <testcase classname="/api/automation/rules GET should return 401 for unauthenticated user" name="/api/automation/rules GET should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="/api/automation/rules POST should create a new automation rule" name="/api/automation/rules POST should create a new automation rule" time="0">
-    </testcase>
-    <testcase classname="/api/automation/rules POST should return 400 for missing required fields" name="/api/automation/rules POST should return 400 for missing required fields" time="0">
-    </testcase>
-    <testcase classname="/api/automation/rules POST should return 401 for unauthenticated user" name="/api/automation/rules POST should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="/api/automation/rules POST should handle server errors gracefully" name="/api/automation/rules POST should handle server errors gracefully" time="0.001">
-    </testcase>
-  </testsuite>
-  <testsuite name="/api/automation/smart-schedule" errors="0" failures="0" skipped="0" timestamp="2025-11-03T19:09:28" time="0.035" tests="7">
-    <testcase classname="/api/automation/smart-schedule POST should auto-schedule an event successfully" name="/api/automation/smart-schedule POST should auto-schedule an event successfully" time="0.001">
-    </testcase>
-    <testcase classname="/api/automation/smart-schedule POST should return 400 for missing required fields" name="/api/automation/smart-schedule POST should return 400 for missing required fields" time="0">
-    </testcase>
-    <testcase classname="/api/automation/smart-schedule POST should return 400 when no optimal time found" name="/api/automation/smart-schedule POST should return 400 when no optimal time found" time="0">
-    </testcase>
-    <testcase classname="/api/automation/smart-schedule POST should return 401 for unauthenticated user" name="/api/automation/smart-schedule POST should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="/api/automation/smart-schedule POST should handle server errors gracefully" name="/api/automation/smart-schedule POST should handle server errors gracefully" time="0.003">
-    </testcase>
-    <testcase classname="/api/automation/smart-schedule POST should handle different event types" name="/api/automation/smart-schedule POST should handle different event types" time="0">
-    </testcase>
-    <testcase classname="/api/automation/smart-schedule POST should handle flexible scheduling" name="/api/automation/smart-schedule POST should handle flexible scheduling" time="0">
-    </testcase>
-  </testsuite>
-  <testsuite name="/api/automation/execute" errors="0" failures="0" skipped="0" timestamp="2025-11-03T19:09:28" time="0.032" tests="6">
-    <testcase classname="/api/automation/execute POST should execute a rule successfully" name="/api/automation/execute POST should execute a rule successfully" time="0">
-    </testcase>
-    <testcase classname="/api/automation/execute POST should execute rule with default trigger data" name="/api/automation/execute POST should execute rule with default trigger data" time="0">
-    </testcase>
-    <testcase classname="/api/automation/execute POST should return 400 for missing ruleId" name="/api/automation/execute POST should return 400 for missing ruleId" time="0">
-    </testcase>
-    <testcase classname="/api/automation/execute POST should return 400 when rule execution fails" name="/api/automation/execute POST should return 400 when rule execution fails" time="0">
-    </testcase>
-    <testcase classname="/api/automation/execute POST should return 401 for unauthenticated user" name="/api/automation/execute POST should return 401 for unauthenticated user" time="0">
-    </testcase>
-    <testcase classname="/api/automation/execute POST should handle server errors gracefully" name="/api/automation/execute POST should handle server errors gracefully" time="0.002">
+    <testcase classname="Workflow Execution API GET /api/workflows/execute should return 401 for unauthenticated user" name="Workflow Execution API GET /api/workflows/execute should return 401 for unauthenticated user" time="0.001">
     </testcase>
   </testsuite>
 </testsuites>
