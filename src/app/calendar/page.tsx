@@ -31,11 +31,11 @@ export default function CalendarPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      window.location.href = '/login';
       return;
     }
     loadEvents();
-  }, [session, status, router]);
+  }, [session, status]);
 
   const loadEvents = async () => {
     try {

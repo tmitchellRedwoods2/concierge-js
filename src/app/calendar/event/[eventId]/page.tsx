@@ -14,7 +14,7 @@ export default async function CalendarEventPage({ params }: CalendarEventPagePro
   const session = await auth();
   
   if (!session?.user?.id) {
-    redirect('/auth/signin');
+    redirect('/login');
   }
 
   await connectDB();
