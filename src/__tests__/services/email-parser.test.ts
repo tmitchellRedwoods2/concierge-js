@@ -162,7 +162,7 @@ describe('EmailParserService', () => {
       const email = {
         from: 'clinic@example.com',
         subject: 'Medical Appointment Reminder',
-        body: 'This is a reminder for your scheduled checkup appointment'
+        body: 'This is a reminder for your scheduled checkup appointment on January 15, 2024'
       };
 
       const result = parser.parseAppointmentEmail(email);
@@ -173,8 +173,8 @@ describe('EmailParserService', () => {
     it('should extract title from subject', () => {
       const email = {
         from: 'doctor@example.com',
-        subject: 'Appointment with Dr. Smith - January 15',
-        body: 'Your appointment is scheduled'
+        subject: 'Appointment with Dr. Smith - January 15, 2024',
+        body: 'Your appointment is scheduled for January 15, 2024'
       };
 
       const result = parser.parseAppointmentEmail(email);
