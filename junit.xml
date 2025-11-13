@@ -1,87 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="9" failures="4" errors="0" time="21.756">
-  <testsuite name="Workflow Execution API" errors="0" failures="4" skipped="0" timestamp="2025-11-12T18:05:15" time="21.405" tests="9">
-    <testcase classname="Workflow Execution API POST /api/workflows/execute should execute workflow with automation rule node" name="Workflow Execution API POST /api/workflows/execute should execute workflow with automation rule node" time="5.002">
-      <failure>Error: thrown: &quot;Exceeded timeout of 5000 ms for a test.
-Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.&quot;
-    at it (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:150:5)
-    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
-    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
-    at describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:149:3)
-    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
-    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
-    at Object.describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:31:1)
-    at Runtime._execModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1439:24)
-    at Runtime._loadModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1022:12)
-    at Runtime.requireModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:882:12)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:77:13)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+<testsuites name="jest tests" tests="36" failures="0" errors="0" time="0.826">
+  <testsuite name="AppleCalendarButton Component" errors="0" failures="0" skipped="0" timestamp="2025-11-12T20:35:36" time="0.441" tests="15">
+    <testcase classname="AppleCalendarButton Component Rendering should render button with default text" name="AppleCalendarButton Component Rendering should render button with default text" time="0.012">
     </testcase>
-    <testcase classname="Workflow Execution API POST /api/workflows/execute should include automation_rule step in execution results" name="Workflow Execution API POST /api/workflows/execute should include automation_rule step in execution results" time="5.001">
-      <failure>Error: thrown: &quot;Exceeded timeout of 5000 ms for a test.
-Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.&quot;
-    at it (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:181:5)
-    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
-    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
-    at describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:149:3)
-    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
-    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
-    at Object.describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:31:1)
-    at Runtime._execModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1439:24)
-    at Runtime._loadModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1022:12)
-    at Runtime.requireModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:882:12)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:77:13)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AppleCalendarButton Component Rendering should render button with &quot;View in Apple Calendar&quot; when appleEventUrl is provided" name="AppleCalendarButton Component Rendering should render button with &quot;View in Apple Calendar&quot; when appleEventUrl is provided" time="0.001">
     </testcase>
-    <testcase classname="Workflow Execution API POST /api/workflows/execute should handle workflow not found gracefully" name="Workflow Execution API POST /api/workflows/execute should handle workflow not found gracefully" time="0.013">
+    <testcase classname="AppleCalendarButton Component Rendering should render calendar icon" name="AppleCalendarButton Component Rendering should render calendar icon" time="0.005">
     </testcase>
-    <testcase classname="Workflow Execution API POST /api/workflows/execute should return 401 for unauthenticated user" name="Workflow Execution API POST /api/workflows/execute should return 401 for unauthenticated user" time="0.001">
+    <testcase classname="AppleCalendarButton Component Rendering should have correct button styling classes" name="AppleCalendarButton Component Rendering should have correct button styling classes" time="0.001">
     </testcase>
-    <testcase classname="Workflow Execution API POST /api/workflows/execute should handle automation rule execution errors gracefully" name="Workflow Execution API POST /api/workflows/execute should handle automation rule execution errors gracefully" time="0.011">
+    <testcase classname="AppleCalendarButton Component Button Interactions should be disabled when loading" name="AppleCalendarButton Component Button Interactions should be disabled when loading" time="0.001">
     </testcase>
-    <testcase classname="Workflow Execution API POST /api/workflows/execute should resolve template variables in automation rule actions" name="Workflow Execution API POST /api/workflows/execute should resolve template variables in automation rule actions" time="5">
-      <failure>Error: thrown: &quot;Exceeded timeout of 5000 ms for a test.
-Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.&quot;
-    at it (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:277:5)
-    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
-    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
-    at describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:149:3)
-    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
-    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
-    at Object.describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:31:1)
-    at Runtime._execModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1439:24)
-    at Runtime._loadModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1022:12)
-    at Runtime.requireModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:882:12)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:77:13)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AppleCalendarButton Component Button Interactions should show loading text when loading" name="AppleCalendarButton Component Button Interactions should show loading text when loading" time="0.006">
     </testcase>
-    <testcase classname="Workflow Execution API POST /api/workflows/execute should use actual recipient email from triggerData instead of placeholder" name="Workflow Execution API POST /api/workflows/execute should use actual recipient email from triggerData instead of placeholder" time="5.002">
-      <failure>Error: thrown: &quot;Exceeded timeout of 5000 ms for a test.
-Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.&quot;
-    at it (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:300:5)
-    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
-    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
-    at describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:149:3)
-    at _dispatchDescribe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:91:26)
-    at describe (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/index.js:55:5)
-    at Object.describe (/Users/timmitchell/concierge-js/src/__tests__/api/workflows/execute.test.ts:31:1)
-    at Runtime._execModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1439:24)
-    at Runtime._loadModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:1022:12)
-    at Runtime.requireModule (/Users/timmitchell/concierge-js/node_modules/jest-runtime/build/index.js:882:12)
-    at jestAdapter (/Users/timmitchell/concierge-js/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:77:13)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at runTestInternal (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:367:16)
-    at runTest (/Users/timmitchell/concierge-js/node_modules/jest-runner/build/runTest.js:444:34)</failure>
+    <testcase classname="AppleCalendarButton Component ICS File Download should fetch .ics file when button is clicked" name="AppleCalendarButton Component ICS File Download should fetch .ics file when button is clicked" time="0.002">
     </testcase>
-    <testcase classname="Workflow Execution API GET /api/workflows/execute should return execution history" name="Workflow Execution API GET /api/workflows/execute should return execution history" time="0.003">
+    <testcase classname="AppleCalendarButton Component ICS File Download should create blob URL and trigger download" name="AppleCalendarButton Component ICS File Download should create blob URL and trigger download" time="0.003">
     </testcase>
-    <testcase classname="Workflow Execution API GET /api/workflows/execute should return 401 for unauthenticated user" name="Workflow Execution API GET /api/workflows/execute should return 401 for unauthenticated user" time="0.001">
+    <testcase classname="AppleCalendarButton Component ICS File Download should set correct download filename" name="AppleCalendarButton Component ICS File Download should set correct download filename" time="0.004">
+    </testcase>
+    <testcase classname="AppleCalendarButton Component ICS File Download should clean up blob URL after download" name="AppleCalendarButton Component ICS File Download should clean up blob URL after download" time="0.154">
+    </testcase>
+    <testcase classname="AppleCalendarButton Component Error Handling should handle fetch errors gracefully" name="AppleCalendarButton Component Error Handling should handle fetch errors gracefully" time="0.016">
+    </testcase>
+    <testcase classname="AppleCalendarButton Component Error Handling should fallback to direct navigation when fetch fails" name="AppleCalendarButton Component Error Handling should fallback to direct navigation when fetch fails" time="0.006">
+    </testcase>
+    <testcase classname="AppleCalendarButton Component Error Handling should stop loading state after error" name="AppleCalendarButton Component Error Handling should stop loading state after error" time="0.006">
+    </testcase>
+    <testcase classname="AppleCalendarButton Component Event Data Handling should work with minimal event data" name="AppleCalendarButton Component Event Data Handling should work with minimal event data" time="0.001">
+    </testcase>
+    <testcase classname="AppleCalendarButton Component Event Data Handling should work with event without attendees" name="AppleCalendarButton Component Event Data Handling should work with event without attendees" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Calendar ICS API Route" errors="0" failures="0" skipped="0" timestamp="2025-11-12T20:35:37" time="0.04" tests="21">
+    <testcase classname="Calendar ICS API Route Successful ICS Generation should generate valid ICS file for event" name="Calendar ICS API Route Successful ICS Generation should generate valid ICS file for event" time="0.001">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Successful ICS Generation should include event title in ICS file" name="Calendar ICS API Route Successful ICS Generation should include event title in ICS file" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Successful ICS Generation should include event dates in ICS file" name="Calendar ICS API Route Successful ICS Generation should include event dates in ICS file" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Successful ICS Generation should include location in ICS file when present" name="Calendar ICS API Route Successful ICS Generation should include location in ICS file when present" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Successful ICS Generation should include description in ICS file when present" name="Calendar ICS API Route Successful ICS Generation should include description in ICS file when present" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Successful ICS Generation should include attendees in ICS file when present" name="Calendar ICS API Route Successful ICS Generation should include attendees in ICS file when present" time="0.001">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Successful ICS Generation should set correct Content-Type header" name="Calendar ICS API Route Successful ICS Generation should set correct Content-Type header" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Successful ICS Generation should set correct Content-Disposition header" name="Calendar ICS API Route Successful ICS Generation should set correct Content-Disposition header" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Event Not Found should return 404 when event does not exist" name="Calendar ICS API Route Event Not Found should return 404 when event does not exist" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Error Handling should handle database connection errors" name="Calendar ICS API Route Error Handling should handle database connection errors" time="0.005">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Error Handling should handle event query errors" name="Calendar ICS API Route Error Handling should handle event query errors" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route ICS Format Validation should escape special characters in event title" name="Calendar ICS API Route ICS Format Validation should escape special characters in event title" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route ICS Format Validation should escape special characters in location" name="Calendar ICS API Route ICS Format Validation should escape special characters in location" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route ICS Format Validation should handle newlines in description" name="Calendar ICS API Route ICS Format Validation should handle newlines in description" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route ICS Format Validation should use CRLF line breaks (\r\n) for iCalendar format" name="Calendar ICS API Route ICS Format Validation should use CRLF line breaks (\r\n) for iCalendar format" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route ICS Format Validation should include UID in ICS file" name="Calendar ICS API Route ICS Format Validation should include UID in ICS file" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route ICS Format Validation should include DTSTAMP in ICS file" name="Calendar ICS API Route ICS Format Validation should include DTSTAMP in ICS file" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Optional Fields should handle event without location" name="Calendar ICS API Route Optional Fields should handle event without location" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Optional Fields should handle event without description" name="Calendar ICS API Route Optional Fields should handle event without description" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Optional Fields should handle event without attendees" name="Calendar ICS API Route Optional Fields should handle event without attendees" time="0">
+    </testcase>
+    <testcase classname="Calendar ICS API Route Optional Fields should handle empty attendees array" name="Calendar ICS API Route Optional Fields should handle empty attendees array" time="0">
     </testcase>
   </testsuite>
 </testsuites>

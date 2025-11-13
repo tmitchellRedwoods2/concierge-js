@@ -425,7 +425,7 @@ export class AutomationEngine extends EventEmitter {
     const { title, startDate, endDate, location, description } = action.config;
     
     // Determine source and workflowExecutionId from context
-    const source = context.triggerData?.workflowExecutionId ? 'workflow' : 'manual';
+    const source = context.triggerData?.workflowExecutionId ? 'workflow' : (context.triggerData?.email ? 'email' : 'manual');
     const workflowExecutionId = context.triggerData?.workflowExecutionId || undefined;
     
     const event = new CalendarEvent({
@@ -437,17 +437,58 @@ export class AutomationEngine extends EventEmitter {
       userId: context.userId,
       attendees: action.config.attendees || [],
       allDay: action.config.allDay || false,
-      source: source as 'workflow' | 'manual' | 'import',
+      source: source as 'workflow' | 'manual' | 'import' | 'email',
       workflowExecutionId: workflowExecutionId,
       createdBy: context.userId,
       status: 'confirmed'
     });
 
     await event.save();
+    const eventId = event._id.toString();
     console.log(`📅 Calendar event created: ${title} (source: ${source})`);
+
+    // Generate ICS URL for automatic Apple Calendar integration
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000';
+    const icsUrl = `${baseUrl}/api/calendar/event/${eventId}/ics`;
+
+    // If this is from an email trigger, automatically send notification with ICS link
+    if (context.triggerData?.email && this.notificationService) {
+      try {
+        await this.notificationService.sendAppointmentConfirmation(
+          {
+            _id: eventId,
+            id: eventId,
+            title,
+            startDate: new Date(startDate).toISOString(),
+            endDate: new Date(endDate).toISOString(),
+            location: location || '',
+            description: description || '',
+            attendees: action.config.attendees || []
+          },
+          context.userId,
+          context.triggerData.email.from || '',
+          'User',
+          `/calendar/event/${eventId}`
+        );
+        console.log(`📧 Notification sent for event ${eventId}`);
+      } catch (error) {
+        console.error('⚠️ Failed to send notification:', error);
+      }
+    }
+
     return {
       message: `Calendar event "${title}" created successfully`,
-      details: { eventId: event._id.toString(), title, startDate, endDate, source, workflowExecutionId }
+      details: { 
+        eventId, 
+        title, 
+        startDate, 
+        endDate, 
+        source, 
+        workflowExecutionId,
+        icsUrl // Include ICS URL for automatic download
+      }
     };
   }
 
