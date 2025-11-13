@@ -250,14 +250,30 @@ export class PrescriptionRefillAutomationService {
     userId: string
   ): Promise<void> {
     try {
-      // TODO: Create prescription refill notification template
-      // For now, use a simple email notification
-      const message = `Your prescription refill for ${prescription.medicationName} has been requested at ${parsedRefill.pharmacy}. ` +
-        `Estimated ready date: ${refillResult.estimatedReadyDate?.toLocaleDateString() || 'Next business day'}. ` +
-        `Confirmation: ${refillResult.confirmation || 'Refill request submitted'}`;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
+        || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+        || 'http://localhost:3000';
+      const prescriptionUrl = `${baseUrl}/health/prescriptions/${prescription._id}`;
 
-      console.log(`📧 Refill notification sent to user ${userId}`);
-      // TODO: Integrate with notification service
+      const result = await this.notificationService.sendPrescriptionRefillNotification({
+        prescriptionId: prescription._id.toString(),
+        medicationName: prescription.medicationName,
+        dosage: prescription.dosage,
+        pharmacy: parsedRefill.pharmacy,
+        orderNumber: parsedRefill.orderNumber || parsedRefill.prescriptionNumber,
+        estimatedReadyDate: refillResult.estimatedReadyDate,
+        refillType: 'refill_requested',
+        recipientEmail: userId, // TODO: Get user email from user service
+        recipientName: 'User',
+        prescriptionUrl,
+        autoRefillEnabled: prescription.autoRefillEnabled || false
+      });
+
+      if (result.success) {
+        console.log(`📧 Refill notification sent to user ${userId}`);
+      } else {
+        console.error('Failed to send refill notification:', result.error);
+      }
     } catch (error) {
       console.error('Error sending refill notification:', error);
       // Don't throw - notification failure shouldn't block refill request
@@ -273,12 +289,30 @@ export class PrescriptionRefillAutomationService {
     userId: string
   ): Promise<void> {
     try {
-      const message = `Your prescription ${prescription.medicationName} is ready for refill at ${parsedRefill.pharmacy}. ` +
-        `Refill by: ${parsedRefill.refillByDate?.toLocaleDateString() || 'See email for details'}. ` +
-        `You can enable auto-refill in your prescription settings.`;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
+        || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+        || 'http://localhost:3000';
+      const prescriptionUrl = `${baseUrl}/health/prescriptions/${prescription._id}`;
 
-      console.log(`📧 Refill available notification sent to user ${userId}`);
-      // TODO: Integrate with notification service
+      const result = await this.notificationService.sendPrescriptionRefillNotification({
+        prescriptionId: prescription._id.toString(),
+        medicationName: prescription.medicationName,
+        dosage: prescription.dosage,
+        pharmacy: parsedRefill.pharmacy,
+        orderNumber: parsedRefill.orderNumber || parsedRefill.prescriptionNumber,
+        refillByDate: parsedRefill.refillByDate,
+        refillType: 'refill_available',
+        recipientEmail: userId, // TODO: Get user email from user service
+        recipientName: 'User',
+        prescriptionUrl,
+        autoRefillEnabled: prescription.autoRefillEnabled || false
+      });
+
+      if (result.success) {
+        console.log(`📧 Refill available notification sent to user ${userId}`);
+      } else {
+        console.error('Failed to send refill available notification:', result.error);
+      }
     } catch (error) {
       console.error('Error sending refill available notification:', error);
     }

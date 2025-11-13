@@ -279,6 +279,46 @@ export class NotificationService {
     }
   }
 
+  async sendPrescriptionRefillNotification(notification: {
+    prescriptionId: string;
+    medicationName: string;
+    dosage?: string;
+    pharmacy: string;
+    orderNumber?: string;
+    estimatedReadyDate?: Date;
+    refillByDate?: Date;
+    refillType: 'refill_requested' | 'refill_available' | 'refill_ready';
+    recipientEmail: string;
+    recipientName?: string;
+    prescriptionUrl?: string;
+    autoRefillEnabled?: boolean;
+  }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log('📧 Sending prescription refill notification:', notification.medicationName);
+      
+      const result = await this.emailService.sendPrescriptionRefillNotification(notification);
+      
+      if (result.success) {
+        console.log('✅ Prescription refill notification sent');
+        return {
+          success: true,
+          messageId: result.messageId,
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error,
+        };
+      }
+    } catch (error) {
+      console.error('❌ Failed to send prescription refill notification:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
   async testEmailService(): Promise<{ success: boolean; error?: string }> {
     try {
       const result = await this.emailService.testConnection();

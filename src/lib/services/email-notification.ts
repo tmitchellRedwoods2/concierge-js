@@ -30,6 +30,21 @@ export interface CalendarEventNotification {
   eventUrl?: string; // URL to view the calendar event
 }
 
+export interface PrescriptionRefillNotification {
+  prescriptionId: string;
+  medicationName: string;
+  dosage?: string;
+  pharmacy: string;
+  orderNumber?: string;
+  estimatedReadyDate?: Date;
+  refillByDate?: Date;
+  refillType: 'refill_requested' | 'refill_available' | 'refill_ready';
+  recipientEmail: string;
+  recipientName?: string;
+  prescriptionUrl?: string; // URL to view prescription details
+  autoRefillEnabled?: boolean;
+}
+
 export class EmailNotificationService {
   private transporter: nodemailer.Transporter;
   private config: EmailConfig;
@@ -88,6 +103,37 @@ export class EmailNotificationService {
       };
     } catch (error) {
       console.error('❌ Email sending failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async sendPrescriptionRefillNotification(notification: PrescriptionRefillNotification): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      console.log('📧 Sending prescription refill notification:', notification.medicationName);
+      
+      const template = this.getPrescriptionRefillTemplate(notification);
+      
+      const mailOptions = {
+        from: `"Concierge AI" <${this.config.auth.user}>`,
+        to: notification.recipientEmail,
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      
+      console.log('✅ Prescription refill notification sent:', result.messageId);
+      
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error('❌ Prescription refill notification failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -550,6 +596,258 @@ ${location ? `📍 ${location}` : ''}
 ${description ? `\n${description}` : ''}
 
 This notification was sent by your Concierge AI assistant.
+    `.trim();
+  }
+
+  /**
+   * Get prescription refill email template
+   */
+  private getPrescriptionRefillTemplate(notification: PrescriptionRefillNotification): EmailTemplate {
+    const { medicationName, dosage, pharmacy, orderNumber, estimatedReadyDate, refillType, prescriptionUrl, autoRefillEnabled } = notification;
+
+    switch (refillType) {
+      case 'refill_requested':
+        return {
+          subject: `✅ Prescription Refill Requested: ${medicationName}`,
+          html: this.getRefillRequestedHTML(notification),
+          text: this.getRefillRequestedText(notification),
+        };
+
+      case 'refill_available':
+        return {
+          subject: `💊 Prescription Refill Available: ${medicationName}`,
+          html: this.getRefillAvailableHTML(notification),
+          text: this.getRefillAvailableText(notification),
+        };
+
+      case 'refill_ready':
+        return {
+          subject: `📦 Prescription Ready for Pickup: ${medicationName}`,
+          html: this.getRefillReadyHTML(notification),
+          text: this.getRefillReadyText(notification),
+        };
+
+      default:
+        return {
+          subject: `💊 Prescription Update: ${medicationName}`,
+          html: this.getRefillAvailableHTML(notification),
+          text: this.getRefillAvailableText(notification),
+        };
+    }
+  }
+
+  private getRefillRequestedHTML(notification: PrescriptionRefillNotification): string {
+    const { medicationName, dosage, pharmacy, orderNumber, estimatedReadyDate, prescriptionUrl, autoRefillEnabled } = notification;
+    const readyDate = estimatedReadyDate 
+      ? estimatedReadyDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : 'Next business day';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Prescription Refill Requested</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+          .details { background: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; }
+          .medication { font-size: 18px; font-weight: bold; color: #007bff; margin-bottom: 10px; }
+          .info { margin: 10px 0; }
+          .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef; font-size: 14px; color: #6c757d; }
+          .button { display: inline-block; padding: 12px 24px; background: #007bff; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✅ Prescription Refill Requested</h1>
+            <p>Your refill request has been submitted successfully.</p>
+          </div>
+          
+          <div class="details">
+            <div class="medication">💊 ${medicationName}${dosage ? ` (${dosage})` : ''}</div>
+            <div class="info"><strong>Pharmacy:</strong> ${pharmacy}</div>
+            ${orderNumber ? `<div class="info"><strong>Order Number:</strong> ${orderNumber}</div>` : ''}
+            <div class="info"><strong>Estimated Ready Date:</strong> ${readyDate}</div>
+            ${autoRefillEnabled ? '<div class="info" style="color: #28a745;"><strong>✓</strong> Auto-refill is enabled</div>' : ''}
+            
+            ${prescriptionUrl ? `
+              <div style="margin-top: 20px; text-align: center;">
+                <a href="${prescriptionUrl}" class="button">View Prescription Details</a>
+              </div>
+            ` : ''}
+          </div>
+          
+          <div class="footer">
+            <p>This refill was automatically requested by your Concierge AI assistant.</p>
+            <p>You will receive another notification when your prescription is ready for pickup.</p>
+            ${!autoRefillEnabled ? '<p><strong>Tip:</strong> Enable auto-refill to automatically request refills when available.</p>' : ''}
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private getRefillRequestedText(notification: PrescriptionRefillNotification): string {
+    const { medicationName, dosage, pharmacy, orderNumber, estimatedReadyDate, autoRefillEnabled } = notification;
+    const readyDate = estimatedReadyDate 
+      ? estimatedReadyDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : 'Next business day';
+
+    return `
+PRESCRIPTION REFILL REQUESTED
+
+💊 ${medicationName}${dosage ? ` (${dosage})` : ''}
+Pharmacy: ${pharmacy}
+${orderNumber ? `Order Number: ${orderNumber}\n` : ''}Estimated Ready Date: ${readyDate}
+${autoRefillEnabled ? '✓ Auto-refill is enabled\n' : ''}
+
+This refill was automatically requested by your Concierge AI assistant.
+You will receive another notification when your prescription is ready for pickup.
+${!autoRefillEnabled ? '\nTip: Enable auto-refill to automatically request refills when available.' : ''}
+    `.trim();
+  }
+
+  private getRefillAvailableHTML(notification: PrescriptionRefillNotification): string {
+    const { medicationName, dosage, pharmacy, orderNumber, prescriptionUrl, autoRefillEnabled } = notification;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Prescription Refill Available</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+          .details { background: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; }
+          .medication { font-size: 18px; font-weight: bold; color: #856404; margin-bottom: 10px; }
+          .info { margin: 10px 0; }
+          .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef; font-size: 14px; color: #6c757d; }
+          .button { display: inline-block; padding: 12px 24px; background: #ffc107; color: #000; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>💊 Prescription Refill Available</h1>
+            <p>Your prescription is ready for refill.</p>
+          </div>
+          
+          <div class="details">
+            <div class="medication">💊 ${medicationName}${dosage ? ` (${dosage})` : ''}</div>
+            <div class="info"><strong>Pharmacy:</strong> ${pharmacy}</div>
+            ${orderNumber ? `<div class="info"><strong>Order Number:</strong> ${orderNumber}</div>` : ''}
+            
+            ${prescriptionUrl ? `
+              <div style="margin-top: 20px; text-align: center;">
+                <a href="${prescriptionUrl}" class="button">Request Refill</a>
+              </div>
+            ` : ''}
+            
+            ${autoRefillEnabled ? `
+              <div style="margin-top: 15px; padding: 10px; background: #d4edda; border-radius: 6px; text-align: center;">
+                <strong>Auto-refill is enabled</strong> - Your refill will be requested automatically.
+              </div>
+            ` : `
+              <div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                <strong>💡 Tip:</strong> Enable auto-refill to automatically request refills when available.
+              </div>
+            `}
+          </div>
+          
+          <div class="footer">
+            <p>This notification was sent by your Concierge AI assistant.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private getRefillAvailableText(notification: PrescriptionRefillNotification): string {
+    const { medicationName, dosage, pharmacy, orderNumber, autoRefillEnabled } = notification;
+
+    return `
+PRESCRIPTION REFILL AVAILABLE
+
+💊 ${medicationName}${dosage ? ` (${dosage})` : ''}
+Pharmacy: ${pharmacy}
+${orderNumber ? `Order Number: ${orderNumber}\n` : ''}
+${autoRefillEnabled 
+  ? 'Auto-refill is enabled - Your refill will be requested automatically.\n'
+  : 'Tip: Enable auto-refill to automatically request refills when available.\n'
+}
+This notification was sent by your Concierge AI assistant.
+    `.trim();
+  }
+
+  private getRefillReadyHTML(notification: PrescriptionRefillNotification): string {
+    const { medicationName, dosage, pharmacy, orderNumber, prescriptionUrl } = notification;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Prescription Ready for Pickup</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #d1ecf1; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+          .details { background: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; }
+          .medication { font-size: 18px; font-weight: bold; color: #0c5460; margin-bottom: 10px; }
+          .info { margin: 10px 0; }
+          .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef; font-size: 14px; color: #6c757d; }
+          .button { display: inline-block; padding: 12px 24px; background: #17a2b8; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📦 Prescription Ready for Pickup</h1>
+            <p>Your prescription is ready at the pharmacy.</p>
+          </div>
+          
+          <div class="details">
+            <div class="medication">💊 ${medicationName}${dosage ? ` (${dosage})` : ''}</div>
+            <div class="info"><strong>Pharmacy:</strong> ${pharmacy}</div>
+            ${orderNumber ? `<div class="info"><strong>Order Number:</strong> ${orderNumber}</div>` : ''}
+            <div class="info"><strong>Status:</strong> Ready for pickup</div>
+            
+            ${prescriptionUrl ? `
+              <div style="margin-top: 20px; text-align: center;">
+                <a href="${prescriptionUrl}" class="button">View Prescription Details</a>
+              </div>
+            ` : ''}
+          </div>
+          
+          <div class="footer">
+            <p>This notification was sent by your Concierge AI assistant.</p>
+            <p>Please pick up your prescription at your earliest convenience.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private getRefillReadyText(notification: PrescriptionRefillNotification): string {
+    const { medicationName, dosage, pharmacy, orderNumber } = notification;
+
+    return `
+PRESCRIPTION READY FOR PICKUP
+
+💊 ${medicationName}${dosage ? ` (${dosage})` : ''}
+Pharmacy: ${pharmacy}
+${orderNumber ? `Order Number: ${orderNumber}\n` : ''}Status: Ready for pickup
+
+This notification was sent by your Concierge AI assistant.
+Please pick up your prescription at your earliest convenience.
     `.trim();
   }
 
