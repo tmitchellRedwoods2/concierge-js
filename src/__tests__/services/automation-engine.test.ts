@@ -260,6 +260,139 @@ describe('AutomationEngine', () => {
       expect(result).toBe(true);
     });
 
+    it('should create calendar event from email trigger with ICS URL', async () => {
+      const { CalendarEvent } = require('@/lib/models/CalendarEvent');
+      const mockSave = jest.fn().mockResolvedValue({ _id: 'test-event-id' });
+      CalendarEvent.mockImplementation(() => ({
+        save: mockSave,
+        _id: 'test-event-id'
+      }));
+
+      const rule = {
+        name: 'Email Calendar Rule',
+        description: 'Rule that creates calendar event from email',
+        trigger: { type: 'email', conditions: {} },
+        actions: [{
+          type: 'create_calendar_event',
+          config: {
+            title: 'Appointment with Dr. Smith',
+            startDate: new Date('2024-01-15T10:00:00Z').toISOString(),
+            endDate: new Date('2024-01-15T11:00:00Z').toISOString(),
+            location: '123 Medical Center',
+            description: 'Regular checkup'
+          }
+        }],
+        enabled: true,
+        userId: 'test-user'
+      };
+
+      const ruleId = await automationEngine.addRule(rule);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {
+          email: {
+            from: 'dr.smith@example.com',
+            subject: 'Appointment Confirmation',
+            body: 'Your appointment is scheduled'
+          }
+        }
+      });
+
+      expect(result.success).toBe(true);
+      expect(CalendarEvent).toHaveBeenCalled();
+      expect(mockSave).toHaveBeenCalled();
+    });
+
+    it('should send notification when creating event from email trigger', async () => {
+      const { CalendarEvent } = require('@/lib/models/CalendarEvent');
+      const mockSave = jest.fn().mockResolvedValue({ _id: 'test-event-id' });
+      CalendarEvent.mockImplementation(() => ({
+        save: mockSave,
+        _id: 'test-event-id'
+      }));
+
+      const rule = {
+        name: 'Email Calendar Rule',
+        description: 'Rule that creates calendar event from email',
+        trigger: { type: 'email', conditions: {} },
+        actions: [{
+          type: 'create_calendar_event',
+          config: {
+            title: 'Appointment with Dr. Smith',
+            startDate: new Date('2024-01-15T10:00:00Z').toISOString(),
+            endDate: new Date('2024-01-15T11:00:00Z').toISOString(),
+            location: '123 Medical Center'
+          }
+        }],
+        enabled: true,
+        userId: 'test-user'
+      };
+
+      const ruleId = await automationEngine.addRule(rule);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {
+          email: {
+            from: 'dr.smith@example.com',
+            subject: 'Appointment Confirmation',
+            body: 'Your appointment is scheduled'
+          }
+        }
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockSendAppointmentConfirmation).toHaveBeenCalled();
+    });
+
+    it('should include ICS URL in event creation details', async () => {
+      const { CalendarEvent } = require('@/lib/models/CalendarEvent');
+      const mockSave = jest.fn().mockResolvedValue({ _id: 'test-event-id' });
+      CalendarEvent.mockImplementation(() => ({
+        save: mockSave,
+        _id: 'test-event-id'
+      }));
+
+      process.env.NEXT_PUBLIC_APP_URL = 'https://test.example.com';
+
+      const rule = {
+        name: 'Email Calendar Rule',
+        description: 'Rule that creates calendar event from email',
+        trigger: { type: 'email', conditions: {} },
+        actions: [{
+          type: 'create_calendar_event',
+          config: {
+            title: 'Test Appointment',
+            startDate: new Date('2024-01-15T10:00:00Z').toISOString(),
+            endDate: new Date('2024-01-15T11:00:00Z').toISOString()
+          }
+        }],
+        enabled: true,
+        userId: 'test-user'
+      };
+
+      const ruleId = await automationEngine.addRule(rule);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {
+          email: {
+            from: 'doctor@example.com',
+            subject: 'Appointment',
+            body: 'Your appointment is scheduled'
+          }
+        }
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.executionLog).toBeDefined();
+      const actionResult = result.executionLog?.actions.find((a: any) => a.type === 'create_calendar_event');
+      expect(actionResult).toBeDefined();
+      expect(actionResult?.details?.icsUrl).toBeDefined();
+      expect(actionResult?.details?.icsUrl).toContain('/api/calendar/event/');
+      expect(actionResult?.details?.icsUrl).toContain('/ics');
+
+      delete process.env.NEXT_PUBLIC_APP_URL;
+    });
+
     it('should execute wait action', async () => {
       const startTime = Date.now();
       
