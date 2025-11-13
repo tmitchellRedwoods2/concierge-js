@@ -8,6 +8,8 @@ export interface CalendarSyncResult {
   success: boolean;
   externalEventId?: string;
   externalEventUrl?: string;
+  externalCalendarUrl?: string; // Alias for externalEventUrl for consistency
+  calendarType?: 'google' | 'apple' | 'outlook' | 'caldav';
   error?: string;
 }
 
@@ -75,7 +77,9 @@ export class CalendarSyncService {
         return {
           success: true,
           externalEventId: result.eventId,
-          externalEventUrl: result.eventUrl
+          externalEventUrl: result.eventUrl,
+          externalCalendarUrl: result.eventUrl,
+          calendarType: 'google'
         };
       } else {
         return {
@@ -125,7 +129,9 @@ export class CalendarSyncService {
         return {
           success: true,
           externalEventId: result.eventId,
-          externalEventUrl: result.eventUrl
+          externalEventUrl: result.eventUrl,
+          externalCalendarUrl: result.eventUrl,
+          calendarType: 'apple'
         };
       } else {
         return {
@@ -220,6 +226,9 @@ export class CalendarSyncService {
         userId, 
         provider as 'google' | 'outlook' | 'apple' | 'caldav'
       );
+
+      // Add calendar type to result
+      syncResult.calendarType = provider as 'google' | 'apple' | 'outlook' | 'caldav';
 
       if (syncResult.success) {
         console.log(`✅ Event synced to ${provider}:`, syncResult.externalEventId);

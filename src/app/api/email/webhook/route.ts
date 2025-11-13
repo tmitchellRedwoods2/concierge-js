@@ -3,6 +3,7 @@ import { emailParserService } from '@/lib/services/email-parser';
 import { emailTriggerService } from '@/lib/services/email-trigger';
 import { automationEngine } from '@/lib/services/automation-engine';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
+import { CalendarSyncService } from '@/lib/services/calendar-sync';
 import connectDB from '@/lib/db/mongodb';
 import { NotificationService } from '@/lib/services/notification-service';
 
@@ -153,8 +154,45 @@ export async function POST(request: NextRequest) {
 
     console.log(`📅 Created calendar event: ${eventId}`);
 
-    // Automatically add to Apple Calendar by generating ICS file URL
-    // The user's device can download this automatically
+    // Automatically sync to external calendar (Google Calendar, Apple Calendar, etc.)
+    try {
+      const calendarSyncService = new CalendarSyncService();
+      const syncResult = await calendarSyncService.syncEventIfEnabled(
+        {
+          _id: eventId,
+          id: eventId,
+          title: parsedAppointment.title,
+          startDate: parsedAppointment.startDate.toISOString(),
+          endDate: parsedAppointment.endDate.toISOString(),
+          location: parsedAppointment.location || '',
+          description: parsedAppointment.description || '',
+          attendees: parsedAppointment.attendees || []
+        },
+        userId
+      );
+
+      if (syncResult.success) {
+        console.log(`📅 Event automatically synced to external calendar: ${syncResult.externalEventId}`);
+        // Update event with external calendar info
+        if (syncResult.externalEventId && syncResult.calendarType) {
+          if (syncResult.calendarType === 'google') {
+            event.googleEventId = syncResult.externalEventId;
+            event.googleEventUrl = syncResult.externalCalendarUrl;
+          } else if (syncResult.calendarType === 'apple') {
+            event.appleEventId = syncResult.externalEventId;
+            event.appleEventUrl = syncResult.externalCalendarUrl;
+          }
+          await event.save();
+        }
+      } else {
+        console.log(`⚠️ Calendar sync not enabled or failed (non-blocking): ${syncResult.error}`);
+      }
+    } catch (error) {
+      console.error('⚠️ Calendar sync error (non-blocking):', error);
+      // Don't throw - calendar sync failure shouldn't block event creation
+    }
+
+    // Generate ICS file URL for manual download/Apple Calendar integration
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const icsUrl = `${baseUrl}/api/calendar/event/${eventId}/ics`;
 

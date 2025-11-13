@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { NotificationService } from './notification-service';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
 import { AutomationRule as AutomationRuleModel } from '@/lib/models/AutomationRule';
+import { CalendarSyncService } from './calendar-sync';
 import connectDB from '@/lib/db/mongodb';
 
 export interface AutomationRule {
@@ -53,6 +54,7 @@ export interface ExecutionLog {
 export class AutomationEngine extends EventEmitter {
   private rules: Map<string, AutomationRule> = new Map();
   private notificationService: NotificationService | null = null;
+  private calendarSyncService: CalendarSyncService | null = null;
   private isRunning: boolean = false;
   private executionQueue: Array<{ rule: AutomationRule; context: AutomationContext }> = [];
   private executionLogs: Map<string, ExecutionLog[]> = new Map(); // userId -> logs[]
@@ -61,6 +63,7 @@ export class AutomationEngine extends EventEmitter {
     super();
     try {
       this.notificationService = new NotificationService();
+      this.calendarSyncService = new CalendarSyncService();
       this.startExecutionLoop();
       // Load rules from database asynchronously
       this.loadRulesFromDB().catch(err => {
@@ -71,6 +74,7 @@ export class AutomationEngine extends EventEmitter {
       // Continue without notification service if it fails
       // This allows rules to be created even if email service isn't configured
       this.notificationService = null;
+      this.calendarSyncService = null;
     }
   }
 
@@ -452,6 +456,45 @@ export class AutomationEngine extends EventEmitter {
       ? `https://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000';
     const icsUrl = `${baseUrl}/api/calendar/event/${eventId}/ics`;
+
+    // Automatically sync to external calendar (Google Calendar, Apple Calendar, etc.)
+    if (this.calendarSyncService) {
+      try {
+        const syncResult = await this.calendarSyncService.syncEventIfEnabled(
+          {
+            _id: eventId,
+            id: eventId,
+            title,
+            startDate: new Date(startDate).toISOString(),
+            endDate: new Date(endDate).toISOString(),
+            location: location || '',
+            description: description || '',
+            attendees: action.config.attendees || []
+          },
+          context.userId
+        );
+
+        if (syncResult.success) {
+          console.log(`📅 Event synced to external calendar: ${syncResult.externalEventId}`);
+          // Update event with external calendar info if available
+          if (syncResult.externalEventId && syncResult.calendarType) {
+            if (syncResult.calendarType === 'google') {
+              event.googleEventId = syncResult.externalEventId;
+              event.googleEventUrl = syncResult.externalCalendarUrl;
+            } else if (syncResult.calendarType === 'apple') {
+              event.appleEventId = syncResult.externalEventId;
+              event.appleEventUrl = syncResult.externalCalendarUrl;
+            }
+            await event.save();
+          }
+        } else {
+          console.log(`⚠️ Calendar sync not enabled or failed (non-blocking): ${syncResult.error}`);
+        }
+      } catch (error) {
+        console.error('⚠️ Calendar sync error (non-blocking):', error);
+        // Don't throw - calendar sync failure shouldn't block event creation
+      }
+    }
 
     // If this is from an email trigger, automatically send notification with ICS link
     if (context.triggerData?.email && this.notificationService) {
