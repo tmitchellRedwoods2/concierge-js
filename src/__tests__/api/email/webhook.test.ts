@@ -8,17 +8,27 @@ import { CalendarEvent } from '@/lib/models/CalendarEvent';
 import { emailParserService } from '@/lib/services/email-parser';
 import { emailTriggerService } from '@/lib/services/email-trigger';
 import { NotificationService } from '@/lib/services/notification-service';
+import { CalendarSyncService } from '@/lib/services/calendar-sync';
 
 // Mock dependencies
 jest.mock('@/lib/db/mongodb');
 jest.mock('@/lib/services/email-parser');
 jest.mock('@/lib/services/email-trigger');
 jest.mock('@/lib/services/notification-service');
+jest.mock('@/lib/services/calendar-sync');
 
 const mockConnectDB = connectDB as jest.MockedFunction<typeof connectDB>;
 const mockEmailParserService = emailParserService as jest.Mocked<typeof emailParserService>;
 const mockEmailTriggerService = emailTriggerService as jest.Mocked<typeof emailTriggerService>;
 const MockNotificationService = NotificationService as jest.MockedClass<typeof NotificationService>;
+const MockCalendarSyncService = CalendarSyncService as jest.MockedClass<typeof CalendarSyncService>;
+
+const mockSyncEventIfEnabled = jest.fn().mockResolvedValue({ 
+  success: true, 
+  externalEventId: 'google-event-123',
+  externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
+  calendarType: 'google'
+});
 
 // Mock CalendarEvent
 let findOneResult: any = null;
@@ -278,6 +288,104 @@ describe('Email Webhook API Route', () => {
       expect(data.appointmentCreated).toBe(false);
       expect(data.eventId).toBe('existing-event-id');
       expect(MockCalendarEvent).not.toHaveBeenCalled();
+    });
+
+    it('should automatically sync event to external calendar when created', async () => {
+      (mockEmailParserService.parseAppointmentEmail as jest.Mock) = jest.fn().mockReturnValue(mockParsedAppointment);
+      setFindOneResult(null);
+      mockSyncEventIfEnabled.mockResolvedValueOnce({
+        success: true,
+        externalEventId: 'google-event-123',
+        externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
+        calendarType: 'google'
+      });
+
+      const body = {
+        from: 'dr.smith@example.com',
+        subject: 'Appointment Confirmation',
+        body: 'Your appointment is scheduled',
+        userId: mockUserId
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/email/webhook', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(mockSyncEventIfEnabled).toHaveBeenCalled();
+      expect(mockSyncEventIfEnabled).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: mockParsedAppointment.title,
+          startDate: mockParsedAppointment.startDate.toISOString()
+        }),
+        mockUserId
+      );
+    });
+
+    it('should update event with external calendar info when sync succeeds', async () => {
+      (mockEmailParserService.parseAppointmentEmail as jest.Mock) = jest.fn().mockReturnValue(mockParsedAppointment);
+      setFindOneResult(null);
+      mockSyncEventIfEnabled.mockResolvedValueOnce({
+        success: true,
+        externalEventId: 'google-event-123',
+        externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
+        calendarType: 'google'
+      });
+
+      const body = {
+        from: 'dr.smith@example.com',
+        subject: 'Appointment Confirmation',
+        body: 'Your appointment is scheduled',
+        userId: mockUserId
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/email/webhook', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      await POST(request);
+
+      // Verify event.save was called (to update with external calendar info)
+      expect(savedEvent?.save).toHaveBeenCalled();
+    });
+
+    it('should continue event creation even if calendar sync fails', async () => {
+      (mockEmailParserService.parseAppointmentEmail as jest.Mock) = jest.fn().mockReturnValue(mockParsedAppointment);
+      setFindOneResult(null);
+      mockSyncEventIfEnabled.mockResolvedValueOnce({
+        success: false,
+        error: 'Calendar sync not enabled'
+      });
+
+      const body = {
+        from: 'dr.smith@example.com',
+        subject: 'Appointment Confirmation',
+        body: 'Your appointment is scheduled',
+        userId: mockUserId
+      };
+
+      const request = new NextRequest('http://localhost:3000/api/email/webhook', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      // Event should still be created even if sync fails
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.appointmentCreated).toBe(true);
+      expect(MockCalendarEvent).toHaveBeenCalled();
     });
 
     it('should send notification when appointment is created', async () => {

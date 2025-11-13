@@ -11,6 +11,20 @@ jest.mock('@/lib/services/notification-service', () => ({
   })),
 }));
 
+// Mock the calendar sync service
+const mockSyncEventIfEnabled = jest.fn().mockResolvedValue({ 
+  success: true, 
+  externalEventId: 'google-event-123',
+  externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
+  calendarType: 'google'
+});
+
+jest.mock('@/lib/services/calendar-sync', () => ({
+  CalendarSyncService: jest.fn().mockImplementation(() => ({
+    syncEventIfEnabled: mockSyncEventIfEnabled,
+  })),
+}));
+
 // Mock the CalendarEvent model
 jest.mock('@/lib/models/CalendarEvent', () => ({
   CalendarEvent: jest.fn().mockImplementation(() => ({
@@ -28,6 +42,7 @@ describe('AutomationEngine', () => {
   afterEach(() => {
     jest.clearAllMocks();
     mockSendAppointmentConfirmation.mockClear();
+    mockSyncEventIfEnabled.mockClear();
   });
 
   describe('addRule', () => {
@@ -342,6 +357,129 @@ describe('AutomationEngine', () => {
 
       expect(result.success).toBe(true);
       expect(mockSendAppointmentConfirmation).toHaveBeenCalled();
+    });
+
+    it('should automatically sync calendar event to external calendar', async () => {
+      const { CalendarEvent } = require('@/lib/models/CalendarEvent');
+      const mockEvent = {
+        _id: 'test-event-id',
+        save: jest.fn().mockResolvedValue({ _id: 'test-event-id' })
+      };
+      CalendarEvent.mockImplementation(() => mockEvent);
+
+      const rule = {
+        name: 'Calendar Sync Rule',
+        description: 'Rule that syncs calendar event',
+        trigger: { type: 'email', conditions: {} },
+        actions: [{
+          type: 'create_calendar_event',
+          config: {
+            title: 'Test Appointment',
+            startDate: new Date('2024-01-15T10:00:00Z').toISOString(),
+            endDate: new Date('2024-01-15T11:00:00Z').toISOString(),
+            location: 'Test Location'
+          }
+        }],
+        enabled: true,
+        userId: 'test-user'
+      };
+
+      const ruleId = await automationEngine.addRule(rule);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {}
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockSyncEventIfEnabled).toHaveBeenCalled();
+      expect(mockSyncEventIfEnabled).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Test Appointment',
+          id: 'test-event-id'
+        }),
+        'test-user'
+      );
+    });
+
+    it('should update event with external calendar info when sync succeeds', async () => {
+      const { CalendarEvent } = require('@/lib/models/CalendarEvent');
+      const mockEvent = {
+        _id: 'test-event-id',
+        save: jest.fn().mockResolvedValue({ _id: 'test-event-id' })
+      };
+      CalendarEvent.mockImplementation(() => mockEvent);
+
+      mockSyncEventIfEnabled.mockResolvedValueOnce({
+        success: true,
+        externalEventId: 'google-event-123',
+        externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
+        calendarType: 'google'
+      });
+
+      const rule = {
+        name: 'Calendar Sync Rule',
+        description: 'Rule that syncs calendar event',
+        trigger: { type: 'email', conditions: {} },
+        actions: [{
+          type: 'create_calendar_event',
+          config: {
+            title: 'Test Appointment',
+            startDate: new Date('2024-01-15T10:00:00Z').toISOString(),
+            endDate: new Date('2024-01-15T11:00:00Z').toISOString()
+          }
+        }],
+        enabled: true,
+        userId: 'test-user'
+      };
+
+      const ruleId = await automationEngine.addRule(rule);
+      await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {}
+      });
+
+      // Event should be saved with external calendar info
+      expect(mockEvent.save).toHaveBeenCalled();
+    });
+
+    it('should continue event creation even if calendar sync fails', async () => {
+      const { CalendarEvent } = require('@/lib/models/CalendarEvent');
+      const mockEvent = {
+        _id: 'test-event-id',
+        save: jest.fn().mockResolvedValue({ _id: 'test-event-id' })
+      };
+      CalendarEvent.mockImplementation(() => mockEvent);
+
+      mockSyncEventIfEnabled.mockResolvedValueOnce({
+        success: false,
+        error: 'Calendar sync not enabled'
+      });
+
+      const rule = {
+        name: 'Calendar Sync Rule',
+        description: 'Rule that syncs calendar event',
+        trigger: { type: 'email', conditions: {} },
+        actions: [{
+          type: 'create_calendar_event',
+          config: {
+            title: 'Test Appointment',
+            startDate: new Date('2024-01-15T10:00:00Z').toISOString(),
+            endDate: new Date('2024-01-15T11:00:00Z').toISOString()
+          }
+        }],
+        enabled: true,
+        userId: 'test-user'
+      };
+
+      const ruleId = await automationEngine.addRule(rule);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {}
+      });
+
+      // Event creation should still succeed even if sync fails
+      expect(result.success).toBe(true);
+      expect(mockEvent.save).toHaveBeenCalled();
     });
 
     it('should include ICS URL in event creation details', async () => {
