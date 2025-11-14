@@ -70,7 +70,24 @@ export default function CalendarPage() {
       
       console.log('📅 Parsed events:', eventsList.length, 'events');
       console.log('📅 Events data:', eventsList);
-      setEvents(eventsList);
+      
+      // Validate events have required fields before setting state
+      const validEvents = eventsList.filter((event: any) => {
+        const isValid = event && 
+          event._id && 
+          event.title && 
+          event.startDate && 
+          event.endDate && 
+          event.status && 
+          event.source;
+        if (!isValid) {
+          console.warn('⚠️ Invalid event found:', event);
+        }
+        return isValid;
+      });
+      
+      console.log('📅 Valid events:', validEvents.length, 'out of', eventsList.length);
+      setEvents(validEvents);
     } catch (err) {
       console.error('Error loading calendar events:', err);
       setError(err instanceof Error ? err.message : 'Failed to load events');
@@ -113,6 +130,8 @@ export default function CalendarPage() {
         return 'bg-purple-100 text-purple-800';
       case 'import':
         return 'bg-gray-100 text-gray-800';
+      case 'email':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -162,7 +181,7 @@ export default function CalendarPage() {
         )}
 
         {/* Events List */}
-        {events.length === 0 ? (
+        {events.length === 0 && !loading ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -176,9 +195,15 @@ export default function CalendarPage() {
               </Button>
             </CardContent>
           </Card>
-        ) : (
+        ) : events.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => (
+            {events.map((event) => {
+              // Additional safety check
+              if (!event || !event._id || !event.title) {
+                console.warn('⚠️ Skipping invalid event in render:', event);
+                return null;
+              }
+              return (
               <Card key={event._id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -251,9 +276,10 @@ export default function CalendarPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
