@@ -432,16 +432,22 @@ function CalendarSyncTester({ provider, syncEnabled }: { provider: string; syncE
           }`}>
             {testResult.message}
           </p>
-          {testResult.success && testResult.eventId && (
-            <div className="mt-3">
-              <a
-                href={`/calendar/event/${testResult.eventId}`}
-                className="text-sm text-green-700 hover:text-green-800 underline"
-              >
-                View Test Event →
-              </a>
-            </div>
-          )}
+              {testResult.success && testResult.eventId && (
+                <div className="mt-3 space-y-2">
+                  <a
+                    href={`/calendar/event/${testResult.eventId}`}
+                    className="text-sm text-green-700 hover:text-green-800 underline block"
+                  >
+                    View Test Event →
+                  </a>
+                  <a
+                    href="/calendar"
+                    className="text-sm text-blue-700 hover:text-blue-800 underline block"
+                  >
+                    View All Calendar Events →
+                  </a>
+                </div>
+              )}
         </div>
       )}
 
