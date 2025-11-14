@@ -24,6 +24,24 @@ export default function EmailScanningPage() {
   useEffect(() => {
     if (session?.user?.id) {
       loadAccounts();
+      
+      // Check for OAuth callback success/error
+      const params = new URLSearchParams(window.location.search);
+      const success = params.get('success');
+      const error = params.get('error');
+      
+      if (success) {
+        alert(success === 'gmail_connected' ? 'Gmail connected successfully!' : 'Outlook connected successfully!');
+        // Clean URL
+        window.history.replaceState({}, '', '/settings/email-scanning');
+        loadAccounts();
+      }
+      
+      if (error) {
+        alert(`Connection failed: ${error}`);
+        // Clean URL
+        window.history.replaceState({}, '', '/settings/email-scanning');
+      }
     }
   }, [session]);
 
@@ -159,15 +177,64 @@ export default function EmailScanningPage() {
               </ul>
             </div>
 
-            {/* Add Account Button */}
+            {/* Quick Connect Buttons */}
             {!showAddForm && (
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
-              >
-                <Plus className="h-5 w-5" />
-                Add Email Account
-              </button>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/email/oauth/gmail/authorize');
+                        const data = await response.json();
+                        if (data.success && data.authUrl) {
+                          window.location.href = data.authUrl;
+                        } else {
+                          alert('Failed to initiate Gmail OAuth');
+                        }
+                      } catch (error) {
+                        console.error('Error initiating Gmail OAuth:', error);
+                        alert('Failed to connect Gmail');
+                      }
+                    }}
+                    className="flex-1 bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/>
+                    </svg>
+                    Connect Gmail
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/email/oauth/outlook/authorize');
+                        const data = await response.json();
+                        if (data.success && data.authUrl) {
+                          window.location.href = data.authUrl;
+                        } else {
+                          alert('Failed to initiate Outlook OAuth');
+                        }
+                      } catch (error) {
+                        console.error('Error initiating Outlook OAuth:', error);
+                        alert('Failed to connect Outlook');
+                      }
+                    }}
+                    className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M7.5 11.5h9m-9 0a3 3 0 110-6h9a3 3 0 110 6m-9 0v9a3 3 0 003 3h3a3 3 0 003-3v-9m-6-9V3a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 3v2.5"/>
+                    </svg>
+                    Connect Outlook
+                  </button>
+                </div>
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="text-sm text-gray-600 hover:text-gray-900 underline"
+                  >
+                    Or add email account manually
+                  </button>
+                </div>
+              </div>
             )}
 
             {/* Add Account Form */}
@@ -197,13 +264,13 @@ export default function EmailScanningPage() {
                       required
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="gmail">Gmail (OAuth - Coming Soon)</option>
-                      <option value="outlook">Outlook (OAuth - Coming Soon)</option>
+                      <option value="gmail">Gmail (OAuth)</option>
+                      <option value="outlook">Outlook (OAuth)</option>
                       <option value="imap">IMAP (Manual Setup)</option>
                       <option value="exchange">Exchange (Manual Setup)</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      Note: Gmail and Outlook OAuth integration is coming soon. For now, use IMAP/Exchange with app-specific passwords.
+                      For Gmail and Outlook, click "Connect with OAuth" below after selecting the provider.
                     </p>
                   </div>
 

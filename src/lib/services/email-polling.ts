@@ -184,21 +184,69 @@ export class EmailPollingService extends EventEmitter {
    * Fetch emails from Gmail using Gmail API
    */
   private async fetchGmailEmails(account: EmailAccount): Promise<PolledEmail[]> {
-    // TODO: Implement Gmail API integration
-    // For now, return empty array
-    // This would use Google OAuth tokens to access Gmail API
-    console.log('📧 Gmail API integration not yet implemented');
-    return [];
+    try {
+      const { GmailAPIService } = await import('./gmail-api');
+      
+      if (!account.credentials.accessToken || !account.credentials.refreshToken) {
+        console.error('📧 Gmail credentials missing for', account.emailAddress);
+        return [];
+      }
+
+      const gmailService = new GmailAPIService({
+        accessToken: account.credentials.accessToken,
+        refreshToken: account.credentials.refreshToken,
+        clientId: account.credentials.clientId,
+        clientSecret: account.credentials.clientSecret
+      });
+
+      const emails = await gmailService.fetchEmails(account.lastMessageId, 10);
+      
+      // Update credentials if they were refreshed
+      const updatedCredentials = gmailService.getCredentials();
+      if (updatedCredentials.accessToken !== account.credentials.accessToken) {
+        account.credentials = { ...account.credentials, ...updatedCredentials };
+      }
+
+      return emails;
+    } catch (error) {
+      console.error('❌ Error fetching Gmail emails:', error);
+      throw error;
+    }
   }
 
   /**
    * Fetch emails from Outlook using Microsoft Graph API
    */
   private async fetchOutlookEmails(account: EmailAccount): Promise<PolledEmail[]> {
-    // TODO: Implement Microsoft Graph API integration
-    // For now, return empty array
-    console.log('📧 Outlook API integration not yet implemented');
-    return [];
+    try {
+      const { OutlookAPIService } = await import('./outlook-api');
+      
+      if (!account.credentials.accessToken) {
+        console.error('📧 Outlook credentials missing for', account.emailAddress);
+        return [];
+      }
+
+      const outlookService = new OutlookAPIService({
+        accessToken: account.credentials.accessToken,
+        refreshToken: account.credentials.refreshToken || '',
+        tenantId: account.credentials.tenantId,
+        clientId: account.credentials.clientId,
+        clientSecret: account.credentials.clientSecret
+      });
+
+      const emails = await outlookService.fetchEmails(account.lastMessageId, 10);
+      
+      // Update credentials if they were refreshed
+      const updatedCredentials = outlookService.getCredentials();
+      if (updatedCredentials.accessToken !== account.credentials.accessToken) {
+        account.credentials = { ...account.credentials, ...updatedCredentials };
+      }
+
+      return emails;
+    } catch (error) {
+      console.error('❌ Error fetching Outlook emails:', error);
+      throw error;
+    }
   }
 
   /**
