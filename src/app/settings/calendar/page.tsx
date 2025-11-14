@@ -46,7 +46,9 @@ export default function CalendarSettingsPage() {
       const response = await fetch('/api/user/preferences');
       if (response.ok) {
         const data = await response.json();
-        setPreferences(data.calendarPreferences || preferences);
+        // Handle both response formats: { preferences: {...} } or { calendarPreferences: {...} }
+        const prefs = data.preferences?.calendarPreferences || data.calendarPreferences || preferences;
+        setPreferences(prefs);
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
@@ -274,9 +276,16 @@ export default function CalendarSettingsPage() {
               </div>
 
               {/* Calendar Sync Testing Section */}
-              {preferences.syncEnabled && preferences.primaryProvider !== 'internal' && (
+              {preferences.primaryProvider !== 'internal' && (
                 <div className="pt-6 border-t border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">Test Calendar Sync</h2>
+                  {!preferences.syncEnabled && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        ⚠️ <strong>Sync is not enabled.</strong> Enable sync above and save your preferences to test calendar sync functionality.
+                      </p>
+                    </div>
+                  )}
                   <CalendarSyncTester 
                     provider={preferences.primaryProvider}
                     syncEnabled={preferences.syncEnabled}
@@ -285,7 +294,7 @@ export default function CalendarSettingsPage() {
               )}
 
               {/* Sync Status Section */}
-              {preferences.syncEnabled && preferences.primaryProvider !== 'internal' && (
+              {preferences.primaryProvider !== 'internal' && (
                 <div className="pt-6 border-t border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">Sync Status</h2>
                   <SyncStatusDisplay provider={preferences.primaryProvider} />
