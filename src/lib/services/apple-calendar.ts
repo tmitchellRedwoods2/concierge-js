@@ -130,11 +130,15 @@ END:VCALENDAR`;
     try {
       console.log('🍎 Fetching Apple Calendar events...');
       
-      // First, try to discover the calendar URL if the path is just /calendars
-      let calendarUrl = `${this.config.serverUrl}${this.config.calendarPath}`;
+      // Always try to discover the calendar URL first for better reliability
+      let calendarUrl: string;
       
-      // If calendar path is just /calendars, we need to discover the actual calendar URL
-      if (this.config.calendarPath === '/calendars' || this.config.calendarPath.endsWith('/calendars')) {
+      // If calendar path is just /calendars or empty, discover the actual calendar URL
+      if (!this.config.calendarPath || 
+          this.config.calendarPath === '/calendars' || 
+          this.config.calendarPath.endsWith('/calendars') ||
+          this.config.calendarPath === '/') {
+        console.log('🔍 Calendar path is generic, attempting discovery...');
         const discoveredUrl = await this.discoverCalendarUrl();
         if (discoveredUrl) {
           calendarUrl = discoveredUrl;
@@ -142,6 +146,9 @@ END:VCALENDAR`;
           // Fallback: try common iCloud calendar paths
           calendarUrl = `${this.config.serverUrl}/calendars/users/${encodeURIComponent(this.config.username)}/calendar/`;
         }
+      } else {
+        // Use the provided path
+        calendarUrl = `${this.config.serverUrl}${this.config.calendarPath}`;
       }
       
       // Ensure calendar URL ends with /
