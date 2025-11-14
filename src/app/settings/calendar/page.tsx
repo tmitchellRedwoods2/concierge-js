@@ -356,16 +356,22 @@ function CalendarSyncTester({ provider, syncEnabled }: { provider: string; syncE
       if (data.success && data.appointmentCreated) {
         let message = `Test event created successfully! Event ID: ${data.eventId}`;
         if (data.syncResult) {
-          if (data.syncResult.synced) {
+          if (data.syncResult.synced && data.syncResult.calendarType) {
             message += `\n✅ Event synced to ${data.syncResult.calendarType} calendar!`;
             if (data.syncResult.externalEventUrl) {
               message += `\nExternal Event ID: ${data.syncResult.externalEventId}`;
             }
+          } else if (provider === 'internal') {
+            message += `\n✅ Event created in internal calendar system. You can download the ICS file to add it to your external calendar.`;
           } else {
             message += `\n⚠️ Sync ${data.syncResult.error ? 'failed' : 'not enabled'}: ${data.syncResult.error || 'Calendar sync is not enabled in your preferences. Enable sync above and save to test automatic syncing.'}`;
           }
         } else {
-          message += `\n⚠️ Sync not attempted: Calendar sync is not enabled in your preferences. Enable sync above and save to test automatic syncing.`;
+          if (provider === 'internal') {
+            message += `\n✅ Event created in internal calendar system. You can download the ICS file to add it to your external calendar.`;
+          } else {
+            message += `\n⚠️ Sync not attempted: Calendar sync is not enabled in your preferences. Enable sync above and save to test automatic syncing.`;
+          }
         }
         setTestResult({
           success: true,
