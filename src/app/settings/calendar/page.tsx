@@ -354,8 +354,10 @@ function CalendarSyncTester({ provider, syncEnabled }: { provider: string; syncE
               message += `\nExternal Event ID: ${data.syncResult.externalEventId}`;
             }
           } else {
-            message += `\n⚠️ Sync ${data.syncResult.error ? 'failed' : 'not enabled'}: ${data.syncResult.error || 'Calendar sync is not enabled in your preferences'}`;
+            message += `\n⚠️ Sync ${data.syncResult.error ? 'failed' : 'not enabled'}: ${data.syncResult.error || 'Calendar sync is not enabled in your preferences. Enable sync above and save to test automatic syncing.'}`;
           }
+        } else {
+          message += `\n⚠️ Sync not attempted: Calendar sync is not enabled in your preferences. Enable sync above and save to test automatic syncing.`;
         }
         setTestResult({
           success: true,
@@ -391,7 +393,7 @@ function CalendarSyncTester({ provider, syncEnabled }: { provider: string; syncE
 
       <button
         onClick={testSync}
-        disabled={testing || !syncEnabled}
+        disabled={testing}
         className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {testing ? 'Testing...' : 'Test Calendar Sync'}
