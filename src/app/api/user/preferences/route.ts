@@ -33,10 +33,10 @@ export async function GET(request: NextRequest) {
       });
       
       await defaultPreferences.save();
-      return NextResponse.json({ preferences: defaultPreferences });
+      return NextResponse.json({ calendarPreferences: defaultPreferences.calendarPreferences });
     }
 
-    return NextResponse.json({ preferences });
+    return NextResponse.json({ calendarPreferences: preferences.calendarPreferences });
 
   } catch (error) {
     console.error('Error fetching user preferences:', error);
