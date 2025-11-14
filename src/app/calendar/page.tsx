@@ -48,7 +48,12 @@ export default function CalendarPage() {
       }
       
       const data = await response.json();
-      setEvents(data.events || []);
+      console.log('📅 Calendar events API response:', data);
+      
+      // Handle both response formats: { events: [...] } or { success: true, events: [...] }
+      const eventsList = data.events || (data.success ? data.events : []) || [];
+      console.log('📅 Parsed events:', eventsList.length, 'events');
+      setEvents(eventsList);
     } catch (err) {
       console.error('Error loading calendar events:', err);
       setError(err instanceof Error ? err.message : 'Failed to load events');
