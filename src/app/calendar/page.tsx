@@ -55,10 +55,21 @@ export default function CalendarPage() {
       
       const data = await response.json();
       console.log('📅 Calendar events API response:', data);
+      console.log('📅 Response status:', response.status);
+      console.log('📅 Response OK:', response.ok);
       
       // Handle both response formats: { events: [...] } or { success: true, events: [...] }
-      const eventsList = data.events || (data.success ? data.events : []) || [];
+      let eventsList: any[] = [];
+      if (data.events && Array.isArray(data.events)) {
+        eventsList = data.events;
+      } else if (data.success && data.events && Array.isArray(data.events)) {
+        eventsList = data.events;
+      } else if (Array.isArray(data)) {
+        eventsList = data;
+      }
+      
       console.log('📅 Parsed events:', eventsList.length, 'events');
+      console.log('📅 Events data:', eventsList);
       setEvents(eventsList);
     } catch (err) {
       console.error('Error loading calendar events:', err);
