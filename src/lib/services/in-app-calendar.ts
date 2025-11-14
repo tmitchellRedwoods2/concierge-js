@@ -61,6 +61,11 @@ export class InAppCalendarService {
   async getEvents(userId: string, startDate?: Date, endDate?: Date) {
     try {
       console.log('📅 Fetching in-app calendar events for user:', userId);
+      console.log('📅 Date range:', { startDate, endDate });
+      
+      // Ensure we're connected to the database
+      const connectDB = (await import('@/lib/db/mongodb')).default;
+      await connectDB();
       
       const query: any = { userId };
       
@@ -72,7 +77,8 @@ export class InAppCalendarService {
         .sort({ startDate: 1 })
         .lean();
 
-      console.log(`✅ Found ${events.length} in-app calendar events`);
+      console.log(`✅ Found ${events.length} in-app calendar events for user ${userId}`);
+      console.log('📅 Event IDs:', events.map((e: any) => e._id));
       
       return {
         success: true,

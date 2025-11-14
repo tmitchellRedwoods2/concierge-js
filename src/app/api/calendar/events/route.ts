@@ -189,6 +189,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('📅 Calendar events API - User ID:', session.user.id);
+
     // Connect to database
     const connectDB = (await import('@/lib/db/mongodb')).default;
     await connectDB();
@@ -196,6 +198,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+
+    console.log('📅 Calendar events API - Date range:', { startDate, endDate });
 
     // Use InAppCalendarService to fetch events from MongoDB
     const { InAppCalendarService } = await import('@/lib/services/in-app-calendar');
@@ -205,6 +209,12 @@ export async function GET(request: NextRequest) {
       startDate ? new Date(startDate) : undefined,
       endDate ? new Date(endDate) : undefined
     );
+
+    console.log('📅 Calendar events API - Result:', {
+      success: result.success,
+      eventCount: result.events?.length || 0,
+      error: result.error
+    });
 
     if (result.success) {
       return NextResponse.json({
@@ -219,7 +229,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Calendar API error:', error);
+    console.error('❌ Calendar API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
