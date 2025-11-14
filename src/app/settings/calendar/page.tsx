@@ -272,10 +272,258 @@ export default function CalendarSettingsPage() {
                   {saving ? 'Saving...' : 'Save Preferences'}
                 </button>
               </div>
+
+              {/* Calendar Sync Testing Section */}
+              {preferences.syncEnabled && preferences.primaryProvider !== 'internal' && (
+                <div className="pt-6 border-t border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Test Calendar Sync</h2>
+                  <CalendarSyncTester 
+                    provider={preferences.primaryProvider}
+                    syncEnabled={preferences.syncEnabled}
+                  />
+                </div>
+              )}
+
+              {/* Sync Status Section */}
+              {preferences.syncEnabled && preferences.primaryProvider !== 'internal' && (
+                <div className="pt-6 border-t border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Sync Status</h2>
+                  <SyncStatusDisplay provider={preferences.primaryProvider} />
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Calendar Sync Tester Component
+function CalendarSyncTester({ provider, syncEnabled }: { provider: string; syncEnabled: boolean }) {
+  const { data: session } = useSession();
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; eventId?: string } | null>(null);
+
+  const testSync = async () => {
+    if (!session?.user?.id) {
+      setTestResult({
+        success: false,
+        message: 'You must be logged in to test calendar sync'
+      });
+      return;
+    }
+
+    setTesting(true);
+    setTestResult(null);
+    
+    try {
+      // Use the dedicated test sync endpoint
+      const response = await fetch('/api/calendar/test-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emailContent: {
+            from: 'test-doctor@example.com',
+            subject: 'Test Appointment - Calendar Sync',
+            body: `This is a test appointment to verify calendar sync functionality. 
+                   Your appointment is scheduled for ${new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()} at 2:00 PM at Test Medical Center, 123 Test Street.`
+          }
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.appointmentCreated) {
+        let message = `Test event created successfully! Event ID: ${data.eventId}`;
+        if (data.syncResult) {
+          if (data.syncResult.synced) {
+            message += `\n✅ Event synced to ${data.syncResult.calendarType} calendar!`;
+            if (data.syncResult.externalEventUrl) {
+              message += `\nExternal Event ID: ${data.syncResult.externalEventId}`;
+            }
+          } else {
+            message += `\n⚠️ Sync ${data.syncResult.error ? 'failed' : 'not enabled'}: ${data.syncResult.error || 'Calendar sync is not enabled in your preferences'}`;
+          }
+        }
+        setTestResult({
+          success: true,
+          message,
+          eventId: data.eventId
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: data.message || data.error || 'Failed to create test event'
+        });
+      }
+    } catch (error) {
+      console.error('Error testing sync:', error);
+      setTestResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to test sync'
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-gray-900 mb-2">Test Calendar Sync Functionality</h3>
+        <p className="text-sm text-gray-600">
+          This will create a test appointment event and attempt to sync it to your {provider} calendar.
+          Check your external calendar to verify the sync worked.
+        </p>
+      </div>
+
+      <button
+        onClick={testSync}
+        disabled={testing || !syncEnabled}
+        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {testing ? 'Testing...' : 'Test Calendar Sync'}
+      </button>
+
+      {testResult && (
+        <div className={`mt-4 p-4 rounded-lg ${
+          testResult.success 
+            ? 'bg-green-50 border border-green-200' 
+            : 'bg-red-50 border border-red-200'
+        }`}>
+          <p className={`text-sm font-medium ${
+            testResult.success ? 'text-green-800' : 'text-red-800'
+          }`}>
+            {testResult.success ? '✅ Success' : '❌ Failed'}
+          </p>
+          <p className={`text-sm mt-1 ${
+            testResult.success ? 'text-green-700' : 'text-red-700'
+          }`}>
+            {testResult.message}
+          </p>
+          {testResult.success && testResult.eventId && (
+            <div className="mt-3">
+              <a
+                href={`/calendar/event/${testResult.eventId}`}
+                className="text-sm text-green-700 hover:text-green-800 underline"
+              >
+                View Test Event →
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-xs text-blue-800">
+          <strong>Note:</strong> The test will create a real calendar event. You can delete it from your calendar after testing.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Sync Status Display Component
+function SyncStatusDisplay({ provider }: { provider: string }) {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadSyncedEvents();
+  }, []);
+
+  const loadSyncedEvents = async () => {
+    try {
+      const response = await fetch('/api/calendar/events');
+      if (response.ok) {
+        const data = await response.json();
+        // Filter events that have been synced to external calendar
+        const syncedEvents = (data.events || []).filter((event: any) => 
+          (provider === 'google' && event.googleEventId) ||
+          (provider === 'apple' && event.appleEventId)
+        );
+        setEvents(syncedEvents.slice(0, 5)); // Show last 5 synced events
+      }
+    } catch (error) {
+      console.error('Error loading synced events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-sm text-gray-600 mt-2">Loading sync status...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">Sync Provider</span>
+          <span className="text-sm text-gray-900 capitalize">{provider} Calendar</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">Synced Events</span>
+          <span className="text-sm text-gray-900">{events.length} recent events</span>
+        </div>
+      </div>
+
+      {events.length > 0 ? (
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Recently Synced Events</h4>
+          <div className="space-y-2">
+            {events.map((event) => (
+              <div key={event._id} className="bg-white border border-gray-200 rounded-lg p-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{event.title}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(event.startDate).toLocaleDateString()} at{' '}
+                      {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <div className="ml-4">
+                    {provider === 'google' && event.googleEventUrl && (
+                      <a
+                        href={event.googleEventUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        View in Google →
+                      </a>
+                    )}
+                    {provider === 'apple' && event.appleEventUrl && (
+                      <a
+                        href={event.appleEventUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        View in Apple →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-sm text-yellow-800">
+            No synced events found. Create an event or test the sync to see events here.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

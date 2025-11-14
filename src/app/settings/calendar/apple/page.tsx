@@ -149,7 +149,10 @@ export default function AppleCalendarSetupPage() {
                     placeholder="/calendars"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Default: /calendars (for iCloud)
+                    Default: /calendars (for iCloud). For iCloud, the actual path is usually discovered automatically, but you can also try: /calendars/users/[your-apple-id]/calendar/
+                  </p>
+                  <p className="text-xs text-yellow-600 mt-1">
+                    💡 Tip: If you get a 400 error, try leaving this as "/calendars" - the system will attempt to discover the correct path automatically.
                   </p>
                 </div>
               </div>

@@ -1,39 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="17" failures="0" errors="0" time="0.4">
-  <testsuite name="EmailParserService" errors="0" failures="0" skipped="0" timestamp="2025-11-13T00:40:27" time="0.136" tests="17">
-    <testcase classname="EmailParserService parseAppointmentEmail should return null for non-appointment emails" name="EmailParserService parseAppointmentEmail should return null for non-appointment emails" time="0.001">
+<testsuites name="jest tests" tests="39" failures="0" errors="0" time="1.325">
+  <testsuite name="AutomationEngine" errors="0" failures="0" skipped="0" timestamp="2025-11-13T22:10:03" time="0.186" tests="23">
+    <testcase classname="AutomationEngine addRule should add a new automation rule" name="AutomationEngine addRule should add a new automation rule" time="0.003">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should parse appointment email with date and time" name="EmailParserService parseAppointmentEmail should parse appointment email with date and time" time="0.001">
+    <testcase classname="AutomationEngine addRule should generate unique IDs for different rules" name="AutomationEngine addRule should generate unique IDs for different rules" time="0.002">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should extract doctor name from email" name="EmailParserService parseAppointmentEmail should extract doctor name from email" time="0.001">
+    <testcase classname="AutomationEngine executeRule should execute a rule successfully" name="AutomationEngine executeRule should execute a rule successfully" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should extract location from email body" name="EmailParserService parseAppointmentEmail should extract location from email body" time="0">
+    <testcase classname="AutomationEngine executeRule should return false for non-existent rule" name="AutomationEngine executeRule should return false for non-existent rule" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should handle ISO date format" name="EmailParserService parseAppointmentEmail should handle ISO date format" time="0.001">
+    <testcase classname="AutomationEngine executeRule should return false for disabled rule" name="AutomationEngine executeRule should return false for disabled rule" time="0">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should handle relative dates like &quot;today&quot;" name="EmailParserService parseAppointmentEmail should handle relative dates like &quot;today&quot;" time="0">
+    <testcase classname="AutomationEngine getUserRules should return rules for a specific user" name="AutomationEngine getUserRules should return rules for a specific user" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should handle relative dates like &quot;tomorrow&quot;" name="EmailParserService parseAppointmentEmail should handle relative dates like &quot;tomorrow&quot;" time="0">
+    <testcase classname="AutomationEngine toggleRule should enable/disable a rule" name="AutomationEngine toggleRule should enable/disable a rule" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should extract time from email" name="EmailParserService parseAppointmentEmail should extract time from email" time="0">
+    <testcase classname="AutomationEngine toggleRule should return false for non-existent rule" name="AutomationEngine toggleRule should return false for non-existent rule" time="0">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should set allDay to true when no time is specified" name="EmailParserService parseAppointmentEmail should set allDay to true when no time is specified" time="0.001">
+    <testcase classname="AutomationEngine deleteRule should delete a rule" name="AutomationEngine deleteRule should delete a rule" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should calculate confidence score" name="EmailParserService parseAppointmentEmail should calculate confidence score" time="0">
+    <testcase classname="AutomationEngine deleteRule should return false for non-existent rule" name="AutomationEngine deleteRule should return false for non-existent rule" time="0">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should handle multiple appointment keywords" name="EmailParserService parseAppointmentEmail should handle multiple appointment keywords" time="0">
+    <testcase classname="AutomationEngine action execution should execute send_email action" name="AutomationEngine action execution should execute send_email action" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should extract title from subject" name="EmailParserService parseAppointmentEmail should extract title from subject" time="0">
+    <testcase classname="AutomationEngine action execution should execute create_calendar_event action" name="AutomationEngine action execution should execute create_calendar_event action" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should build description from email content" name="EmailParserService parseAppointmentEmail should build description from email content" time="0">
+    <testcase classname="AutomationEngine action execution should create calendar event from email trigger with ICS URL" name="AutomationEngine action execution should create calendar event from email trigger with ICS URL" time="0.005">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should set default end date to 1 hour after start" name="EmailParserService parseAppointmentEmail should set default end date to 1 hour after start" time="0">
+    <testcase classname="AutomationEngine action execution should send notification when creating event from email trigger" name="AutomationEngine action execution should send notification when creating event from email trigger" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should handle MM/DD/YYYY date format" name="EmailParserService parseAppointmentEmail should handle MM/DD/YYYY date format" time="0.001">
+    <testcase classname="AutomationEngine action execution should automatically sync calendar event to external calendar" name="AutomationEngine action execution should automatically sync calendar event to external calendar" time="0.001">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should handle 12-hour time format with AM/PM" name="EmailParserService parseAppointmentEmail should handle 12-hour time format with AM/PM" time="0">
+    <testcase classname="AutomationEngine action execution should update event with external calendar info when sync succeeds" name="AutomationEngine action execution should update event with external calendar info when sync succeeds" time="0">
     </testcase>
-    <testcase classname="EmailParserService parseAppointmentEmail should return null when no date can be extracted" name="EmailParserService parseAppointmentEmail should return null when no date can be extracted" time="0.011">
+    <testcase classname="AutomationEngine action execution should continue event creation even if calendar sync fails" name="AutomationEngine action execution should continue event creation even if calendar sync fails" time="0.001">
+    </testcase>
+    <testcase classname="AutomationEngine action execution should include ICS URL in event creation details" name="AutomationEngine action execution should include ICS URL in event creation details" time="0.001">
+    </testcase>
+    <testcase classname="AutomationEngine action execution should execute wait action" name="AutomationEngine action execution should execute wait action" time="0.001">
+    </testcase>
+    <testcase classname="AutomationEngine executeSingleAction - send_email should call sendAppointmentConfirmation with correct parameters" name="AutomationEngine executeSingleAction - send_email should call sendAppointmentConfirmation with correct parameters" time="0.001">
+    </testcase>
+    <testcase classname="AutomationEngine executeSingleAction - send_email should handle missing recipient email" name="AutomationEngine executeSingleAction - send_email should handle missing recipient email" time="0.001">
+    </testcase>
+    <testcase classname="AutomationEngine executeSingleAction - send_email should use recipientEmail if to is not provided" name="AutomationEngine executeSingleAction - send_email should use recipientEmail if to is not provided" time="0">
+    </testcase>
+    <testcase classname="AutomationEngine executeSingleAction - send_email should construct event object with fallbacks when data is missing" name="AutomationEngine executeSingleAction - send_email should construct event object with fallbacks when data is missing" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Email Webhook API Route" errors="0" failures="0" skipped="0" timestamp="2025-11-13T22:10:03" time="0.823" tests="16">
+    <testcase classname="Email Webhook API Route Webhook Security should reject requests without webhook secret when secret is configured" name="Email Webhook API Route Webhook Security should reject requests without webhook secret when secret is configured" time="0.001">
+    </testcase>
+    <testcase classname="Email Webhook API Route Webhook Security should accept requests with correct webhook secret" name="Email Webhook API Route Webhook Security should accept requests with correct webhook secret" time="0.002">
+    </testcase>
+    <testcase classname="Email Webhook API Route Email Format Support should handle SendGrid email format" name="Email Webhook API Route Email Format Support should handle SendGrid email format" time="0.001">
+    </testcase>
+    <testcase classname="Email Webhook API Route Email Format Support should handle Mailgun email format" name="Email Webhook API Route Email Format Support should handle Mailgun email format" time="0">
+    </testcase>
+    <testcase classname="Email Webhook API Route Email Format Support should handle generic email format" name="Email Webhook API Route Email Format Support should handle generic email format" time="0">
+    </testcase>
+    <testcase classname="Email Webhook API Route Email Format Support should return 400 for invalid email format" name="Email Webhook API Route Email Format Support should return 400 for invalid email format" time="0">
+    </testcase>
+    <testcase classname="Email Webhook API Route Appointment Creation should create calendar event from parsed appointment" name="Email Webhook API Route Appointment Creation should create calendar event from parsed appointment" time="0.001">
+    </testcase>
+    <testcase classname="Email Webhook API Route Appointment Creation should not create duplicate events" name="Email Webhook API Route Appointment Creation should not create duplicate events" time="0">
+    </testcase>
+    <testcase classname="Email Webhook API Route Appointment Creation should automatically sync event to external calendar when created" name="Email Webhook API Route Appointment Creation should automatically sync event to external calendar when created" time="0.001">
+    </testcase>
+    <testcase classname="Email Webhook API Route Appointment Creation should update event with external calendar info when sync succeeds" name="Email Webhook API Route Appointment Creation should update event with external calendar info when sync succeeds" time="0">
+    </testcase>
+    <testcase classname="Email Webhook API Route Appointment Creation should continue event creation even if calendar sync fails" name="Email Webhook API Route Appointment Creation should continue event creation even if calendar sync fails" time="0">
+    </testcase>
+    <testcase classname="Email Webhook API Route Appointment Creation should send notification when appointment is created" name="Email Webhook API Route Appointment Creation should send notification when appointment is created" time="0.001">
+    </testcase>
+    <testcase classname="Email Webhook API Route Appointment Creation should process email through trigger service even if no appointment detected" name="Email Webhook API Route Appointment Creation should process email through trigger service even if no appointment detected" time="0">
+    </testcase>
+    <testcase classname="Email Webhook API Route GET Endpoint should return status message" name="Email Webhook API Route GET Endpoint should return status message" time="0">
+    </testcase>
+    <testcase classname="Email Webhook API Route Error Handling should handle database connection errors" name="Email Webhook API Route Error Handling should handle database connection errors" time="0.003">
+    </testcase>
+    <testcase classname="Email Webhook API Route Error Handling should handle notification service errors gracefully" name="Email Webhook API Route Error Handling should handle notification service errors gracefully" time="0">
     </testcase>
   </testsuite>
 </testsuites>

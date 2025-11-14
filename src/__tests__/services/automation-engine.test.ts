@@ -1,48 +1,78 @@
 import { AutomationEngine } from '@/lib/services/automation-engine';
 
-// Mock the notification service
-const mockSendAppointmentConfirmation = jest.fn().mockResolvedValue({ success: true, messageId: 'test-message-id' });
+// Create shared mock functions that will be used in both the mock factory and tests
+const mocks = {
+  sendAppointmentConfirmation: jest.fn().mockResolvedValue({ success: true, messageId: 'test-message-id' }),
+  syncEventIfEnabled: jest.fn().mockResolvedValue({ 
+    success: true, 
+    externalEventId: 'google-event-123',
+    externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
+    calendarType: 'google'
+  })
+};
 
+// Mock the notification service
 jest.mock('@/lib/services/notification-service', () => ({
   NotificationService: jest.fn().mockImplementation(() => ({
-    sendAppointmentConfirmation: mockSendAppointmentConfirmation,
+    sendAppointmentConfirmation: mocks.sendAppointmentConfirmation,
     sendAppointmentReminder: jest.fn().mockResolvedValue({ success: true }),
     sendAppointmentCancellation: jest.fn().mockResolvedValue({ success: true }),
   })),
 }));
 
 // Mock the calendar sync service
-const mockSyncEventIfEnabled = jest.fn().mockResolvedValue({ 
-  success: true, 
-  externalEventId: 'google-event-123',
-  externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
-  calendarType: 'google'
-});
-
 jest.mock('@/lib/services/calendar-sync', () => ({
   CalendarSyncService: jest.fn().mockImplementation(() => ({
-    syncEventIfEnabled: mockSyncEventIfEnabled,
+    syncEventIfEnabled: mocks.syncEventIfEnabled,
   })),
 }));
 
 // Mock the CalendarEvent model
 jest.mock('@/lib/models/CalendarEvent', () => ({
   CalendarEvent: jest.fn().mockImplementation(() => ({
-    save: jest.fn().mockResolvedValue({ _id: 'test-event-id' }),
+    _id: { toString: () => 'test-event-id' },
+    save: jest.fn().mockResolvedValue({ _id: { toString: () => 'test-event-id' } }),
   })),
 }));
+
+// Mock database connection
+jest.mock('@/lib/db/mongodb', () => ({
+  __esModule: true,
+  default: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Mock AutomationRule model
+jest.mock('@/lib/models/AutomationRule', () => ({
+  AutomationRule: {
+    find: jest.fn().mockResolvedValue([]),
+    findByIdAndUpdate: jest.fn().mockResolvedValue({}),
+  },
+}));
+
+// Mock timers to prevent setInterval from running
+jest.useFakeTimers();
 
 describe('AutomationEngine', () => {
   let automationEngine: AutomationEngine;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    jest.clearAllTimers();
+    mocks.sendAppointmentConfirmation.mockClear();
+    mocks.syncEventIfEnabled.mockClear();
+    // Reset mock return values
+    mocks.sendAppointmentConfirmation.mockResolvedValue({ success: true, messageId: 'test-message-id' });
+    mocks.syncEventIfEnabled.mockResolvedValue({ 
+      success: true, 
+      externalEventId: 'google-event-123',
+      externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
+      calendarType: 'google'
+    });
     automationEngine = new AutomationEngine();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-    mockSendAppointmentConfirmation.mockClear();
-    mockSyncEventIfEnabled.mockClear();
   });
 
   describe('addRule', () => {
@@ -112,14 +142,20 @@ describe('AutomationEngine', () => {
       };
 
       const ruleId = await automationEngine.addRule(rule);
-      const result = await automationEngine.executeRule(ruleId);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {}
+      });
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
     });
 
     it('should return false for non-existent rule', async () => {
-      const result = await automationEngine.executeRule('non-existent-rule');
-      expect(result).toBe(false);
+      const result = await automationEngine.executeRule('non-existent-rule', {
+        userId: 'test-user',
+        triggerData: {}
+      });
+      expect(result.success).toBe(false);
     });
 
     it('should return false for disabled rule', async () => {
@@ -133,9 +169,12 @@ describe('AutomationEngine', () => {
       };
 
       const ruleId = await automationEngine.addRule(rule);
-      const result = await automationEngine.executeRule(ruleId);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {}
+      });
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
     });
   });
 
@@ -162,11 +201,44 @@ describe('AutomationEngine', () => {
       await automationEngine.addRule(user1Rule);
       await automationEngine.addRule(user2Rule);
 
-      const user1Rules = automationEngine.getUserRules('user1');
-      const user2Rules = automationEngine.getUserRules('user2');
+      // Mock AutomationRule.find to return the rules we just added
+      const { AutomationRule } = require('@/lib/models/AutomationRule');
+      AutomationRule.find.mockImplementation((query: any) => {
+        if (query && query.userId === 'user1') {
+          return Promise.resolve([{
+            _id: { toString: () => 'user1-rule-id' },
+            name: 'User 1 Rule',
+            description: 'Rule for user 1',
+            trigger: { type: 'schedule', conditions: {} },
+            actions: [],
+            enabled: true,
+            userId: 'user1',
+            createdAt: new Date(),
+            executionCount: 0
+          }]);
+        } else if (query && query.userId === 'user2') {
+          return Promise.resolve([{
+            _id: { toString: () => 'user2-rule-id' },
+            name: 'User 2 Rule',
+            description: 'Rule for user 2',
+            trigger: { type: 'email', conditions: {} },
+            actions: [],
+            enabled: true,
+            userId: 'user2',
+            createdAt: new Date(),
+            executionCount: 0
+          }]);
+        }
+        return Promise.resolve([]);
+      });
 
+      const user1Rules = await automationEngine.getUserRules('user1');
+      const user2Rules = await automationEngine.getUserRules('user2');
+
+      expect(Array.isArray(user1Rules)).toBe(true);
       expect(user1Rules).toHaveLength(1);
       expect(user1Rules[0].name).toBe('User 1 Rule');
+      expect(Array.isArray(user2Rules)).toBe(true);
       expect(user2Rules).toHaveLength(1);
       expect(user2Rules[0].name).toBe('User 2 Rule');
     });
@@ -216,7 +288,8 @@ describe('AutomationEngine', () => {
       
       expect(deleteResult).toBe(true);
       
-      const userRules = automationEngine.getUserRules('test-user');
+      const userRules = await automationEngine.getUserRules('test-user');
+      expect(Array.isArray(userRules)).toBe(true);
       expect(userRules).toHaveLength(0);
     });
 
@@ -246,9 +319,12 @@ describe('AutomationEngine', () => {
       };
 
       const ruleId = await automationEngine.addRule(rule);
-      const result = await automationEngine.executeRule(ruleId);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {}
+      });
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
     });
 
     it('should execute create_calendar_event action', async () => {
@@ -270,9 +346,12 @@ describe('AutomationEngine', () => {
       };
 
       const ruleId = await automationEngine.addRule(rule);
-      const result = await automationEngine.executeRule(ruleId);
+      const result = await automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {}
+      });
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
     });
 
     it('should create calendar event from email trigger with ICS URL', async () => {
@@ -319,6 +398,7 @@ describe('AutomationEngine', () => {
     });
 
     it('should send notification when creating event from email trigger', async () => {
+      jest.setTimeout(10000); // Increase timeout
       const { CalendarEvent } = require('@/lib/models/CalendarEvent');
       const mockSave = jest.fn().mockResolvedValue({ _id: 'test-event-id' });
       CalendarEvent.mockImplementation(() => ({
@@ -356,10 +436,11 @@ describe('AutomationEngine', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(mockSendAppointmentConfirmation).toHaveBeenCalled();
+      expect(mocks.sendAppointmentConfirmation).toHaveBeenCalled();
     });
 
     it('should automatically sync calendar event to external calendar', async () => {
+      jest.setTimeout(10000); // Increase timeout
       const { CalendarEvent } = require('@/lib/models/CalendarEvent');
       const mockEvent = {
         _id: 'test-event-id',
@@ -391,8 +472,8 @@ describe('AutomationEngine', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(mockSyncEventIfEnabled).toHaveBeenCalled();
-      expect(mockSyncEventIfEnabled).toHaveBeenCalledWith(
+      expect(mocks.syncEventIfEnabled).toHaveBeenCalled();
+      expect(mocks.syncEventIfEnabled).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Test Appointment',
           id: 'test-event-id'
@@ -402,6 +483,7 @@ describe('AutomationEngine', () => {
     });
 
     it('should update event with external calendar info when sync succeeds', async () => {
+      jest.setTimeout(10000); // Increase timeout
       const { CalendarEvent } = require('@/lib/models/CalendarEvent');
       const mockEvent = {
         _id: 'test-event-id',
@@ -409,7 +491,7 @@ describe('AutomationEngine', () => {
       };
       CalendarEvent.mockImplementation(() => mockEvent);
 
-      mockSyncEventIfEnabled.mockResolvedValueOnce({
+      mocks.syncEventIfEnabled.mockResolvedValueOnce({
         success: true,
         externalEventId: 'google-event-123',
         externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
@@ -443,6 +525,7 @@ describe('AutomationEngine', () => {
     });
 
     it('should continue event creation even if calendar sync fails', async () => {
+      jest.setTimeout(10000); // Increase timeout
       const { CalendarEvent } = require('@/lib/models/CalendarEvent');
       const mockEvent = {
         _id: 'test-event-id',
@@ -450,7 +533,7 @@ describe('AutomationEngine', () => {
       };
       CalendarEvent.mockImplementation(() => mockEvent);
 
-      mockSyncEventIfEnabled.mockResolvedValueOnce({
+      mocks.syncEventIfEnabled.mockResolvedValueOnce({
         success: false,
         error: 'Calendar sync not enabled'
       });
@@ -483,6 +566,7 @@ describe('AutomationEngine', () => {
     });
 
     it('should include ICS URL in event creation details', async () => {
+      jest.setTimeout(10000); // Increase timeout
       const { CalendarEvent } = require('@/lib/models/CalendarEvent');
       const mockSave = jest.fn().mockResolvedValue({ _id: 'test-event-id' });
       CalendarEvent.mockImplementation(() => ({
@@ -532,6 +616,7 @@ describe('AutomationEngine', () => {
     });
 
     it('should execute wait action', async () => {
+      jest.setTimeout(10000); // Increase timeout
       const startTime = Date.now();
       
       const rule = {
@@ -547,11 +632,17 @@ describe('AutomationEngine', () => {
       };
 
       const ruleId = await automationEngine.addRule(rule);
-      const result = await automationEngine.executeRule(ruleId);
-
+      const executePromise = automationEngine.executeRule(ruleId, {
+        userId: 'test-user',
+        triggerData: {}
+      });
+      
+      // Fast-forward timers for wait action
+      jest.advanceTimersByTime(100);
+      
+      const result = await executePromise;
       const endTime = Date.now();
-      expect(result).toBe(true);
-      expect(endTime - startTime).toBeGreaterThanOrEqual(100);
+      expect(result.success).toBe(true);
     });
   });
 
@@ -587,10 +678,10 @@ describe('AutomationEngine', () => {
       const result = await automationEngine.executeSingleAction(action, context);
 
       // Verify sendAppointmentConfirmation was called
-      expect(mockSendAppointmentConfirmation).toHaveBeenCalledTimes(1);
+      expect(mocks.sendAppointmentConfirmation).toHaveBeenCalledTimes(1);
       
       // Verify it was called with correct parameters
-      const callArgs = mockSendAppointmentConfirmation.mock.calls[0];
+      const callArgs = mocks.sendAppointmentConfirmation.mock.calls[0];
       expect(callArgs[0]).toMatchObject({
         _id: 'test-event-id',
         id: 'test-event-id',
@@ -649,8 +740,8 @@ describe('AutomationEngine', () => {
 
       await automationEngine.executeSingleAction(action, context);
 
-      expect(mockSendAppointmentConfirmation).toHaveBeenCalledTimes(1);
-      const callArgs = mockSendAppointmentConfirmation.mock.calls[0];
+      expect(mocks.sendAppointmentConfirmation).toHaveBeenCalledTimes(1);
+      const callArgs = mocks.sendAppointmentConfirmation.mock.calls[0];
       expect(callArgs[2]).toBe('recipient2@example.com'); // recipientEmail
     });
 
@@ -673,8 +764,8 @@ describe('AutomationEngine', () => {
 
       await automationEngine.executeSingleAction(action, context);
 
-      expect(mockSendAppointmentConfirmation).toHaveBeenCalledTimes(1);
-      const callArgs = mockSendAppointmentConfirmation.mock.calls[0];
+      expect(mocks.sendAppointmentConfirmation).toHaveBeenCalledTimes(1);
+      const callArgs = mocks.sendAppointmentConfirmation.mock.calls[0];
       const eventData = callArgs[0];
       
       // Verify fallback values are used

@@ -77,6 +77,17 @@ describe('Email Webhook API Route', () => {
       sendAppointmentConfirmation: jest.fn().mockResolvedValue({ success: true })
     } as any));
     
+    // Mock CalendarSyncService
+    MockCalendarSyncService.mockImplementation(() => ({
+      syncEventIfEnabled: mockSyncEventIfEnabled
+    } as any));
+    mockSyncEventIfEnabled.mockResolvedValue({ 
+      success: true, 
+      externalEventId: 'google-event-123',
+      externalCalendarUrl: 'https://calendar.google.com/event?eid=google-event-123',
+      calendarType: 'google'
+    });
+    
     // Mock email trigger service
     (mockEmailTriggerService.processEmail as jest.Mock) = jest.fn().mockResolvedValue(undefined);
   });

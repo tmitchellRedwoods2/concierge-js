@@ -29,17 +29,33 @@ export async function POST(request: NextRequest) {
       });
 
       // Try to fetch events to test the connection
-      const result = await appleCalendarService.getEvents();
+      // Use a small date range for testing (today to 7 days from now)
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const result = await appleCalendarService.getEvents(today, nextWeek);
       
       if (result.success) {
+        const eventCount = result.events?.length || 0;
         return NextResponse.json({
           success: true,
-          message: 'Apple Calendar connection successful! You can now sync events.'
+          message: `Apple Calendar connection successful! Found ${eventCount} event(s) in the next 7 days. You can now sync events.`
         });
       } else {
+        // Provide more helpful error messages
+        let errorMessage = result.error || 'Unknown error';
+        
+        // Add helpful hints based on common errors
+        if (errorMessage.includes('400')) {
+          errorMessage += '\n\n💡 Tip: The calendar path might be incorrect. Try leaving it as "/calendars" to let the system discover the correct path automatically.';
+        } else if (errorMessage.includes('401') || errorMessage.includes('403')) {
+          errorMessage += '\n\n💡 Tip: Check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password.';
+        } else if (errorMessage.includes('404')) {
+          errorMessage += '\n\n💡 Tip: The calendar path might not exist. Try "/calendars" or check your iCloud calendar settings.';
+        }
+        
         return NextResponse.json({
           success: false,
-          message: `Connection failed: ${result.error}`
+          message: `Connection failed: ${errorMessage}`
         });
       }
     } catch (error) {

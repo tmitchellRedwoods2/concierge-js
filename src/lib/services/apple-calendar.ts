@@ -130,10 +130,32 @@ END:VCALENDAR`;
     try {
       console.log('🍎 Fetching Apple Calendar events...');
       
-      const response = await fetch(`${this.config.serverUrl}${this.config.calendarPath}/`, {
+      // First, try to discover the calendar URL if the path is just /calendars
+      let calendarUrl = `${this.config.serverUrl}${this.config.calendarPath}`;
+      
+      // If calendar path is just /calendars, we need to discover the actual calendar URL
+      if (this.config.calendarPath === '/calendars' || this.config.calendarPath.endsWith('/calendars')) {
+        const discoveredUrl = await this.discoverCalendarUrl();
+        if (discoveredUrl) {
+          calendarUrl = discoveredUrl;
+        } else {
+          // Fallback: try common iCloud calendar paths
+          calendarUrl = `${this.config.serverUrl}/calendars/users/${encodeURIComponent(this.config.username)}/calendar/`;
+        }
+      }
+      
+      // Ensure calendar URL ends with /
+      if (!calendarUrl.endsWith('/')) {
+        calendarUrl += '/';
+      }
+      
+      console.log('🍎 Using calendar URL:', calendarUrl);
+      
+      const response = await fetch(calendarUrl, {
         method: 'REPORT',
         headers: {
           'Content-Type': 'application/xml',
+          'Depth': '1',
           'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
           'User-Agent': 'Concierge-AI-Calendar/1.0'
         },
@@ -149,9 +171,11 @@ END:VCALENDAR`;
           events: events
         };
       } else {
+        const errorText = await response.text().catch(() => '');
+        console.error('❌ CalDAV error response:', response.status, response.statusText, errorText);
         return {
           success: false,
-          error: `Failed to fetch events: ${response.status} ${response.statusText}`
+          error: `Failed to fetch events: ${response.status} ${response.statusText}. ${errorText ? `Details: ${errorText.substring(0, 200)}` : ''}`
         };
       }
     } catch (error) {
@@ -163,9 +187,47 @@ END:VCALENDAR`;
     }
   }
 
+  private async discoverCalendarUrl(): Promise<string | null> {
+    try {
+      // Try to discover calendars using PROPFIND
+      const response = await fetch(`${this.config.serverUrl}/calendars/`, {
+        method: 'PROPFIND',
+        headers: {
+          'Content-Type': 'application/xml',
+          'Depth': '1',
+          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+          'User-Agent': 'Concierge-AI-Calendar/1.0'
+        },
+        body: `<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:prop>
+    <D:displayname/>
+    <C:calendar-description/>
+  </D:prop>
+</D:propfind>`
+      });
+
+      if (response.ok) {
+        const xml = await response.text();
+        // Parse XML to find calendar URLs
+        // For now, return a default path - in production, parse the XML properly
+        return `${this.config.serverUrl}/calendars/users/${encodeURIComponent(this.config.username)}/calendar/`;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ Calendar discovery error:', error);
+      return null;
+    }
+  }
+
   private createCalDAVQuery(startDate?: Date, endDate?: Date): string {
-    const start = startDate ? this.formatCalDAVDate(startDate) : '';
-    const end = endDate ? this.formatCalDAVDate(endDate) : '';
+    // Use a date range for the query (last 30 days to next 30 days if not specified)
+    const queryStart = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const queryEnd = endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    
+    const start = this.formatCalDAVDate(queryStart);
+    const end = this.formatCalDAVDate(queryEnd);
     
     return `<?xml version="1.0" encoding="utf-8"?>
 <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
@@ -176,7 +238,7 @@ END:VCALENDAR`;
   <C:filter>
     <C:comp-filter name="VCALENDAR">
       <C:comp-filter name="VEVENT">
-        ${start ? `<C:time-range start="${start}" end="${end}"/>` : ''}
+        <C:time-range start="${start}" end="${end}"/>
       </C:comp-filter>
     </C:comp-filter>
   </C:filter>
