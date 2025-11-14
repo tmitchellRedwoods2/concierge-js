@@ -158,10 +158,42 @@ END:VCALENDAR`;
       
       console.log('🍎 Using calendar URL:', calendarUrl);
       
+      // First, try a simple PROPFIND to verify the calendar exists
+      try {
+        const propfindResponse = await fetch(calendarUrl, {
+          method: 'PROPFIND',
+          headers: {
+            'Content-Type': 'application/xml',
+            'Depth': '0',
+            'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+            'User-Agent': 'Concierge-AI-Calendar/1.0'
+          },
+          body: `<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:prop>
+    <D:displayname/>
+    <C:calendar-description/>
+  </D:prop>
+</D:propfind>`
+        });
+
+        if (!propfindResponse.ok && propfindResponse.status === 404) {
+          // Calendar doesn't exist at this path, try discovery again
+          console.log('⚠️ Calendar not found at path, trying alternative discovery...');
+          const altUrl = await this.discoverCalendarUrl();
+          if (altUrl && altUrl !== calendarUrl) {
+            calendarUrl = altUrl;
+            console.log('🔄 Using alternative calendar URL:', calendarUrl);
+          }
+        }
+      } catch (propfindError) {
+        console.log('⚠️ PROPFIND check failed, continuing with REPORT...');
+      }
+
       const response = await fetch(calendarUrl, {
         method: 'REPORT',
         headers: {
-          'Content-Type': 'application/xml',
+          'Content-Type': 'application/xml; charset=utf-8',
           'Depth': '1',
           'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
           'User-Agent': 'Concierge-AI-Calendar/1.0'
@@ -179,10 +211,26 @@ END:VCALENDAR`;
         };
       } else {
         const errorText = await response.text().catch(() => '');
-        console.error('❌ CalDAV error response:', response.status, response.statusText, errorText);
+        console.error('❌ CalDAV error response:', response.status, response.statusText);
+        console.error('❌ Error details:', errorText.substring(0, 500));
+        
+        // Provide more specific error messages
+        let errorMessage = `Failed to fetch events: ${response.status} ${response.statusText}`;
+        if (response.status === 400) {
+          errorMessage += '. The calendar path may be incorrect or the CalDAV query format is invalid.';
+        } else if (response.status === 401 || response.status === 403) {
+          errorMessage += '. Authentication failed. Please check your Apple ID credentials or use an App-Specific Password.';
+        } else if (response.status === 404) {
+          errorMessage += '. Calendar not found at the specified path.';
+        }
+        
+        if (errorText) {
+          errorMessage += ` Details: ${errorText.substring(0, 200)}`;
+        }
+        
         return {
           success: false,
-          error: `Failed to fetch events: ${response.status} ${response.statusText}. ${errorText ? `Details: ${errorText.substring(0, 200)}` : ''}`
+          error: errorMessage
         };
       }
     } catch (error) {
