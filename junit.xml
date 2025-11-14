@@ -1,85 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="39" failures="0" errors="0" time="1.325">
-  <testsuite name="AutomationEngine" errors="0" failures="0" skipped="0" timestamp="2025-11-13T22:10:03" time="0.186" tests="23">
-    <testcase classname="AutomationEngine addRule should add a new automation rule" name="AutomationEngine addRule should add a new automation rule" time="0.003">
+<testsuites name="jest tests" tests="11" failures="0" errors="0" time="1.494">
+  <testsuite name="Calendar Test Sync API Route" errors="0" failures="0" skipped="0" timestamp="2025-11-14T00:42:33" time="1.125" tests="11">
+    <testcase classname="Calendar Test Sync API Route Authentication should return 401 if user is not authenticated" name="Calendar Test Sync API Route Authentication should return 401 if user is not authenticated" time="0.007">
     </testcase>
-    <testcase classname="AutomationEngine addRule should generate unique IDs for different rules" name="AutomationEngine addRule should generate unique IDs for different rules" time="0.002">
+    <testcase classname="Calendar Test Sync API Route Event Creation should create calendar event from parsed appointment" name="Calendar Test Sync API Route Event Creation should create calendar event from parsed appointment" time="0.015">
     </testcase>
-    <testcase classname="AutomationEngine executeRule should execute a rule successfully" name="AutomationEngine executeRule should execute a rule successfully" time="0.001">
+    <testcase classname="Calendar Test Sync API Route Event Creation should return error if email does not contain appointment information" name="Calendar Test Sync API Route Event Creation should return error if email does not contain appointment information" time="0.001">
     </testcase>
-    <testcase classname="AutomationEngine executeRule should return false for non-existent rule" name="AutomationEngine executeRule should return false for non-existent rule" time="0.001">
+    <testcase classname="Calendar Test Sync API Route Event Creation should not create duplicate events" name="Calendar Test Sync API Route Event Creation should not create duplicate events" time="0.001">
     </testcase>
-    <testcase classname="AutomationEngine executeRule should return false for disabled rule" name="AutomationEngine executeRule should return false for disabled rule" time="0">
+    <testcase classname="Calendar Test Sync API Route Calendar Sync should automatically sync event to external calendar when sync is enabled" name="Calendar Test Sync API Route Calendar Sync should automatically sync event to external calendar when sync is enabled" time="0.001">
     </testcase>
-    <testcase classname="AutomationEngine getUserRules should return rules for a specific user" name="AutomationEngine getUserRules should return rules for a specific user" time="0.001">
+    <testcase classname="Calendar Test Sync API Route Calendar Sync should update event with external calendar info when sync succeeds" name="Calendar Test Sync API Route Calendar Sync should update event with external calendar info when sync succeeds" time="0.001">
     </testcase>
-    <testcase classname="AutomationEngine toggleRule should enable/disable a rule" name="AutomationEngine toggleRule should enable/disable a rule" time="0.001">
+    <testcase classname="Calendar Test Sync API Route Calendar Sync should continue event creation even if calendar sync fails" name="Calendar Test Sync API Route Calendar Sync should continue event creation even if calendar sync fails" time="0.001">
     </testcase>
-    <testcase classname="AutomationEngine toggleRule should return false for non-existent rule" name="AutomationEngine toggleRule should return false for non-existent rule" time="0">
+    <testcase classname="Calendar Test Sync API Route Notification should send notification when event is created" name="Calendar Test Sync API Route Notification should send notification when event is created" time="0.001">
     </testcase>
-    <testcase classname="AutomationEngine deleteRule should delete a rule" name="AutomationEngine deleteRule should delete a rule" time="0.001">
+    <testcase classname="Calendar Test Sync API Route Notification should continue even if notification fails" name="Calendar Test Sync API Route Notification should continue even if notification fails" time="0.005">
     </testcase>
-    <testcase classname="AutomationEngine deleteRule should return false for non-existent rule" name="AutomationEngine deleteRule should return false for non-existent rule" time="0">
+    <testcase classname="Calendar Test Sync API Route Error Handling should handle database connection errors" name="Calendar Test Sync API Route Error Handling should handle database connection errors" time="0.001">
     </testcase>
-    <testcase classname="AutomationEngine action execution should execute send_email action" name="AutomationEngine action execution should execute send_email action" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should execute create_calendar_event action" name="AutomationEngine action execution should execute create_calendar_event action" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should create calendar event from email trigger with ICS URL" name="AutomationEngine action execution should create calendar event from email trigger with ICS URL" time="0.005">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should send notification when creating event from email trigger" name="AutomationEngine action execution should send notification when creating event from email trigger" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should automatically sync calendar event to external calendar" name="AutomationEngine action execution should automatically sync calendar event to external calendar" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should update event with external calendar info when sync succeeds" name="AutomationEngine action execution should update event with external calendar info when sync succeeds" time="0">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should continue event creation even if calendar sync fails" name="AutomationEngine action execution should continue event creation even if calendar sync fails" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should include ICS URL in event creation details" name="AutomationEngine action execution should include ICS URL in event creation details" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine action execution should execute wait action" name="AutomationEngine action execution should execute wait action" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine executeSingleAction - send_email should call sendAppointmentConfirmation with correct parameters" name="AutomationEngine executeSingleAction - send_email should call sendAppointmentConfirmation with correct parameters" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine executeSingleAction - send_email should handle missing recipient email" name="AutomationEngine executeSingleAction - send_email should handle missing recipient email" time="0.001">
-    </testcase>
-    <testcase classname="AutomationEngine executeSingleAction - send_email should use recipientEmail if to is not provided" name="AutomationEngine executeSingleAction - send_email should use recipientEmail if to is not provided" time="0">
-    </testcase>
-    <testcase classname="AutomationEngine executeSingleAction - send_email should construct event object with fallbacks when data is missing" name="AutomationEngine executeSingleAction - send_email should construct event object with fallbacks when data is missing" time="0.001">
-    </testcase>
-  </testsuite>
-  <testsuite name="Email Webhook API Route" errors="0" failures="0" skipped="0" timestamp="2025-11-13T22:10:03" time="0.823" tests="16">
-    <testcase classname="Email Webhook API Route Webhook Security should reject requests without webhook secret when secret is configured" name="Email Webhook API Route Webhook Security should reject requests without webhook secret when secret is configured" time="0.001">
-    </testcase>
-    <testcase classname="Email Webhook API Route Webhook Security should accept requests with correct webhook secret" name="Email Webhook API Route Webhook Security should accept requests with correct webhook secret" time="0.002">
-    </testcase>
-    <testcase classname="Email Webhook API Route Email Format Support should handle SendGrid email format" name="Email Webhook API Route Email Format Support should handle SendGrid email format" time="0.001">
-    </testcase>
-    <testcase classname="Email Webhook API Route Email Format Support should handle Mailgun email format" name="Email Webhook API Route Email Format Support should handle Mailgun email format" time="0">
-    </testcase>
-    <testcase classname="Email Webhook API Route Email Format Support should handle generic email format" name="Email Webhook API Route Email Format Support should handle generic email format" time="0">
-    </testcase>
-    <testcase classname="Email Webhook API Route Email Format Support should return 400 for invalid email format" name="Email Webhook API Route Email Format Support should return 400 for invalid email format" time="0">
-    </testcase>
-    <testcase classname="Email Webhook API Route Appointment Creation should create calendar event from parsed appointment" name="Email Webhook API Route Appointment Creation should create calendar event from parsed appointment" time="0.001">
-    </testcase>
-    <testcase classname="Email Webhook API Route Appointment Creation should not create duplicate events" name="Email Webhook API Route Appointment Creation should not create duplicate events" time="0">
-    </testcase>
-    <testcase classname="Email Webhook API Route Appointment Creation should automatically sync event to external calendar when created" name="Email Webhook API Route Appointment Creation should automatically sync event to external calendar when created" time="0.001">
-    </testcase>
-    <testcase classname="Email Webhook API Route Appointment Creation should update event with external calendar info when sync succeeds" name="Email Webhook API Route Appointment Creation should update event with external calendar info when sync succeeds" time="0">
-    </testcase>
-    <testcase classname="Email Webhook API Route Appointment Creation should continue event creation even if calendar sync fails" name="Email Webhook API Route Appointment Creation should continue event creation even if calendar sync fails" time="0">
-    </testcase>
-    <testcase classname="Email Webhook API Route Appointment Creation should send notification when appointment is created" name="Email Webhook API Route Appointment Creation should send notification when appointment is created" time="0.001">
-    </testcase>
-    <testcase classname="Email Webhook API Route Appointment Creation should process email through trigger service even if no appointment detected" name="Email Webhook API Route Appointment Creation should process email through trigger service even if no appointment detected" time="0">
-    </testcase>
-    <testcase classname="Email Webhook API Route GET Endpoint should return status message" name="Email Webhook API Route GET Endpoint should return status message" time="0">
-    </testcase>
-    <testcase classname="Email Webhook API Route Error Handling should handle database connection errors" name="Email Webhook API Route Error Handling should handle database connection errors" time="0.003">
-    </testcase>
-    <testcase classname="Email Webhook API Route Error Handling should handle notification service errors gracefully" name="Email Webhook API Route Error Handling should handle notification service errors gracefully" time="0">
+    <testcase classname="Calendar Test Sync API Route Error Handling should handle event save errors" name="Calendar Test Sync API Route Error Handling should handle event save errors" time="0.001">
     </testcase>
   </testsuite>
 </testsuites>
