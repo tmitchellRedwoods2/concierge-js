@@ -17,7 +17,7 @@ interface CalendarEvent {
   location?: string;
   attendees?: string[];
   status: 'confirmed' | 'tentative' | 'cancelled';
-  source: 'workflow' | 'manual' | 'import';
+  source: 'workflow' | 'manual' | 'import' | 'email';
   workflowExecutionId?: string;
 }
 
@@ -29,11 +29,17 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'loading') return;
+    console.log('📅 Calendar page useEffect - status:', status, 'session:', session?.user?.id);
+    if (status === 'loading') {
+      console.log('📅 Still loading session...');
+      return;
+    }
     if (!session) {
+      console.log('📅 No session, redirecting to login');
       window.location.href = '/login';
       return;
     }
+    console.log('📅 Loading events for user:', session.user.id);
     loadEvents();
   }, [session, status]);
 
