@@ -275,23 +275,31 @@ export default function CalendarSettingsPage() {
                 </button>
               </div>
 
-              {/* Calendar Sync Testing Section */}
-              {preferences.primaryProvider !== 'internal' && (
-                <div className="pt-6 border-t border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Test Calendar Sync</h2>
-                  {!preferences.syncEnabled && (
-                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800">
-                        ⚠️ <strong>Sync is not enabled.</strong> Enable sync above and save your preferences to test calendar sync functionality.
-                      </p>
-                    </div>
-                  )}
-                  <CalendarSyncTester 
-                    provider={preferences.primaryProvider}
-                    syncEnabled={preferences.syncEnabled}
-                  />
-                </div>
-              )}
+                  {/* Calendar Sync Testing Section */}
+                  <div className="pt-6 border-t border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Test Calendar Event Creation</h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Test the automated email-to-calendar workflow. This will create a test appointment event from simulated email content.
+                    </p>
+                    {preferences.primaryProvider === 'internal' && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          ℹ️ <strong>Using Internal Calendar.</strong> Events will be created in the internal calendar system. You can download an ICS file to add events to your external calendar.
+                        </p>
+                      </div>
+                    )}
+                    {preferences.primaryProvider !== 'internal' && !preferences.syncEnabled && (
+                      <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800">
+                          ⚠️ <strong>Sync is not enabled.</strong> Events will be created in the internal calendar. Enable sync above to automatically sync to {preferences.primaryProvider} calendar.
+                        </p>
+                      </div>
+                    )}
+                    <CalendarSyncTester 
+                      provider={preferences.primaryProvider}
+                      syncEnabled={preferences.syncEnabled}
+                    />
+                  </div>
 
               {/* Sync Status Section */}
               {preferences.primaryProvider !== 'internal' && (
