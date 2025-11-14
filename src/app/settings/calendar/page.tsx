@@ -352,8 +352,9 @@ function CalendarSyncTester({ provider, syncEnabled }: { provider: string; syncE
       });
 
       const data = await response.json();
+      console.log('📅 Test sync response:', data);
       
-      if (data.success && data.appointmentCreated) {
+      if (data.success && (data.appointmentCreated || data.isDuplicate)) {
         let message = `Test event created successfully! Event ID: ${data.eventId}`;
         if (data.syncResult) {
           if (data.syncResult.synced && data.syncResult.calendarType) {
@@ -375,7 +376,9 @@ function CalendarSyncTester({ provider, syncEnabled }: { provider: string; syncE
         }
         setTestResult({
           success: true,
-          message,
+          message: data.isDuplicate 
+            ? `Event already exists! Event ID: ${data.eventId}\n✅ You can view this event using the link below.`
+            : message,
           eventId: data.eventId
         });
       } else {
