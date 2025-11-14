@@ -196,35 +196,92 @@ END:VCALENDAR`;
 
   private async discoverCalendarUrl(): Promise<string | null> {
     try {
-      // Try to discover calendars using PROPFIND
-      const response = await fetch(`${this.config.serverUrl}/calendars/`, {
-        method: 'PROPFIND',
-        headers: {
-          'Content-Type': 'application/xml',
-          'Depth': '1',
-          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
-          'User-Agent': 'Concierge-AI-Calendar/1.0'
-        },
-        body: `<?xml version="1.0" encoding="utf-8"?>
+      console.log('🔍 Attempting to discover calendar URL...');
+      
+      // Try multiple discovery methods
+      const discoveryPaths = [
+        `/calendars/users/${encodeURIComponent(this.config.username)}/calendar/`,
+        `/calendars/users/${encodeURIComponent(this.config.username)}/`,
+        `/calendars/`,
+        `/`
+      ];
+
+      // First, try PROPFIND on /calendars/ to discover available calendars
+      try {
+        const propfindResponse = await fetch(`${this.config.serverUrl}/calendars/`, {
+          method: 'PROPFIND',
+          headers: {
+            'Content-Type': 'application/xml',
+            'Depth': '1',
+            'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+            'User-Agent': 'Concierge-AI-Calendar/1.0'
+          },
+          body: `<?xml version="1.0" encoding="utf-8"?>
 <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
   <D:prop>
     <D:displayname/>
     <C:calendar-description/>
+    <D:resourcetype/>
   </D:prop>
 </D:propfind>`
-      });
+        });
 
-      if (response.ok) {
-        const xml = await response.text();
-        // Parse XML to find calendar URLs
-        // For now, return a default path - in production, parse the XML properly
-        return `${this.config.serverUrl}/calendars/users/${encodeURIComponent(this.config.username)}/calendar/`;
+        if (propfindResponse.ok) {
+          const xml = await propfindResponse.text();
+          console.log('📋 PROPFIND response received, parsing...');
+          
+          // Try to extract calendar URLs from the XML response
+          // Look for href attributes in the response
+          const hrefMatches = xml.match(/<D:href>([^<]+)<\/D:href>/g);
+          if (hrefMatches && hrefMatches.length > 0) {
+            // Find the first calendar URL (usually the default calendar)
+            for (const match of hrefMatches) {
+              const href = match.replace(/<\/?D:href>/g, '');
+              if (href.includes('calendar') && !href.includes('principals')) {
+                const calendarUrl = href.startsWith('http') ? href : `${this.config.serverUrl}${href}`;
+                console.log('✅ Discovered calendar URL:', calendarUrl);
+                return calendarUrl.endsWith('/') ? calendarUrl : `${calendarUrl}/`;
+              }
+            }
+          }
+        }
+      } catch (propfindError) {
+        console.log('⚠️ PROPFIND discovery failed, trying direct paths...');
       }
-      
-      return null;
+
+      // If PROPFIND didn't work, try direct paths
+      for (const path of discoveryPaths) {
+        try {
+          const testUrl = `${this.config.serverUrl}${path}`;
+          console.log(`🔍 Testing path: ${testUrl}`);
+          
+          const testResponse = await fetch(testUrl, {
+            method: 'OPTIONS',
+            headers: {
+              'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+              'User-Agent': 'Concierge-AI-Calendar/1.0'
+            }
+          });
+
+          if (testResponse.ok || testResponse.status === 405) {
+            // 405 Method Not Allowed is OK - it means the endpoint exists
+            console.log(`✅ Found working calendar path: ${path}`);
+            return testUrl.endsWith('/') ? testUrl : `${testUrl}/`;
+          }
+        } catch (error) {
+          // Continue to next path
+          continue;
+        }
+      }
+
+      // Fallback to the most common iCloud path
+      const fallbackUrl = `${this.config.serverUrl}/calendars/users/${encodeURIComponent(this.config.username)}/calendar/`;
+      console.log('⚠️ Using fallback calendar URL:', fallbackUrl);
+      return fallbackUrl;
     } catch (error) {
       console.error('❌ Calendar discovery error:', error);
-      return null;
+      // Return fallback URL even on error
+      return `${this.config.serverUrl}/calendars/users/${encodeURIComponent(this.config.username)}/calendar/`;
     }
   }
 
