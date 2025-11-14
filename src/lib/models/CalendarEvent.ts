@@ -15,7 +15,7 @@ export interface ICalendarEvent extends Document {
   };
   status: 'confirmed' | 'tentative' | 'cancelled';
   createdBy: string;
-  source: 'workflow' | 'manual' | 'import';
+  source: 'workflow' | 'manual' | 'import' | 'email';
   workflowExecutionId?: string;
   googleEventId?: string;
   googleEventUrl?: string;
@@ -46,7 +46,7 @@ const CalendarEventSchema = new Schema<ICalendarEvent>({
   source: { 
     type: String, 
     required: true, 
-    enum: ['workflow', 'manual', 'import'],
+    enum: ['workflow', 'manual', 'import', 'email'],
     default: 'manual'
   },
   workflowExecutionId: { type: String },

@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       userId: session.user.id,
       attendees: parsedAppointment.attendees || [],
       allDay: parsedAppointment.allDay || false,
-      source: 'manual', // Use 'manual' for test events created from UI
+      source: 'email', // Use 'email' since this simulates an email-triggered event
       createdBy: session.user.id,
       status: 'confirmed'
     });
