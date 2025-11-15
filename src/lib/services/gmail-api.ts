@@ -86,13 +86,13 @@ export class GmailAPIService {
   /**
    * Exchange authorization code for tokens
    */
-  static async getTokensFromCode(code: string): Promise<GmailCredentials> {
+  static async getTokensFromCode(code: string): Promise<GmailCredentials & { emailAddress?: string }> {
     // Determine the base URL (must match the one used in getAuthUrl)
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
                     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
                     'http://localhost:3000';
     
-    const redirectUri = `${baseUrl}/api/email/oauth/gmail/callback`;
+    const redirectUri = `${baseUrl.replace(/\/$/, '')}/api/email/oauth/gmail/callback`;
     
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
@@ -102,11 +102,26 @@ export class GmailAPIService {
 
     const { tokens } = await oauth2Client.getToken(code);
     
+    oauth2Client.setCredentials(tokens);
+    
+    // Fetch user's email address from Gmail API
+    let emailAddress: string | undefined;
+    try {
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+      const profile = await gmail.users.getProfile({ userId: 'me' });
+      emailAddress = profile.data.emailAddress || undefined;
+      console.log('📧 Fetched Gmail address:', emailAddress);
+    } catch (error) {
+      console.error('⚠️ Could not fetch Gmail address:', error);
+      // Continue without email address - it can be updated later
+    }
+    
     return {
       accessToken: tokens.access_token!,
       refreshToken: tokens.refresh_token!,
       clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      emailAddress
     };
   }
 

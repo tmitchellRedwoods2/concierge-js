@@ -39,11 +39,20 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Find or create email account
-    const emailAddress = credentials.emailAddress || ''; // We'll need to fetch this from Gmail API
+    const emailAddress = credentials.emailAddress || 'pending@gmail.com';
     let account = await EmailAccount.findOne({
       userId: state,
+      emailAddress: emailAddress, // Match by email address if available
       provider: 'gmail'
     });
+    
+    // If not found by email, try finding by userId and provider
+    if (!account) {
+      account = await EmailAccount.findOne({
+        userId: state,
+        provider: 'gmail'
+      });
+    }
 
     if (account) {
       // Update existing account
@@ -86,11 +95,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Determine the base URL - same logic as in gmail-api.ts
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                    'http://localhost:3000';
-    const redirectUrl = `${baseUrl.replace(/\/$/, '')}/settings/email-scanning?success=gmail_connected`;
+    // Redirect to success page
+    const redirectUrl = `${cleanBaseUrl}/settings/email-scanning?success=gmail_connected`;
     
     console.log('🔗 Redirecting to:', redirectUrl);
     
