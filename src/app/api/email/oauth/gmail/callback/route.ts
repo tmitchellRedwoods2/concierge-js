@@ -9,17 +9,17 @@ import { emailPollingService } from '@/lib/services/email-polling';
  * Handles the OAuth callback from Google after user authorizes access
  */
 export async function GET(request: NextRequest) {
+  // Determine the base URL (used in both try and catch blocks)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                  'http://localhost:3000';
+  const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const state = searchParams.get('state'); // userId
     const error = searchParams.get('error');
-
-    // Determine the base URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                    'http://localhost:3000';
-    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
 
     if (error) {
       return NextResponse.redirect(
@@ -104,11 +104,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in Gmail OAuth callback:', error);
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                    'http://localhost:3000';
-    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-    
     return NextResponse.redirect(
       `${cleanBaseUrl}/settings/email-scanning?error=oauth_failed`
     );
