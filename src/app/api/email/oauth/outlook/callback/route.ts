@@ -15,15 +15,21 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get('state'); // userId
     const error = searchParams.get('error');
 
+    // Determine the base URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                    'http://localhost:3000';
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+
     if (error) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings/email-scanning?error=${encodeURIComponent(error)}`
+        `${cleanBaseUrl}/settings/email-scanning?error=${encodeURIComponent(error)}`
       );
     }
 
     if (!code || !state) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings/email-scanning?error=missing_parameters`
+        `${cleanBaseUrl}/settings/email-scanning?error=missing_parameters`
       );
     }
 
@@ -81,14 +87,25 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Determine the base URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                    'http://localhost:3000';
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings/email-scanning?success=outlook_connected`
+      `${cleanBaseUrl}/settings/email-scanning?success=outlook_connected`
     );
 
   } catch (error) {
     console.error('Error in Outlook OAuth callback:', error);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                    'http://localhost:3000';
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings/email-scanning?error=oauth_failed`
+      `${cleanBaseUrl}/settings/email-scanning?error=oauth_failed`
     );
   }
 }

@@ -15,15 +15,21 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get('state'); // userId
     const error = searchParams.get('error');
 
+    // Determine the base URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                    'http://localhost:3000';
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+
     if (error) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings/email-scanning?error=${encodeURIComponent(error)}`
+        `${cleanBaseUrl}/settings/email-scanning?error=${encodeURIComponent(error)}`
       );
     }
 
     if (!code || !state) {
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings/email-scanning?error=missing_parameters`
+        `${cleanBaseUrl}/settings/email-scanning?error=missing_parameters`
       );
     }
 
@@ -80,14 +86,25 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings/email-scanning?success=gmail_connected`
-    );
+    // Determine the base URL - same logic as in gmail-api.ts
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                    'http://localhost:3000';
+    const redirectUrl = `${baseUrl.replace(/\/$/, '')}/settings/email-scanning?success=gmail_connected`;
+    
+    console.log('🔗 Redirecting to:', redirectUrl);
+    
+    return NextResponse.redirect(redirectUrl);
 
   } catch (error) {
     console.error('Error in Gmail OAuth callback:', error);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                    'http://localhost:3000';
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings/email-scanning?error=oauth_failed`
+      `${cleanBaseUrl}/settings/email-scanning?error=oauth_failed`
     );
   }
 }
