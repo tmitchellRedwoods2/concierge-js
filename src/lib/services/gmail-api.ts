@@ -43,10 +43,21 @@ export class GmailAPIService {
    * Get OAuth2 authorization URL for Gmail
    */
   static getAuthUrl(userId: string): string {
+    // Determine the base URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                    'http://localhost:3000';
+    
+    const redirectUri = `${baseUrl}/api/email/oauth/gmail/callback`;
+    
+    console.log('🔗 Gmail OAuth redirect URI:', redirectUri);
+    console.log('🔗 Base URL:', baseUrl);
+    console.log('🔗 GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Missing');
+
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/oauth/gmail/callback`
+      redirectUri
     );
 
     const scopes = [
@@ -54,22 +65,34 @@ export class GmailAPIService {
       'https://www.googleapis.com/auth/gmail.modify'
     ];
 
-    return oauth2Client.generateAuthUrl({
+    const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
       prompt: 'consent',
-      state: userId // Pass userId in state for callback
+      state: userId, // Pass userId in state for callback
+      redirect_uri: redirectUri // Explicitly include redirect_uri
     });
+
+    console.log('🔗 Generated auth URL:', authUrl.substring(0, 100) + '...');
+    
+    return authUrl;
   }
 
   /**
    * Exchange authorization code for tokens
    */
   static async getTokensFromCode(code: string): Promise<GmailCredentials> {
+    // Determine the base URL (must match the one used in getAuthUrl)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                    'http://localhost:3000';
+    
+    const redirectUri = `${baseUrl}/api/email/oauth/gmail/callback`;
+    
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/oauth/gmail/callback`
+      redirectUri
     );
 
     const { tokens } = await oauth2Client.getToken(code);
