@@ -61,12 +61,19 @@ export class GmailAPIService {
     
     const redirectUri = `${baseUrl}/api/email/oauth/gmail/callback`;
     
-    console.log('🔗 Gmail OAuth redirect URI:', redirectUri);
-    console.log('🔗 Base URL:', baseUrl);
-    console.log('🔗 Request URL:', requestUrl);
-    console.log('🔗 NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
-    console.log('🔗 VERCEL_URL:', process.env.VERCEL_URL);
-    console.log('🔗 GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Missing');
+    // Log detailed information for debugging
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('🔗 Gmail OAuth Configuration:');
+    console.log('   Redirect URI:', redirectUri);
+    console.log('   Base URL:', baseUrl);
+    console.log('   Request URL:', requestUrl);
+    console.log('   NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL || '(not set)');
+    console.log('   VERCEL_URL:', process.env.VERCEL_URL || '(not set)');
+    console.log('   GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? '✅ Set' : '❌ Missing');
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('⚠️  IMPORTANT: Make sure this redirect URI is added to Google Cloud Console:');
+    console.log('   ', redirectUri);
+    console.log('═══════════════════════════════════════════════════════');
 
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,

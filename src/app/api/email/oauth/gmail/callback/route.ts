@@ -101,10 +101,23 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.redirect(redirectUrl);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in Gmail OAuth callback:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = 'oauth_failed';
+    if (error?.message?.includes('redirect_uri_mismatch')) {
+      errorMessage = `redirect_uri_mismatch: The redirect URI ${cleanBaseUrl}/api/email/oauth/gmail/callback must be added to Google Cloud Console`;
+      console.error('═══════════════════════════════════════════════════════');
+      console.error('❌ REDIRECT URI MISMATCH ERROR');
+      console.error('   Expected redirect URI:', `${cleanBaseUrl}/api/email/oauth/gmail/callback`);
+      console.error('   Please add this exact URI to Google Cloud Console');
+      console.error('   See GMAIL_OAUTH_SETUP.md for instructions');
+      console.error('═══════════════════════════════════════════════════════');
+    }
+    
     return NextResponse.redirect(
-      `${cleanBaseUrl}/settings/email-scanning?error=oauth_failed`
+      `${cleanBaseUrl}/settings/email-scanning?error=${encodeURIComponent(errorMessage)}`
     );
   }
 }

@@ -116,8 +116,34 @@ GOOGLE_CLIENT_SECRET=your-client-secret-here
 
 ### "redirect_uri_mismatch" Error
 
-- Make sure the redirect URI in your `.env` matches exactly what's configured in Google Cloud Console
-- Check for trailing slashes or protocol mismatches (http vs https)
+This is the most common error. The redirect URI must match **exactly** between what your app sends and what's configured in Google Cloud Console.
+
+**To fix this:**
+
+1. **Find the actual redirect URI being used:**
+   - Check your Vercel deployment logs (or local server logs)
+   - Look for the log message: `🔗 Gmail OAuth redirect URI:`
+   - Copy the exact URI shown (e.g., `https://your-app.vercel.app/api/email/oauth/gmail/callback`)
+
+2. **Add it to Google Cloud Console:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Navigate to **"APIs & Services"** → **"Credentials"**
+   - Click on your OAuth 2.0 Client ID
+   - Under **"Authorized redirect URIs"**, click **"+ ADD URI"**
+   - Paste the exact URI from step 1 (must match exactly, including `https://` and no trailing slash)
+   - Click **"Save"**
+
+3. **Common issues:**
+   - ❌ Trailing slash: `https://app.com/api/.../callback/` (wrong) vs `https://app.com/api/.../callback` (correct)
+   - ❌ Protocol mismatch: `http://` vs `https://`
+   - ❌ Domain mismatch: `localhost:3000` vs production domain
+   - ❌ Path mismatch: `/api/email/oauth/gmail/callback` must match exactly
+
+4. **For Vercel deployments:**
+   - The redirect URI will be: `https://YOUR-VERCEL-URL.vercel.app/api/email/oauth/gmail/callback`
+   - Or if you have a custom domain: `https://yourdomain.com/api/email/oauth/gmail/callback`
+   - Check your Vercel deployment URL in the Vercel dashboard
+   - Add BOTH the preview URL and production URL if needed
 
 ### "invalid_client" Error
 
