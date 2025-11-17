@@ -161,12 +161,14 @@ export class OutlookAPIService {
         throw new Error('Graph client not initialized');
       }
 
-      // Build filter query
-      let filter = '';
+      // Build filter query using hoursBack parameter
+      const hoursBackMs = hoursBack * 3600000;
+      const timeThreshold = new Date(Date.now() - hoursBackMs).toISOString();
+      const filter = `receivedDateTime ge ${timeThreshold}`;
+      
+      console.log(`📧 Outlook query: looking back ${hoursBack} hours / ${Math.round(hoursBack/24)} days`);
       if (lastMessageId) {
-        // Use receivedDateTime to filter new messages
-        const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
-        filter = `receivedDateTime ge ${oneHourAgo}`;
+        console.log(`📧 Note: lastMessageId provided, but using time-based query for broader scan`);
       }
 
       // Fetch messages
