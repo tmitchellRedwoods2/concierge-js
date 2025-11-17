@@ -374,7 +374,8 @@ export class EmailPollingService extends EventEmitter {
       });
 
       if (!parsedAppointment) {
-        console.log(`⚠️ Email does not contain appointment information: ${email.subject}`);
+        console.log(`⚠️ Email does not contain appointment information: "${email.subject}"`);
+        console.log(`   Email body preview: ${email.body.substring(0, 200)}...`);
         
         // Still process through email trigger system for other automation rules
         await emailTriggerService.processEmail({
@@ -387,7 +388,11 @@ export class EmailPollingService extends EventEmitter {
         return;
       }
 
-      console.log(`✅ Parsed appointment: ${parsedAppointment.title} on ${parsedAppointment.startDate}`);
+      console.log(`✅ Parsed appointment from email: "${email.subject}"`);
+      console.log(`   Title: ${parsedAppointment.title}`);
+      console.log(`   Date: ${parsedAppointment.startDate.toISOString()}`);
+      console.log(`   Location: ${parsedAppointment.location || 'Not specified'}`);
+      console.log(`   Confidence: ${(parsedAppointment.confidence * 100).toFixed(0)}%`);
 
       await connectDB();
 
@@ -399,9 +404,13 @@ export class EmailPollingService extends EventEmitter {
       });
 
       if (existingEvent) {
-        console.log(`⚠️ Event already exists, skipping: ${parsedAppointment.title}`);
+        console.log(`⚠️ Event already exists, skipping duplicate: ${parsedAppointment.title}`);
+        console.log(`   Existing event ID: ${existingEvent._id}`);
+        console.log(`   Existing event date: ${existingEvent.startDate}`);
         return;
       }
+      
+      console.log(`📅 No duplicate found, creating new calendar event...`);
 
       // Create calendar event
       const event = new CalendarEvent({

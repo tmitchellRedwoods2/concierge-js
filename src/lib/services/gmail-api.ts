@@ -196,6 +196,13 @@ export class GmailAPIService {
       });
 
       const messages = response.data.messages || [];
+      console.log(`📧 Gmail API returned ${messages.length} message(s) for query: ${query}`);
+      
+      if (messages.length === 0) {
+        console.log(`⚠️ No messages found. Query was: ${query}`);
+        console.log(`⚠️ This might mean: 1) No emails in the time window, 2) Query syntax issue, or 3) Gmail API permissions issue`);
+      }
+      
       const emails: PolledEmail[] = [];
 
       // Fetch full message details
