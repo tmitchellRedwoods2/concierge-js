@@ -511,35 +511,48 @@ export class EmailPollingService extends EventEmitter {
           userId
         );
         
-        // If sync is disabled or using internal calendar, try Apple Calendar auto-sync as fallback
-        if (!syncResult.success && (syncResult.message === 'Sync disabled' || syncResult.message === 'Internal calendar only')) {
-          console.log(`📅 Sync disabled or internal-only, trying Apple Calendar auto-sync...`);
-          syncResult = await calendarSyncService.syncToAppleCalendarIfConfigured(
-            {
-              _id: eventId,
-              id: eventId,
-              title: parsedAppointment.title,
-              startDate: parsedAppointment.startDate,
-              endDate: parsedAppointment.endDate,
-              location: parsedAppointment.location || '',
-              description: parsedAppointment.description || '',
-              attendees: parsedAppointment.attendees || []
-            },
-            userId
-          );
+        // Always try Apple Calendar auto-sync as fallback (even if other sync succeeded)
+        // This ensures email-created events always sync to Apple Calendar if configured
+        console.log(`🍎 Attempting Apple Calendar auto-sync for email-created event...`);
+        const appleSyncResult = await calendarSyncService.syncToAppleCalendarIfConfigured(
+          {
+            _id: eventId,
+            id: eventId,
+            title: parsedAppointment.title,
+            startDate: parsedAppointment.startDate,
+            endDate: parsedAppointment.endDate,
+            location: parsedAppointment.location || '',
+            description: parsedAppointment.description || '',
+            attendees: parsedAppointment.attendees || []
+          },
+          userId
+        );
+        
+        // Use Apple sync result if it succeeded, otherwise use the original sync result
+        if (appleSyncResult.success) {
+          syncResult = appleSyncResult;
         }
 
         if (syncResult.success && syncResult.externalEventId) {
-          console.log(`📅 Event synced to external calendar: ${syncResult.externalEventId}`);
+          console.log(`✅ Event synced to external calendar: ${syncResult.calendarType}`);
+          console.log(`   External Event ID: ${syncResult.externalEventId}`);
+          console.log(`   External Event URL: ${syncResult.externalEventUrl}`);
           
-          if (syncResult.calendarType === 'google') {
-            event.googleEventId = syncResult.externalEventId;
-            event.googleEventUrl = syncResult.externalCalendarUrl;
-          } else if (syncResult.calendarType === 'apple') {
-            event.appleEventId = syncResult.externalEventId;
-            event.appleEventUrl = syncResult.externalCalendarUrl;
+          // Update the event with external calendar info
+          const eventToUpdate = await CalendarEvent.findById(eventId);
+          if (eventToUpdate) {
+            if (syncResult.calendarType === 'google') {
+              eventToUpdate.googleEventId = syncResult.externalEventId;
+              eventToUpdate.googleEventUrl = syncResult.externalCalendarUrl;
+            } else if (syncResult.calendarType === 'apple') {
+              eventToUpdate.appleEventId = syncResult.externalEventId;
+              eventToUpdate.appleEventUrl = syncResult.externalCalendarUrl;
+            }
+            await eventToUpdate.save();
+            console.log(`✅ Updated event ${eventId} with external calendar info`);
           }
-          await event.save();
+        } else {
+          console.log(`⚠️ Event not synced to external calendar: ${syncResult.error || syncResult.message || 'Unknown reason'}`);
         }
       } catch (error) {
         console.error('⚠️ Calendar sync error (non-blocking):', error);
