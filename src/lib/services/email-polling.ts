@@ -434,34 +434,66 @@ export class EmailPollingService extends EventEmitter {
       console.log(`   Event location: ${parsedAppointment.location || 'Not specified'}`);
 
       // Create calendar event
-      const event = new CalendarEvent({
+      console.log(`📅 Attempting to create calendar event...`);
+      console.log(`   Event data:`, {
         title: parsedAppointment.title,
         startDate: parsedAppointment.startDate,
         endDate: parsedAppointment.endDate,
         location: parsedAppointment.location || '',
-        description: parsedAppointment.description || '',
         userId,
-        attendees: parsedAppointment.attendees || [],
-        allDay: parsedAppointment.allDay || false,
         source: 'email',
         createdBy: userId,
         status: 'confirmed'
       });
 
-      await event.save();
-      const eventId = event._id.toString();
-
-      console.log(`✅ SUCCESS: Created calendar event in database!`);
-      console.log(`   Event ID: ${eventId}`);
-      console.log(`   Title: ${parsedAppointment.title}`);
-      console.log(`   Start Date: ${parsedAppointment.startDate.toISOString()}`);
-      console.log(`   End Date: ${parsedAppointment.endDate.toISOString()}`);
-      console.log(`   Location: ${parsedAppointment.location || 'Not specified'}`);
-      console.log(`   Source: email`);
-      console.log(`   User ID: ${userId}`);
-
-      // Automatically sync to external calendar
+      let event;
+      let eventId;
+      
       try {
+        event = new CalendarEvent({
+          title: parsedAppointment.title,
+          startDate: parsedAppointment.startDate,
+          endDate: parsedAppointment.endDate,
+          location: parsedAppointment.location || '',
+          description: parsedAppointment.description || '',
+          userId,
+          attendees: parsedAppointment.attendees || [],
+          source: 'email',
+          createdBy: userId,
+          status: 'confirmed'
+        });
+
+        console.log(`📅 CalendarEvent object created, attempting to save...`);
+        await event.save();
+        eventId = event._id.toString();
+
+        console.log(`✅ SUCCESS: Created calendar event in database!`);
+        console.log(`   Event ID: ${eventId}`);
+        console.log(`   Title: ${parsedAppointment.title}`);
+        console.log(`   Start Date: ${parsedAppointment.startDate.toISOString()}`);
+        console.log(`   End Date: ${parsedAppointment.endDate.toISOString()}`);
+        console.log(`   Location: ${parsedAppointment.location || 'Not specified'}`);
+        console.log(`   Source: email`);
+        console.log(`   User ID: ${userId}`);
+      } catch (saveError: any) {
+        console.error(`❌ ERROR: Failed to save calendar event to database!`);
+        console.error(`   Error:`, saveError);
+        console.error(`   Error message:`, saveError?.message);
+        console.error(`   Error stack:`, saveError?.stack);
+        if (saveError?.errors) {
+          console.error(`   Validation errors:`, saveError.errors);
+        }
+        throw saveError; // Re-throw to be caught by outer try-catch
+      }
+
+      // Automatically sync to external calendar (only if event was successfully created)
+      if (!eventId) {
+        console.error(`❌ Cannot sync event - eventId is missing!`);
+        return;
+      }
+
+      try {
+        console.log(`📅 Attempting to sync event to external calendar...`);
         const calendarSyncService = new CalendarSyncService();
         const syncResult = await calendarSyncService.syncEventIfEnabled(
           {
