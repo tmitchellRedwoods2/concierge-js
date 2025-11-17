@@ -495,7 +495,9 @@ export class EmailPollingService extends EventEmitter {
       try {
         console.log(`📅 Attempting to sync event to external calendar...`);
         const calendarSyncService = new CalendarSyncService();
-        const syncResult = await calendarSyncService.syncEventIfEnabled(
+        
+        // First try the normal sync (respects user preferences)
+        let syncResult = await calendarSyncService.syncEventIfEnabled(
           {
             _id: eventId,
             id: eventId,
@@ -508,6 +510,24 @@ export class EmailPollingService extends EventEmitter {
           },
           userId
         );
+        
+        // If sync is disabled or using internal calendar, try Apple Calendar auto-sync as fallback
+        if (!syncResult.success && (syncResult.message === 'Sync disabled' || syncResult.message === 'Internal calendar only')) {
+          console.log(`📅 Sync disabled or internal-only, trying Apple Calendar auto-sync...`);
+          syncResult = await calendarSyncService.syncToAppleCalendarIfConfigured(
+            {
+              _id: eventId,
+              id: eventId,
+              title: parsedAppointment.title,
+              startDate: parsedAppointment.startDate,
+              endDate: parsedAppointment.endDate,
+              location: parsedAppointment.location || '',
+              description: parsedAppointment.description || '',
+              attendees: parsedAppointment.attendees || []
+            },
+            userId
+          );
+        }
 
         if (syncResult.success && syncResult.externalEventId) {
           console.log(`📅 Event synced to external calendar: ${syncResult.externalEventId}`);
