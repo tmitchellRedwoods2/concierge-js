@@ -20,10 +20,13 @@ export default function EmailScanningPage() {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     if (session?.user?.id) {
       loadAccounts();
+      loadDebugInfo();
       
       // Check for OAuth callback success/error
       const params = new URLSearchParams(window.location.search);
@@ -38,12 +41,28 @@ export default function EmailScanningPage() {
       }
       
       if (error) {
+        // Show debug info if there's a redirect_uri_mismatch error
+        if (error.includes('redirect_uri_mismatch')) {
+          setShowDebug(true);
+        }
         alert(`Connection failed: ${error}`);
         // Clean URL
         window.history.replaceState({}, '', '/settings/email-scanning');
       }
     }
   }, [session]);
+
+  const loadDebugInfo = async () => {
+    try {
+      const response = await fetch('/api/email/oauth/debug');
+      if (response.ok) {
+        const data = await response.json();
+        setDebugInfo(data);
+      }
+    } catch (error) {
+      console.error('Error loading debug info:', error);
+    }
+  };
 
   const loadAccounts = async () => {
     try {
@@ -176,6 +195,56 @@ export default function EmailScanningPage() {
                 <li><strong>No manual intervention required!</strong></li>
               </ul>
             </div>
+
+            {/* Debug Info Section */}
+            {(showDebug || debugInfo) && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-yellow-900 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    OAuth Configuration Debug Info
+                  </h3>
+                  <button
+                    onClick={() => setShowDebug(!showDebug)}
+                    className="text-xs text-yellow-700 hover:text-yellow-900 underline"
+                  >
+                    {showDebug ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                {showDebug && debugInfo && (
+                  <div className="text-sm text-yellow-800 space-y-2">
+                    <div>
+                      <strong>Gmail Redirect URI:</strong>
+                      <div className="bg-white p-2 rounded border border-yellow-300 mt-1 font-mono text-xs break-all">
+                        {debugInfo.redirectUris?.gmail}
+                      </div>
+                      <p className="text-xs mt-1 text-yellow-700">
+                        ⚠️ Copy this exact URI and add it to Google Cloud Console → Credentials → OAuth 2.0 Client ID → Authorized redirect URIs
+                      </p>
+                    </div>
+                    <div className="mt-3">
+                      <strong>Environment Status:</strong>
+                      <ul className="list-disc list-inside mt-1 space-y-1">
+                        <li>Google Client ID: {debugInfo.environment?.GOOGLE_CLIENT_ID}</li>
+                        <li>Google Client Secret: {debugInfo.environment?.GOOGLE_CLIENT_SECRET}</li>
+                        <li>Base URL: {debugInfo.baseUrl}</li>
+                      </ul>
+                    </div>
+                    <div className="mt-3 p-2 bg-white rounded border border-yellow-300">
+                      <strong className="text-xs">Quick Fix Steps:</strong>
+                      <ol className="list-decimal list-inside mt-1 text-xs space-y-1">
+                        <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="underline">Google Cloud Console → Credentials</a></li>
+                        <li>Click on your OAuth 2.0 Client ID</li>
+                        <li>Under "Authorized redirect URIs", click "+ ADD URI"</li>
+                        <li>Paste the Gmail Redirect URI above exactly as shown</li>
+                        <li>Click "Save"</li>
+                        <li>Try connecting Gmail again</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Quick Connect Buttons */}
             {!showAddForm && (
