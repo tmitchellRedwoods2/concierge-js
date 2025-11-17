@@ -8,6 +8,10 @@ export interface IEmailAccount extends Document {
     // For Gmail OAuth
     accessToken?: string;
     refreshToken?: string;
+    clientId?: string;
+    clientSecret?: string;
+    // For Outlook OAuth
+    tenantId?: string;
     // For IMAP/Exchange
     username?: string;
     password?: string;
@@ -34,6 +38,9 @@ const EmailAccountSchema = new Schema<IEmailAccount>({
   credentials: {
     accessToken: { type: String, select: false }, // Don't return in queries by default
     refreshToken: { type: String, select: false },
+    clientId: { type: String, select: false },
+    clientSecret: { type: String, select: false },
+    tenantId: { type: String, select: false }, // For Outlook
     username: { type: String, select: false },
     password: { type: String, select: false },
     server: { type: String },

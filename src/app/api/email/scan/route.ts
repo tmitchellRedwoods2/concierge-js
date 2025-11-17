@@ -27,11 +27,11 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Find the email account
+    // Find the email account (make sure to include credentials)
     const account = await EmailAccount.findOne({
       _id: accountId,
       userId: session.user.id
-    });
+    }).select('+credentials.accessToken +credentials.refreshToken'); // Explicitly include credentials
 
     if (!account) {
       return NextResponse.json(
@@ -47,12 +47,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log credentials status for debugging
+    console.log(`📧 Account found: ${account.emailAddress}`);
+    console.log(`📧 Provider: ${account.provider}`);
+    console.log(`📧 Credentials present: ${!!account.credentials}`);
+    console.log(`📧 Access token present: ${!!account.credentials?.accessToken}`);
+    console.log(`📧 Refresh token present: ${!!account.credentials?.refreshToken}`);
+    console.log(`📧 Client ID present: ${!!account.credentials?.clientId}`);
+    console.log(`📧 Client secret present: ${!!account.credentials?.clientSecret}`);
+
+    if (!account.credentials || !account.credentials.accessToken || !account.credentials.refreshToken) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Email account credentials are missing or incomplete. Please reconnect your Gmail account.',
+          message: 'The account needs to be re-authenticated. Please disconnect and reconnect Gmail.'
+        },
+        { status: 400 }
+      );
+    }
+
     // Convert to EmailAccount format for polling service
     const pollingAccount = {
       userId: account.userId.toString(),
       emailAddress: account.emailAddress,
       provider: account.provider,
-      credentials: account.credentials,
+      credentials: {
+        accessToken: account.credentials.accessToken,
+        refreshToken: account.credentials.refreshToken,
+        clientId: account.credentials.clientId || process.env.GOOGLE_CLIENT_ID,
+        clientSecret: account.credentials.clientSecret || process.env.GOOGLE_CLIENT_SECRET
+      },
       enabled: account.enabled,
       lastChecked: account.lastChecked,
       lastMessageId: account.lastMessageId,
