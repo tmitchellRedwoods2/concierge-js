@@ -406,10 +406,16 @@ export class EmailPollingService extends EventEmitter {
 
       await connectDB();
 
-      // Check for duplicates
+      // Check for duplicates - use a more flexible date range (within 1 hour)
+      const oneHourBefore = new Date(parsedAppointment.startDate.getTime() - 60 * 60 * 1000);
+      const oneHourAfter = new Date(parsedAppointment.startDate.getTime() + 60 * 60 * 1000);
+      
       const existingEvent = await CalendarEvent.findOne({
         userId,
-        startDate: parsedAppointment.startDate,
+        startDate: {
+          $gte: oneHourBefore,
+          $lte: oneHourAfter
+        },
         title: { $regex: new RegExp(parsedAppointment.title, 'i') }
       });
 
@@ -417,10 +423,15 @@ export class EmailPollingService extends EventEmitter {
         console.log(`⚠️ Event already exists, skipping duplicate: ${parsedAppointment.title}`);
         console.log(`   Existing event ID: ${existingEvent._id}`);
         console.log(`   Existing event date: ${existingEvent.startDate}`);
+        console.log(`   New event would be: ${parsedAppointment.startDate}`);
+        console.log(`   Date difference: ${Math.abs(existingEvent.startDate.getTime() - parsedAppointment.startDate.getTime()) / 1000 / 60} minutes`);
         return;
       }
       
       console.log(`📅 No duplicate found, creating new calendar event...`);
+      console.log(`   Event title: ${parsedAppointment.title}`);
+      console.log(`   Event date: ${parsedAppointment.startDate.toISOString()}`);
+      console.log(`   Event location: ${parsedAppointment.location || 'Not specified'}`);
 
       // Create calendar event
       const event = new CalendarEvent({
@@ -440,7 +451,14 @@ export class EmailPollingService extends EventEmitter {
       await event.save();
       const eventId = event._id.toString();
 
-      console.log(`📅 Created calendar event: ${eventId} - ${parsedAppointment.title}`);
+      console.log(`✅ SUCCESS: Created calendar event in database!`);
+      console.log(`   Event ID: ${eventId}`);
+      console.log(`   Title: ${parsedAppointment.title}`);
+      console.log(`   Start Date: ${parsedAppointment.startDate.toISOString()}`);
+      console.log(`   End Date: ${parsedAppointment.endDate.toISOString()}`);
+      console.log(`   Location: ${parsedAppointment.location || 'Not specified'}`);
+      console.log(`   Source: email`);
+      console.log(`   User ID: ${userId}`);
 
       // Automatically sync to external calendar
       try {
