@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const authUrl = OutlookAPIService.getAuthUrl(session.user.id);
+    // Get the request URL to determine the correct base URL
+    const requestUrl = request.url;
+    const authUrl = OutlookAPIService.getAuthUrl(session.user.id, requestUrl);
 
     return NextResponse.json({
       success: true,

@@ -41,9 +41,22 @@ export class OutlookAPIService {
   /**
    * Get OAuth2 authorization URL for Outlook
    */
-  static getAuthUrl(userId: string): string {
+  static getAuthUrl(userId: string, requestUrl?: string): string {
     const clientId = process.env.MICROSOFT_CLIENT_ID || '';
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/oauth/outlook/callback`;
+    
+    // Determine base URL from request or env vars
+    let baseUrl: string;
+    if (requestUrl) {
+      const url = new URL(requestUrl);
+      baseUrl = `${url.protocol}//${url.host}`;
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                'http://localhost:3000';
+    }
+    baseUrl = baseUrl.replace(/\/$/, '');
+    
+    const redirectUri = `${baseUrl}/api/email/oauth/outlook/callback`;
     const scopes = ['https://graph.microsoft.com/Mail.Read', 'https://graph.microsoft.com/Mail.ReadWrite'];
     const state = userId;
 
@@ -62,10 +75,23 @@ export class OutlookAPIService {
   /**
    * Exchange authorization code for tokens
    */
-  static async getTokensFromCode(code: string): Promise<OutlookCredentials> {
+  static async getTokensFromCode(code: string, requestUrl?: string): Promise<OutlookCredentials> {
     const clientId = process.env.MICROSOFT_CLIENT_ID || '';
     const clientSecret = process.env.MICROSOFT_CLIENT_SECRET || '';
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/oauth/outlook/callback`;
+    
+    // Determine base URL from request or env vars
+    let baseUrl: string;
+    if (requestUrl) {
+      const url = new URL(requestUrl);
+      baseUrl = `${url.protocol}//${url.host}`;
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                'http://localhost:3000';
+    }
+    baseUrl = baseUrl.replace(/\/$/, '');
+    
+    const redirectUri = `${baseUrl}/api/email/oauth/outlook/callback`;
     const tenantId = process.env.MICROSOFT_TENANT_ID || 'common';
 
     const msalClient = new ConfidentialClientApplication({

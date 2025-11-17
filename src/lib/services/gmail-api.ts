@@ -86,11 +86,18 @@ export class GmailAPIService {
   /**
    * Exchange authorization code for tokens
    */
-  static async getTokensFromCode(code: string): Promise<GmailCredentials & { emailAddress?: string }> {
+  static async getTokensFromCode(code: string, requestUrl?: string): Promise<GmailCredentials & { emailAddress?: string }> {
     // Determine the base URL (must match the one used in getAuthUrl)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                    'http://localhost:3000';
+    let baseUrl: string;
+    
+    if (requestUrl) {
+      const url = new URL(requestUrl);
+      baseUrl = `${url.protocol}//${url.host}`;
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                'http://localhost:3000';
+    }
     
     const redirectUri = `${baseUrl.replace(/\/$/, '')}/api/email/oauth/gmail/callback`;
     

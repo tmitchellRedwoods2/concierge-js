@@ -9,10 +9,9 @@ import { emailPollingService } from '@/lib/services/email-polling';
  * Handles the OAuth callback from Microsoft after user authorizes access
  */
 export async function GET(request: NextRequest) {
-  // Determine the base URL (used in both try and catch blocks)
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                  'http://localhost:3000';
+  // Get base URL from the request itself
+  const url = new URL(request.url);
+  const baseUrl = `${url.protocol}//${url.host}`;
   const cleanBaseUrl = baseUrl.replace(/\/$/, '');
 
   try {
@@ -33,8 +32,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Exchange code for tokens
-    const credentials = await OutlookAPIService.getTokensFromCode(code);
+    // Exchange code for tokens (pass request URL to ensure redirect URI matches)
+    const credentials = await OutlookAPIService.getTokensFromCode(code, request.url);
 
     await connectDB();
 
