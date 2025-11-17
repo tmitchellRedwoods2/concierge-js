@@ -525,8 +525,14 @@ export class EmailPollingService extends EventEmitter {
         console.error('⚠️ Calendar sync error (non-blocking):', error);
       }
 
-      // Send notification to user
+      // Send notification to user (only if event was successfully created)
+      if (!eventId) {
+        console.error(`❌ Cannot send notification - eventId is missing!`);
+        return;
+      }
+
       try {
+        console.log(`📧 Attempting to send notification for event ${eventId}...`);
         const notificationService = new NotificationService();
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const icsUrl = `${baseUrl}/api/calendar/event/${eventId}/ics`;
@@ -548,6 +554,7 @@ export class EmailPollingService extends EventEmitter {
           `/calendar/event/${eventId}`,
           icsUrl
         );
+        console.log(`✅ Notification sent successfully`);
       } catch (error) {
         console.error('⚠️ Failed to send notification:', error);
       }
