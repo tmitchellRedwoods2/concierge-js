@@ -1,6 +1,5 @@
 import { ConfidentialClientApplication, AuthenticationResult } from '@azure/msal-node';
 import { Client } from '@microsoft/microsoft-graph-client';
-import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials';
 import { PolledEmail } from './email-polling';
 
 export interface OutlookCredentials {
@@ -13,7 +12,7 @@ export interface OutlookCredentials {
 
 export class OutlookAPIService {
   private msalClient: ConfidentialClientApplication;
-  private graphClient: Client;
+  private graphClient: Client | null = null;
   private credentials: OutlookCredentials;
 
   constructor(credentials: OutlookCredentials) {
@@ -28,19 +27,14 @@ export class OutlookAPIService {
       }
     });
 
-    // Initialize Graph client with token provider
-    const authProvider = new TokenCredentialAuthenticationProvider({
-      getToken: async () => {
-        const token = await this.getAccessToken();
-        return {
-          token: token,
-          expiresOnTimestamp: Date.now() + 3600000 // 1 hour
-        };
-      }
-    });
-
-    this.graphClient = Client.initWithMiddleware({
-      authProvider: authProvider as any
+    // Initialize Graph client with custom authentication
+    // We'll use a custom authentication approach that provides the access token
+    this.graphClient = Client.init({
+      authProvider: {
+        getAccessToken: async () => {
+          return await this.getAccessToken();
+        }
+      } as any
     });
   }
 
@@ -137,6 +131,10 @@ export class OutlookAPIService {
    */
   async fetchEmails(lastMessageId?: string, maxResults: number = 10): Promise<PolledEmail[]> {
     try {
+      if (!this.graphClient) {
+        throw new Error('Graph client not initialized');
+      }
+
       // Build filter query
       let filter = '';
       if (lastMessageId) {
