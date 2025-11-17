@@ -97,10 +97,10 @@ export class EmailParserService {
     const datePatterns = [
       // MM/DD/YYYY or MM-DD-YYYY
       /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/g,
-      // Month DD, YYYY
-      /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})/gi,
-      // DD Month YYYY
-      /(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})/gi,
+      // Month DD, YYYY or Month DDth YYYY (with ordinal suffixes)
+      /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/gi,
+      // DD Month YYYY or DDth Month YYYY
+      /(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{4})/gi,
       // Today, Tomorrow, Next Week, etc.
       /(today|tomorrow|next\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday|week))/gi
     ];
@@ -168,26 +168,45 @@ export class EmailParserService {
               matchText.includes('july') || matchText.includes('august') ||
               matchText.includes('september') || matchText.includes('october') ||
               matchText.includes('november') || matchText.includes('december')) {
-            // Month name format - try parsing directly
-            // Handle formats like "January 15, 2024" or "15 January 2024"
-            date = new Date(match[0]);
-            if (isNaN(date.getTime())) {
-              // Try alternative parsing for "January 15" without year
-              const monthDayMatch = match[0].match(/(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})/i);
-              if (monthDayMatch) {
-                const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
-                                  'july', 'august', 'september', 'october', 'november', 'december'];
-                const monthIndex = monthNames.indexOf(monthDayMatch[1].toLowerCase());
-                const day = parseInt(monthDayMatch[2]);
-                if (monthIndex >= 0 && !isNaN(day)) {
-                  // Use current year if not specified
-                  const year = now.getFullYear();
-                  date = new Date(year, monthIndex, day);
+            // Month name format - extract components manually to handle ordinals
+            const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
+                              'july', 'august', 'september', 'october', 'november', 'december'];
+            
+            // Try to extract month, day, and year from the match
+            // Pattern: (month) (day)(ordinal?), (year) or (month) (day)(ordinal?) (year)
+            const monthDayYearMatch = match[0].match(/(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/i);
+            if (monthDayYearMatch) {
+              const monthName = monthDayYearMatch[1].toLowerCase();
+              const monthIndex = monthNames.indexOf(monthName);
+              const day = parseInt(monthDayYearMatch[2]); // Extract just the number, ignoring ordinal
+              const year = parseInt(monthDayYearMatch[3]);
+              
+              if (monthIndex >= 0 && !isNaN(day) && !isNaN(year)) {
+                date = new Date(year, monthIndex, day);
+              } else {
+                continue;
+              }
+            } else {
+              // Try parsing directly (for formats without ordinals)
+              // Remove ordinal suffixes before parsing
+              const cleanedMatch = match[0].replace(/(\d{1,2})(?:st|nd|rd|th)/gi, '$1');
+              date = new Date(cleanedMatch);
+              if (isNaN(date.getTime())) {
+                // Try alternative parsing for "January 15" without year
+                const monthDayMatch = cleanedMatch.match(/(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})/i);
+                if (monthDayMatch) {
+                  const monthIndex = monthNames.indexOf(monthDayMatch[1].toLowerCase());
+                  const day = parseInt(monthDayMatch[2]);
+                  if (monthIndex >= 0 && !isNaN(day)) {
+                    // Use current year if not specified
+                    const year = now.getFullYear();
+                    date = new Date(year, monthIndex, day);
+                  } else {
+                    continue;
+                  }
                 } else {
                   continue;
                 }
-              } else {
-                continue;
               }
             }
           } else {
