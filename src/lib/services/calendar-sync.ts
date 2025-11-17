@@ -208,16 +208,23 @@ export class CalendarSyncService {
     try {
       const preferences = await this.getUserCalendarPreferences(userId);
       
+      console.log('📅 Calendar sync check - preferences:', {
+        hasPreferences: !!preferences,
+        syncEnabled: preferences?.calendarPreferences?.syncEnabled,
+        primaryProvider: preferences?.calendarPreferences?.primaryProvider,
+        hasAppleConfig: !!preferences?.calendarPreferences?.appleCalendarConfig
+      });
+      
       if (!preferences || !preferences.calendarPreferences.syncEnabled) {
         console.log('📅 Calendar sync disabled for user:', userId);
-        return { success: true, message: 'Sync disabled' };
+        return { success: false, message: 'Sync disabled' };
       }
 
       const provider = preferences.calendarPreferences.primaryProvider;
       
       if (provider === 'internal') {
         console.log('📅 Using internal calendar only');
-        return { success: true, message: 'Internal calendar only' };
+        return { success: false, message: 'Internal calendar only' };
       }
 
       // Sync to external calendar
@@ -252,30 +259,52 @@ export class CalendarSyncService {
    */
   async syncToAppleCalendarIfConfigured(event: any, userId: string): Promise<CalendarSyncResult> {
     try {
+      console.log('🍎 Checking Apple Calendar configuration...');
       const preferences = await this.getUserCalendarPreferences(userId);
       const appleConfig = preferences?.calendarPreferences?.appleCalendarConfig;
       
+      console.log('🍎 Apple Calendar config check:', {
+        hasPreferences: !!preferences,
+        hasAppleConfig: !!appleConfig,
+        hasServerUrl: !!appleConfig?.serverUrl,
+        hasUsername: !!appleConfig?.username,
+        hasPassword: !!appleConfig?.password
+      });
+      
       if (!appleConfig || !appleConfig.serverUrl || !appleConfig.username) {
         console.log('🍎 Apple Calendar not configured, skipping auto-sync');
+        console.log('🍎 To enable Apple Calendar sync, configure it in Settings → Calendar');
         return { 
           success: false, 
-          error: 'Apple Calendar not configured' 
+          error: 'Apple Calendar not configured. Please set up Apple Calendar in Settings → Calendar.' 
         };
       }
 
       // Attempt to sync to Apple Calendar
       console.log('🍎 Auto-syncing event to Apple Calendar...');
+      console.log('🍎 Event details:', {
+        title: event.title,
+        startDate: event.startDate,
+        endDate: event.endDate
+      });
+      
       const syncResult = await this.syncToAppleCalendar(event, userId);
       
       if (syncResult.success) {
         console.log('✅ Event auto-synced to Apple Calendar:', syncResult.externalEventId);
+        console.log('✅ Apple Calendar event URL:', syncResult.externalEventUrl);
       } else {
-        console.log('⚠️ Apple Calendar auto-sync failed (non-blocking):', syncResult.error);
+        console.error('❌ Apple Calendar auto-sync failed:', syncResult.error);
+        console.error('❌ This might be due to:');
+        console.error('   1. Invalid Apple Calendar credentials');
+        console.error('   2. CalDAV server connection issue');
+        console.error('   3. Network/firewall blocking CalDAV requests');
       }
 
       return syncResult;
     } catch (error) {
       console.error('❌ Error in auto-sync to Apple Calendar:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : 'Unknown error');
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Auto-sync failed'
