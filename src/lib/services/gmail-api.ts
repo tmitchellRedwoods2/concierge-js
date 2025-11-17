@@ -42,11 +42,19 @@ export class GmailAPIService {
   /**
    * Get OAuth2 authorization URL for Gmail
    */
-  static getAuthUrl(userId: string): string {
-    // Determine the base URL - remove trailing slash if present
-    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                  'http://localhost:3000';
+  static getAuthUrl(userId: string, requestUrl?: string): string {
+    // Determine the base URL - prefer request URL, then env vars, then localhost
+    let baseUrl: string;
+    
+    if (requestUrl) {
+      // Extract base URL from the request URL
+      const url = new URL(requestUrl);
+      baseUrl = `${url.protocol}//${url.host}`;
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                'http://localhost:3000';
+    }
     
     // Remove trailing slash
     baseUrl = baseUrl.replace(/\/$/, '');
@@ -54,7 +62,8 @@ export class GmailAPIService {
     const redirectUri = `${baseUrl}/api/email/oauth/gmail/callback`;
     
     console.log('🔗 Gmail OAuth redirect URI:', redirectUri);
-    console.log('🔗 Base URL (after cleanup):', baseUrl);
+    console.log('🔗 Base URL:', baseUrl);
+    console.log('🔗 Request URL:', requestUrl);
     console.log('🔗 NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
     console.log('🔗 VERCEL_URL:', process.env.VERCEL_URL);
     console.log('🔗 GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Missing');
