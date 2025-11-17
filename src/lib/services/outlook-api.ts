@@ -155,7 +155,7 @@ export class OutlookAPIService {
   /**
    * Fetch emails from Outlook
    */
-  async fetchEmails(lastMessageId?: string, maxResults: number = 10): Promise<PolledEmail[]> {
+  async fetchEmails(lastMessageId?: string, maxResults: number = 10, hoursBack: number = 24): Promise<PolledEmail[]> {
     try {
       if (!this.graphClient) {
         throw new Error('Graph client not initialized');

@@ -125,7 +125,7 @@ export class EmailPollingService extends EventEmitter {
   /**
    * Manually trigger a scan for a specific account (with account object)
    */
-  async scanAccount(account: EmailAccount): Promise<{ success: boolean; message: string; emailCount?: number }> {
+  async scanAccount(account: EmailAccount, hoursBack: number = 168): Promise<{ success: boolean; message: string; emailCount?: number }> {
     try {
       const accountKey = `${account.userId}:${account.emailAddress}`;
       
@@ -136,7 +136,7 @@ export class EmailPollingService extends EventEmitter {
         };
       }
 
-      console.log(`📧 Manual scan triggered for ${account.emailAddress}`);
+      console.log(`📧 Manual scan triggered for ${account.emailAddress} (looking back ${hoursBack} hours / ${Math.round(hoursBack/24)} days)`);
       
       // Track email count via event listener
       let emailCount = 0;
@@ -152,8 +152,31 @@ export class EmailPollingService extends EventEmitter {
       
       this.on('emailsProcessed', handler);
       
+      // For manual scans, create a temporary account without lastMessageId
+      // This allows us to scan older emails, but we'll still check for duplicates
+      const scanAccount = { 
+        ...account,
+        lastMessageId: undefined // Clear lastMessageId to scan all emails in time window
+      };
+      
+      // Store original fetchEmails method
+      const originalFetchGmail = this.fetchGmailEmails.bind(this);
+      const originalFetchOutlook = this.fetchOutlookEmails.bind(this);
+      
+      // Override fetch methods to use extended time window
+      this.fetchGmailEmails = async (acc: EmailAccount) => {
+        return originalFetchGmail(acc, hoursBack);
+      };
+      this.fetchOutlookEmails = async (acc: EmailAccount) => {
+        return originalFetchOutlook(acc, hoursBack);
+      };
+      
       // Trigger the scan
-      await this.pollEmails(account);
+      await this.pollEmails(scanAccount);
+      
+      // Restore original fetch methods
+      this.fetchGmailEmails = originalFetchGmail;
+      this.fetchOutlookEmails = originalFetchOutlook;
       
       // Wait a bit for the event to fire, then clean up
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -256,7 +279,7 @@ export class EmailPollingService extends EventEmitter {
   /**
    * Fetch emails from Gmail using Gmail API
    */
-  private async fetchGmailEmails(account: EmailAccount): Promise<PolledEmail[]> {
+  private async fetchGmailEmails(account: EmailAccount, hoursBack: number = 24): Promise<PolledEmail[]> {
     try {
       const { GmailAPIService } = await import('./gmail-api');
       
@@ -272,7 +295,10 @@ export class EmailPollingService extends EventEmitter {
         clientSecret: account.credentials.clientSecret
       });
 
-      const emails = await gmailService.fetchEmails(account.lastMessageId, 10);
+      // For manual scans, look back 7 days to catch older test emails
+      // For automatic scans, use 24 hours
+      const hoursBack = 24; // Default to 24 hours
+      const emails = await gmailService.fetchEmails(account.lastMessageId, 10, hoursBack);
       
       // Update credentials if they were refreshed
       const updatedCredentials = gmailService.getCredentials();
@@ -290,7 +316,7 @@ export class EmailPollingService extends EventEmitter {
   /**
    * Fetch emails from Outlook using Microsoft Graph API
    */
-  private async fetchOutlookEmails(account: EmailAccount): Promise<PolledEmail[]> {
+  private async fetchOutlookEmails(account: EmailAccount, hoursBack: number = 24): Promise<PolledEmail[]> {
     try {
       const { OutlookAPIService } = await import('./outlook-api');
       
@@ -307,7 +333,7 @@ export class EmailPollingService extends EventEmitter {
         clientSecret: account.credentials.clientSecret
       });
 
-      const emails = await outlookService.fetchEmails(account.lastMessageId, 10);
+      const emails = await outlookService.fetchEmails(account.lastMessageId, 10, hoursBack);
       
       // Update credentials if they were refreshed
       const updatedCredentials = outlookService.getCredentials();

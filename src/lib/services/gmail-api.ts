@@ -168,16 +168,24 @@ export class GmailAPIService {
   /**
    * Fetch emails from Gmail
    */
-  async fetchEmails(lastMessageId?: string, maxResults: number = 10): Promise<PolledEmail[]> {
+  async fetchEmails(lastMessageId?: string, maxResults: number = 10, hoursBack: number = 24): Promise<PolledEmail[]> {
     try {
       const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
 
       // Build query to fetch new messages
       let query = 'in:inbox';
+      // Use timestamp-based approach to find recent messages
+      // For manual scans, use a longer time window (default 24 hours)
+      const secondsBack = hoursBack * 3600;
+      const timestamp = Math.floor(Date.now() / 1000) - secondsBack;
+      query += ` after:${timestamp}`;
+      
+      // If lastMessageId is provided, we could use it, but for manual scans we ignore it
+      // to allow re-scanning of older emails
+      
+      console.log(`📧 Gmail query: ${query} (looking back ${hoursBack} hours / ${Math.round(hoursBack/24)} days)`);
       if (lastMessageId) {
-        // Use Gmail's search to find messages after a specific message ID
-        // Note: Gmail uses internal IDs, so we'll use a timestamp-based approach
-        query += ` after:${Math.floor(Date.now() / 1000) - 3600}`; // Last hour as fallback
+        console.log(`📧 Note: lastMessageId provided (${lastMessageId.substring(0, 20)}...), but using time-based query for broader scan`);
       }
 
       // List messages
