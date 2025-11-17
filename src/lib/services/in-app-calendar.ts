@@ -78,7 +78,15 @@ export class InAppCalendarService {
         .lean();
 
       console.log(`✅ Found ${events.length} in-app calendar events for user ${userId}`);
+      console.log('📅 Query used:', JSON.stringify(query, null, 2));
       console.log('📅 Event IDs:', events.map((e: any) => e._id));
+      console.log('📅 Event details:', events.map((e: any) => ({
+        id: e._id?.toString(),
+        title: e.title,
+        startDate: e.startDate,
+        source: e.source,
+        userId: e.userId
+      })));
       
       // Ensure proper serialization for frontend (convert ObjectId to string, dates to ISO strings)
       const serializedEvents = events.map((event: any) => ({
