@@ -220,14 +220,24 @@ export class EmailPollingService extends EventEmitter {
       console.log(`📧 Polling emails for ${account.emailAddress}...`);
       
       // Fetch new emails based on provider
-      const emails = await this.fetchEmails(account);
+      const emails = await this.fetchEmails(account, 24);
+      
+      console.log(`📧 Email fetch completed for ${account.emailAddress}: ${emails.length} email(s) found`);
       
       if (emails.length === 0) {
-        console.log(`📧 No new emails found for ${account.emailAddress}`);
+        console.log(`⚠️ No emails found for ${account.emailAddress}`);
+        console.log(`⚠️ This could mean:`);
+        console.log(`   1. No emails in inbox matching the query`);
+        console.log(`   2. All emails were already processed (check lastMessageId)`);
+        console.log(`   3. Gmail API query issue`);
+        console.log(`   4. Email provider authentication issue`);
         return;
       }
 
-      console.log(`📧 Found ${emails.length} new email(s) for ${account.emailAddress}`);
+      console.log(`✅ Found ${emails.length} email(s) to process for ${account.emailAddress}`);
+      emails.forEach((email, index) => {
+        console.log(`   ${index + 1}. Subject: "${email.subject}" from ${email.from} (ID: ${email.messageId.substring(0, 20)}...)`);
+      });
 
       // Process each email
       for (const email of emails) {
