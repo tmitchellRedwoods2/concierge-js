@@ -1,5 +1,6 @@
 'use client';
 
+// Email Scanning Settings Page
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Mail, Plus, Trash2, Play, Pause, RefreshCw, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
