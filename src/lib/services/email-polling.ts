@@ -108,6 +108,79 @@ export class EmailPollingService extends EventEmitter {
   }
 
   /**
+   * Manually trigger a scan for a specific account (public method)
+   */
+  async scanNow(userId: string, emailAddress: string): Promise<{ success: boolean; message: string; emailCount?: number }> {
+    const accountKey = `${userId}:${emailAddress}`;
+    
+    // We need to get the account details from the database
+    // For now, we'll need to pass the account object
+    // This method will be called from the API route which has access to the account
+    return {
+      success: false,
+      message: 'Account not found. Use scanAccount method with account object.'
+    };
+  }
+
+  /**
+   * Manually trigger a scan for a specific account (with account object)
+   */
+  async scanAccount(account: EmailAccount): Promise<{ success: boolean; message: string; emailCount?: number }> {
+    try {
+      const accountKey = `${account.userId}:${account.emailAddress}`;
+      
+      if (this.isPolling.get(accountKey)) {
+        return {
+          success: false,
+          message: 'Scan already in progress for this account'
+        };
+      }
+
+      console.log(`📧 Manual scan triggered for ${account.emailAddress}`);
+      
+      // Track email count via event listener
+      let emailCount = 0;
+      let resolved = false;
+      
+      const handler = (data: { account: EmailAccount; emailCount: number }) => {
+        if (data.account.emailAddress === account.emailAddress && !resolved) {
+          emailCount = data.emailCount;
+          resolved = true;
+          this.removeListener('emailsProcessed', handler);
+        }
+      };
+      
+      this.on('emailsProcessed', handler);
+      
+      // Trigger the scan
+      await this.pollEmails(account);
+      
+      // Wait a bit for the event to fire, then clean up
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (!resolved) {
+        this.removeListener('emailsProcessed', handler);
+        // If no event fired, assume no emails were found
+        emailCount = 0;
+      }
+      
+      return {
+        success: true,
+        message: emailCount > 0 
+          ? `Scan completed. Found ${emailCount} new email(s).`
+          : 'Scan completed. No new emails found.',
+        emailCount
+      };
+    } catch (error) {
+      console.error(`❌ Error in manual scan for ${account.emailAddress}:`, error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  }
+
+  /**
    * Poll emails from the account
    */
   private async pollEmails(account: EmailAccount): Promise<void> {

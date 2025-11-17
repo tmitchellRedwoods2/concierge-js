@@ -23,6 +23,7 @@ export default function EmailScanningPage() {
   const [adding, setAdding] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [showDebug, setShowDebug] = useState(false);
+  const [scanningAccount, setScanningAccount] = useState<string | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -115,6 +116,31 @@ export default function EmailScanningPage() {
     } catch (error) {
       console.error('Error deleting account:', error);
       alert('Failed to delete account');
+    }
+  };
+
+  const scanNow = async (accountId: string) => {
+    setScanningAccount(accountId);
+    try {
+      const response = await fetch('/api/email/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(data.message || 'Scan completed successfully!');
+        await loadAccounts(); // Refresh to update lastChecked time
+      } else {
+        alert(data.message || 'Failed to scan emails');
+      }
+    } catch (error) {
+      console.error('Error scanning emails:', error);
+      alert('Failed to scan emails');
+    } finally {
+      setScanningAccount(null);
     }
   };
 
@@ -448,6 +474,24 @@ export default function EmailScanningPage() {
                         </div>
 
                         <div className="flex items-center gap-2 ml-4">
+                          <button
+                            onClick={() => scanNow(account._id)}
+                            disabled={scanningAccount === account._id || !account.enabled}
+                            className={`p-2 rounded-md transition-colors ${
+                              scanningAccount === account._id
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : account.enabled
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                            title={account.enabled ? 'Scan now' : 'Enable account to scan'}
+                          >
+                            {scanningAccount === account._id ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-5 w-5" />
+                            )}
+                          </button>
                           <button
                             onClick={() => toggleAccount(account._id, account.enabled)}
                             className={`p-2 rounded-md transition-colors ${
