@@ -44,18 +44,37 @@ export async function POST(request: NextRequest) {
         // Provide more helpful error messages
         let errorMessage = result.error || 'Unknown error';
         
+        // Log the full error for debugging
+        console.error('❌ Apple Calendar test failed:', {
+          error: errorMessage,
+          serverUrl: serverUrl,
+          username: username,
+          calendarPath: calendarPath,
+          passwordLength: password?.length || 0
+        });
+        
         // Add helpful hints based on common errors
         if (errorMessage.includes('400')) {
           errorMessage += '\n\n💡 Tip: The calendar path might be incorrect. Try leaving it as "/calendars" to let the system discover the correct path automatically.';
-        } else if (errorMessage.includes('401') || errorMessage.includes('403')) {
+        } else if (errorMessage.includes('401') || errorMessage.includes('403') || errorMessage.includes('Authentication failed')) {
           errorMessage += '\n\n💡 Tip: Check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password.';
+          errorMessage += '\n\nCommon issues:';
+          errorMessage += '\n- Make sure you copied the entire App-Specific Password (no spaces)';
+          errorMessage += '\n- Verify the username is your full Apple ID email address';
+          errorMessage += '\n- Try generating a NEW App-Specific Password (old ones may have been revoked)';
         } else if (errorMessage.includes('404')) {
           errorMessage += '\n\n💡 Tip: The calendar path might not exist. Try "/calendars" or check your iCloud calendar settings.';
         }
         
         return NextResponse.json({
           success: false,
-          message: `Connection failed: ${errorMessage}`
+          message: `Connection failed: ${errorMessage}`,
+          debug: {
+            serverUrl,
+            username,
+            calendarPath,
+            passwordProvided: !!password
+          }
         });
       }
     } catch (error) {

@@ -278,9 +278,17 @@ END:VCALENDAR`;
 </D:propfind>`
         });
 
+        const propfindResponseText = await propfindResponse.text().catch(() => '');
         console.log('🔍 PROPFIND response status:', propfindResponse.status, propfindResponse.statusText);
+        console.log('🔍 PROPFIND response body:', propfindResponseText.substring(0, 500));
         
         if (propfindResponse.status === 401 || propfindResponse.status === 403) {
+          const wwwAuth = propfindResponse.headers.get('WWW-Authenticate');
+          console.error('❌ PROPFIND authentication failed:', {
+            status: propfindResponse.status,
+            wwwAuthenticate: wwwAuth,
+            responseBody: propfindResponseText.substring(0, 200)
+          });
           return {
             success: false,
             error: 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.'
@@ -297,8 +305,15 @@ END:VCALENDAR`;
           }
         } else if (!propfindResponse.ok && propfindResponse.status === 400) {
           // 400 might indicate authentication issue or wrong path
-          const errorText = await propfindResponse.text().catch(() => '');
-          console.error('❌ PROPFIND 400 error:', errorText.substring(0, 200));
+          console.error('❌ PROPFIND 400 error:', propfindResponseText.substring(0, 500));
+          // Check if it's actually an auth error
+          const lowerErrorText = propfindResponseText.toLowerCase();
+          if (lowerErrorText.includes('auth') || lowerErrorText.includes('unauthorized') || lowerErrorText.includes('credential')) {
+            return {
+              success: false,
+              error: 'Authentication failed (400 Bad Request). Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.'
+            };
+          }
           // Continue to try REPORT anyway, but we'll handle the error there
         }
       } catch (propfindError) {
