@@ -25,6 +25,15 @@ export class AppleCalendarService {
     this.config = config;
   }
 
+  /**
+   * Get cleaned credentials (trimmed, no spaces in password)
+   */
+  private getCleanedCredentials(): { username: string; password: string } {
+    const username = (this.config.username || '').trim();
+    const password = (this.config.password || '').trim().replace(/\s/g, '');
+    return { username, password };
+  }
+
   async createEvent(event: any, userId: string): Promise<{ success: boolean; eventId?: string; eventUrl?: string; error?: string }> {
     try {
       console.log('🍎 Creating Apple Calendar event:', event.title);
@@ -101,13 +110,14 @@ END:VCALENDAR`;
 
   private async uploadEventToCalDAV(eventData: string, uid: string): Promise<string | null> {
     try {
+      const { username, password } = this.getCleanedCredentials();
       const eventUrl = `${this.config.serverUrl}${this.config.calendarPath}/${uid}.ics`;
       
       const response = await fetch(eventUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'text/calendar; charset=utf-8',
-          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+          'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
           'User-Agent': 'Concierge-AI-Calendar/1.0'
         },
         body: eventData
@@ -136,8 +146,39 @@ END:VCALENDAR`;
       console.log('🔐 Password length:', this.config.password?.length || 0);
       console.log('🔐 Password starts with:', this.config.password?.substring(0, 4) || 'N/A');
       
-      const authHeader = `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`;
+      // Verify credentials are present and properly formatted
+      if (!this.config.password || this.config.password.trim().length === 0) {
+        console.error('❌ Password is empty or missing');
+        return {
+          success: false,
+          error: 'Password is missing. Please enter your App-Specific Password.'
+        };
+      }
+      
+      if (!this.config.username || this.config.username.trim().length === 0) {
+        console.error('❌ Username is empty or missing');
+        return {
+          success: false,
+          error: 'Username is missing. Please enter your Apple ID email address.'
+        };
+      }
+      
+      // Get cleaned credentials
+      const { username: cleanUsername, password: cleanPassword } = this.getCleanedCredentials();
+      
+      console.log('🔐 Cleaned username:', cleanUsername);
+      console.log('🔐 Cleaned password length:', cleanPassword.length);
+      console.log('🔐 Password format check:', {
+        hasDashes: cleanPassword.includes('-'),
+        hasSpaces: cleanPassword.includes(' '),
+        length: cleanPassword.length,
+        first4Chars: cleanPassword.substring(0, 4),
+        last4Chars: cleanPassword.substring(cleanPassword.length - 4)
+      });
+      
+      const authHeader = `Basic ${Buffer.from(`${cleanUsername}:${cleanPassword}`).toString('base64')}`;
       console.log('🔐 Auth header length:', authHeader.length);
+      console.log('🔐 Auth header preview:', authHeader.substring(0, 20) + '...');
       
       const response = await fetch(testUrl, {
         method: 'PROPFIND',
@@ -163,26 +204,46 @@ END:VCALENDAR`;
       if (response.status === 401 || response.status === 403) {
         // Check if there's a WWW-Authenticate header that might give us more info
         const wwwAuth = response.headers.get('WWW-Authenticate');
-        console.log('🔐 WWW-Authenticate header:', wwwAuth);
+        console.error('❌ Authentication failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          wwwAuthenticate: wwwAuth,
+          responseBody: responseText.substring(0, 500),
+          username: cleanUsername,
+          passwordLength: cleanPassword.length,
+          serverUrl: this.config.serverUrl
+        });
         
         let errorMsg = 'Authentication failed. ';
         
         // Check for common issues
-        if (this.config.password?.includes(' ')) {
+        const originalPassword = this.config.password?.trim() || '';
+        if (originalPassword.includes(' ')) {
           errorMsg += 'The password appears to contain spaces. App-Specific Passwords should not have spaces. ';
         }
         
-        if (this.config.password && this.config.password.length < 16) {
-          errorMsg += 'The password seems too short. App-Specific Passwords are typically 16+ characters. ';
+        if (cleanPassword.length < 16) {
+          errorMsg += `The password seems too short (${cleanPassword.length} characters). App-Specific Passwords are typically 16+ characters. `;
         }
         
-        errorMsg += 'Please verify:\n';
+        // Check if username looks like an email
+        if (!cleanUsername.includes('@')) {
+          errorMsg += 'The username does not appear to be an email address. ';
+        }
+        
+        errorMsg += '\n\nPlease verify:\n';
         errorMsg += '1. You are using an App-Specific Password (not your regular Apple ID password)\n';
-        errorMsg += '2. The App-Specific Password was copied correctly (no extra spaces)\n';
-        errorMsg += '3. The username is your full Apple ID email address\n';
-        errorMsg += '4. The App-Specific Password hasn\'t been revoked or expired\n';
-        errorMsg += '\nTo generate a new App-Specific Password:\n';
-        errorMsg += 'Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords';
+        errorMsg += '2. The App-Specific Password was copied correctly (no extra spaces before or after)\n';
+        errorMsg += '3. The username is your full Apple ID email address (the one you use to sign in to iCloud)\n';
+        errorMsg += '4. The App-Specific Password hasn\'t been revoked (check appleid.apple.com)\n';
+        errorMsg += '5. If using a non-iCloud email (like @yahoo.com, @gmail.com), make sure it\'s your Apple ID email\n';
+        errorMsg += '\nTo generate a NEW App-Specific Password:\n';
+        errorMsg += '1. Go to appleid.apple.com\n';
+        errorMsg += '2. Sign in with your Apple ID\n';
+        errorMsg += '3. Go to Sign-In and Security → App-Specific Passwords\n';
+        errorMsg += '4. Click "Generate an app-specific password"\n';
+        errorMsg += '5. Copy the ENTIRE password (format: xxxx-xxxx-xxxx-xxxx)\n';
+        errorMsg += '6. Paste it here (the system will automatically remove any spaces)';
         
         return {
           success: false,
@@ -259,6 +320,9 @@ END:VCALENDAR`;
       
       console.log('🍎 Using calendar URL:', calendarUrl);
       
+      // Get cleaned credentials for all requests
+      const { username: cleanUsername, password: cleanPassword } = this.getCleanedCredentials();
+      
       // First, try a simple PROPFIND to verify the calendar exists
       try {
         const propfindResponse = await fetch(calendarUrl, {
@@ -266,7 +330,7 @@ END:VCALENDAR`;
           headers: {
             'Content-Type': 'application/xml',
             'Depth': '0',
-            'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+            'Authorization': `Basic ${Buffer.from(`${cleanUsername}:${cleanPassword}`).toString('base64')}`,
             'User-Agent': 'Concierge-AI-Calendar/1.0'
           },
           body: `<?xml version="1.0" encoding="utf-8"?>
@@ -326,7 +390,7 @@ END:VCALENDAR`;
         headers: {
           'Content-Type': 'application/xml; charset=utf-8',
           'Depth': '1',
-          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+          'Authorization': `Basic ${Buffer.from(`${cleanUsername}:${cleanPassword}`).toString('base64')}`,
           'User-Agent': 'Concierge-AI-Calendar/1.0'
         },
         body: this.createCalDAVQuery(startDate, endDate)
@@ -396,6 +460,9 @@ END:VCALENDAR`;
         `/`
       ];
 
+      // Get cleaned credentials for discovery
+      const { username, password } = this.getCleanedCredentials();
+      
       // First, try PROPFIND on /calendars/ to discover available calendars
       try {
         const discoveryUrl = `${this.config.serverUrl}/calendars/`;
@@ -406,7 +473,7 @@ END:VCALENDAR`;
           headers: {
             'Content-Type': 'application/xml',
             'Depth': '1',
-            'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+            'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
             'User-Agent': 'Concierge-AI-Calendar/1.0'
           },
           body: `<?xml version="1.0" encoding="utf-8"?>
@@ -463,7 +530,7 @@ END:VCALENDAR`;
           const testResponse = await fetch(testUrl, {
             method: 'OPTIONS',
             headers: {
-              'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+              'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
               'User-Agent': 'Concierge-AI-Calendar/1.0'
             }
           });
@@ -526,6 +593,7 @@ END:VCALENDAR`;
 
   async updateEvent(eventId: string, event: any): Promise<{ success: boolean; error?: string }> {
     try {
+      const { username, password } = this.getCleanedCredentials();
       console.log('🍎 Updating Apple Calendar event:', eventId);
       
       const caldavEvent = this.createCalDAVEvent(event, eventId);
@@ -535,7 +603,7 @@ END:VCALENDAR`;
         method: 'PUT',
         headers: {
           'Content-Type': 'text/calendar; charset=utf-8',
-          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+          'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
           'User-Agent': 'Concierge-AI-Calendar/1.0'
         },
         body: caldavEvent
@@ -561,6 +629,7 @@ END:VCALENDAR`;
 
   async deleteEvent(eventId: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const { username, password } = this.getCleanedCredentials();
       console.log('🍎 Deleting Apple Calendar event:', eventId);
       
       const eventUrl = `${this.config.serverUrl}${this.config.calendarPath}/${eventId}.ics`;
@@ -568,7 +637,7 @@ END:VCALENDAR`;
       const response = await fetch(eventUrl, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+          'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
           'User-Agent': 'Concierge-AI-Calendar/1.0'
         }
       });
