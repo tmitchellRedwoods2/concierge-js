@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
       // First, test authentication with a simple request
       // This will verify credentials work before trying to fetch events
-      const { username: cleanUsername, password: cleanPassword } = (appleCalendarService as any).getCleanedCredentials();
+      const { username: cleanUsername, password: cleanPassword } = appleCalendarService.getCleanedCredentials();
       
       // Test authentication with a simple PROPFIND to the root
       const authTestUrl = `${serverUrl}/`;

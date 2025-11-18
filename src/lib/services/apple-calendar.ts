@@ -28,7 +28,7 @@ export class AppleCalendarService {
   /**
    * Get cleaned credentials (trimmed, no spaces in password)
    */
-  private getCleanedCredentials(): { username: string; password: string } {
+  public getCleanedCredentials(): { username: string; password: string } {
     const username = (this.config.username || '').trim();
     const password = (this.config.password || '').trim().replace(/\s/g, '');
     return { username, password };
