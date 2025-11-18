@@ -128,38 +128,89 @@ END:VCALENDAR`;
 
   private async testAuthentication(): Promise<{ success: boolean; error?: string }> {
     try {
-      // Test authentication with a simple OPTIONS request to the root
+      // Test authentication with a simple PROPFIND request to the root
+      // This is more reliable than OPTIONS for CalDAV servers
       const testUrl = `${this.config.serverUrl}/`;
       console.log('🔐 Testing authentication with:', testUrl);
+      console.log('🔐 Username:', this.config.username);
+      console.log('🔐 Password length:', this.config.password?.length || 0);
+      console.log('🔐 Password starts with:', this.config.password?.substring(0, 4) || 'N/A');
+      
+      const authHeader = `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`;
+      console.log('🔐 Auth header length:', authHeader.length);
       
       const response = await fetch(testUrl, {
-        method: 'OPTIONS',
+        method: 'PROPFIND',
         headers: {
-          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+          'Content-Type': 'application/xml',
+          'Depth': '0',
+          'Authorization': authHeader,
           'User-Agent': 'Concierge-AI-Calendar/1.0'
-        }
+        },
+        body: `<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:current-user-principal/>
+  </D:prop>
+</D:propfind>`
       });
       
+      const responseText = await response.text().catch(() => '');
       console.log('🔐 Authentication test response:', response.status, response.statusText);
+      console.log('🔐 Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('🔐 Response body preview:', responseText.substring(0, 500));
       
       if (response.status === 401 || response.status === 403) {
+        // Check if there's a WWW-Authenticate header that might give us more info
+        const wwwAuth = response.headers.get('WWW-Authenticate');
+        console.log('🔐 WWW-Authenticate header:', wwwAuth);
+        
+        let errorMsg = 'Authentication failed. ';
+        
+        // Check for common issues
+        if (this.config.password?.includes(' ')) {
+          errorMsg += 'The password appears to contain spaces. App-Specific Passwords should not have spaces. ';
+        }
+        
+        if (this.config.password && this.config.password.length < 16) {
+          errorMsg += 'The password seems too short. App-Specific Passwords are typically 16+ characters. ';
+        }
+        
+        errorMsg += 'Please verify:\n';
+        errorMsg += '1. You are using an App-Specific Password (not your regular Apple ID password)\n';
+        errorMsg += '2. The App-Specific Password was copied correctly (no extra spaces)\n';
+        errorMsg += '3. The username is your full Apple ID email address\n';
+        errorMsg += '4. The App-Specific Password hasn\'t been revoked or expired\n';
+        errorMsg += '\nTo generate a new App-Specific Password:\n';
+        errorMsg += 'Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords';
+        
         return {
           success: false,
-          error: 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.'
+          error: errorMsg
         };
       }
       
-      // 200, 204, or 405 (Method Not Allowed) are all acceptable - they mean the server responded
-      if (response.ok || response.status === 405) {
+      // 200, 207 (Multi-Status), or 405 (Method Not Allowed) are all acceptable
+      if (response.ok || response.status === 207 || response.status === 405) {
+        console.log('✅ Authentication test passed');
         return { success: true };
       }
       
-      // For other status codes, we'll still try to proceed
+      // For other status codes, log them but still try to proceed
+      console.log('⚠️ Authentication test returned unexpected status:', response.status);
       return { success: true };
     } catch (error) {
       console.error('❌ Authentication test error:', error);
-      // If the test fails, we'll still try to proceed with the actual request
-      // The actual request will provide a better error message
+      // If the test fails with a network error, provide helpful info
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          return {
+            success: false,
+            error: `Network error: ${error.message}. Please check your internet connection and that the server URL (${this.config.serverUrl}) is correct.`
+          };
+        }
+      }
+      // Otherwise, we'll still try to proceed with the actual request
       return { success: true };
     }
   }

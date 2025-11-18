@@ -123,29 +123,62 @@ export default function AppleCalendarSetupPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password
+                    App-Specific Password
                   </label>
                   <input
                     type="password"
                     value={config.password}
-                    onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Your Apple ID password"
+                    onChange={(e) => {
+                      // Remove any spaces that might have been accidentally added
+                      const cleanedPassword = e.target.value.replace(/\s/g, '');
+                      setConfig({ ...config, password: cleanedPassword });
+                    }}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                    placeholder="xxxx-xxxx-xxxx-xxxx"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    <strong>Important:</strong> You must use an App-Specific Password, not your regular Apple ID password. 
-                    Regular passwords will not work with CalDAV.
-                  </p>
-                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-xs text-yellow-800 font-medium mb-1">How to create an App-Specific Password:</p>
-                    <ol className="text-xs text-yellow-700 list-decimal list-inside space-y-1">
-                      <li>Go to <a href="https://appleid.apple.com" target="_blank" rel="noopener noreferrer" className="underline">appleid.apple.com</a></li>
-                      <li>Sign in with your Apple ID</li>
-                      <li>Go to <strong>Sign-In and Security</strong> → <strong>App-Specific Passwords</strong></li>
-                      <li>Click <strong>Generate an app-specific password</strong></li>
-                      <li>Enter a label (e.g., "Concierge Calendar") and click <strong>Create</strong></li>
-                      <li>Copy the generated password and paste it here</li>
-                    </ol>
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-gray-500">
+                      <strong>Important:</strong> You must use an App-Specific Password, not your regular Apple ID password. 
+                      Regular passwords will not work with CalDAV.
+                    </p>
+                    {config.password && (
+                      <div className={`p-2 rounded text-xs ${
+                        config.password.includes(' ') 
+                          ? 'bg-red-50 text-red-800 border border-red-200' 
+                          : config.password.length < 16
+                          ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+                          : 'bg-green-50 text-green-800 border border-green-200'
+                      }`}>
+                        {config.password.includes(' ') ? (
+                          <p>⚠️ Warning: Password contains spaces. App-Specific Passwords should not have spaces.</p>
+                        ) : config.password.length < 16 ? (
+                          <p>⚠️ Warning: Password seems too short ({config.password.length} chars). App-Specific Passwords are typically 16+ characters.</p>
+                        ) : (
+                          <p>✅ Password format looks good ({config.password.length} characters, no spaces)</p>
+                        )}
+                      </div>
+                    )}
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-xs text-yellow-800 font-medium mb-1">How to create an App-Specific Password:</p>
+                      <ol className="text-xs text-yellow-700 list-decimal list-inside space-y-1">
+                        <li>Go to <a href="https://appleid.apple.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">appleid.apple.com</a></li>
+                        <li>Sign in with your Apple ID</li>
+                        <li>Go to <strong>Sign-In and Security</strong> → <strong>App-Specific Passwords</strong></li>
+                        <li>Click <strong>Generate an app-specific password</strong></li>
+                        <li>Enter a label (e.g., "Concierge Calendar") and click <strong>Create</strong></li>
+                        <li>Copy the generated password (format: xxxx-xxxx-xxxx-xxxx) and paste it here</li>
+                        <li><strong>Important:</strong> Copy the entire password without any spaces</li>
+                      </ol>
+                    </div>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs text-blue-800 font-medium mb-1">Troubleshooting:</p>
+                      <ul className="text-xs text-blue-700 list-disc list-inside space-y-1">
+                        <li>Make sure you're using your <strong>full Apple ID email address</strong> as the username</li>
+                        <li>If you previously generated a password, try generating a <strong>new one</strong> (old ones may have been revoked)</li>
+                        <li>Make sure there are <strong>no spaces</strong> before or after the password when pasting</li>
+                        <li>App-Specific Passwords are case-sensitive - copy exactly as shown</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
 
