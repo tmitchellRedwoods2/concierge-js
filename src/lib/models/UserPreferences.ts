@@ -51,6 +51,12 @@ const UserPreferencesSchema = new Schema<IUserPreferences>({
     },
     externalCalendarId: { type: String },
     externalCalendarName: { type: String },
+    appleCalendarConfig: {
+      serverUrl: { type: String },
+      username: { type: String },
+      password: { type: String },
+      calendarPath: { type: String }
+    },
     syncSettings: {
       autoSync: { type: Boolean, default: true },
       syncInterval: { type: Number, default: 15 }, // 15 minutes

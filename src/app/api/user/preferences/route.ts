@@ -36,6 +36,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ calendarPreferences: defaultPreferences.calendarPreferences });
     }
 
+    // Log what we're retrieving (without exposing password)
+    console.log('📖 Retrieved preferences:', {
+      userId: session.user.id,
+      hasAppleConfig: !!preferences.calendarPreferences?.appleCalendarConfig,
+      appleConfigKeys: preferences.calendarPreferences?.appleCalendarConfig ? Object.keys(preferences.calendarPreferences.appleCalendarConfig) : [],
+      appleUsername: preferences.calendarPreferences?.appleCalendarConfig?.username,
+      applePasswordLength: preferences.calendarPreferences?.appleCalendarConfig?.password?.length || 0,
+      appleServerUrl: preferences.calendarPreferences?.appleCalendarConfig?.serverUrl
+    });
+
     return NextResponse.json({ calendarPreferences: preferences.calendarPreferences });
 
   } catch (error) {
@@ -59,22 +69,37 @@ export async function PUT(request: NextRequest) {
 
     await connectDB();
     
+    // Log what we're trying to save (without exposing password)
+    console.log('💾 Saving calendar preferences:', {
+      userId: session.user.id,
+      primaryProvider: calendarPreferences?.primaryProvider,
+      syncEnabled: calendarPreferences?.syncEnabled,
+      hasAppleConfig: !!calendarPreferences?.appleCalendarConfig,
+      appleConfigKeys: calendarPreferences?.appleCalendarConfig ? Object.keys(calendarPreferences.appleCalendarConfig) : [],
+      appleUsername: calendarPreferences?.appleCalendarConfig?.username,
+      applePasswordLength: calendarPreferences?.appleCalendarConfig?.password?.length || 0,
+      appleServerUrl: calendarPreferences?.appleCalendarConfig?.serverUrl,
+      appleCalendarPath: calendarPreferences?.appleCalendarConfig?.calendarPath
+    });
+
     const preferences = await UserPreferences.findOneAndUpdate(
       { userId: session.user.id },
       { 
         $set: { 
-          calendarPreferences: {
-            ...calendarPreferences,
-            syncSettings: {
-              ...calendarPreferences.syncSettings
-            }
-          }
+          'calendarPreferences': calendarPreferences
         }
       },
       { new: true, upsert: true }
     );
 
-    console.log('✅ User preferences updated:', preferences._id);
+    // Log what was actually saved
+    console.log('✅ User preferences updated:', {
+      _id: preferences._id,
+      hasAppleConfig: !!preferences.calendarPreferences?.appleCalendarConfig,
+      appleConfigKeys: preferences.calendarPreferences?.appleCalendarConfig ? Object.keys(preferences.calendarPreferences.appleCalendarConfig) : [],
+      appleUsername: preferences.calendarPreferences?.appleCalendarConfig?.username,
+      applePasswordLength: preferences.calendarPreferences?.appleCalendarConfig?.password?.length || 0
+    });
     
     return NextResponse.json({ 
       success: true, 
