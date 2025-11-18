@@ -28,7 +28,36 @@ export async function POST(request: NextRequest) {
         calendarPath
       });
 
-      // Try to fetch events to test the connection
+      // First, test authentication with a simple request
+      // This will verify credentials work before trying to fetch events
+      const { username: cleanUsername, password: cleanPassword } = (appleCalendarService as any).getCleanedCredentials();
+      
+      // Test authentication with a simple PROPFIND to the root
+      const authTestUrl = `${serverUrl}/`;
+      const authResponse = await fetch(authTestUrl, {
+        method: 'PROPFIND',
+        headers: {
+          'Content-Type': 'application/xml',
+          'Depth': '0',
+          'Authorization': `Basic ${Buffer.from(`${cleanUsername}:${cleanPassword}`).toString('base64')}`,
+          'User-Agent': 'Concierge-AI-Calendar/1.0'
+        },
+        body: `<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:current-user-principal/>
+  </D:prop>
+</D:propfind>`
+      });
+
+      if (authResponse.status === 401 || authResponse.status === 403) {
+        return NextResponse.json({
+          success: false,
+          message: 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.'
+        });
+      }
+
+      // Authentication succeeded! Now try to fetch events to verify calendar access
       // Use a small date range for testing (today to 7 days from now)
       const today = new Date();
       const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -41,6 +70,19 @@ export async function POST(request: NextRequest) {
           message: `Apple Calendar connection successful! Found ${eventCount} event(s) in the next 7 days. You can now sync events.`
         });
       } else {
+        // Authentication worked, but fetching events failed
+        // This could be a calendar path issue, but credentials are correct
+        // Check if it's a 400 error (path/query issue) vs other errors
+        const isPathIssue = result.error?.includes('400') || result.error?.includes('Bad Request');
+        
+        if (isPathIssue) {
+          // Credentials are correct, but calendar path might need adjustment
+          return NextResponse.json({
+            success: true, // Consider this a success since auth worked
+            message: `Apple Calendar credentials verified successfully! However, there was an issue accessing your calendar events (${result.error}). This may be due to the calendar path. Your credentials are saved and you can try syncing events - the system will attempt to discover the correct calendar path automatically.`,
+            warning: result.error
+          });
+        } else {
         // Provide more helpful error messages
         let errorMessage = result.error || 'Unknown error';
         

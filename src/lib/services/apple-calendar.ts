@@ -385,6 +385,10 @@ END:VCALENDAR`;
         // Continue with REPORT attempt
       }
 
+      // Try REPORT query to fetch events
+      const caldavQuery = this.createCalDAVQuery(startDate, endDate);
+      console.log('📋 CalDAV Query:', caldavQuery.substring(0, 300));
+      
       const response = await fetch(calendarUrl, {
         method: 'REPORT',
         headers: {
@@ -393,11 +397,14 @@ END:VCALENDAR`;
           'Authorization': `Basic ${Buffer.from(`${cleanUsername}:${cleanPassword}`).toString('base64')}`,
           'User-Agent': 'Concierge-AI-Calendar/1.0'
         },
-        body: this.createCalDAVQuery(startDate, endDate)
+        body: caldavQuery
       });
 
-      if (response.ok) {
-        const events = await this.parseCalDAVResponse(await response.text());
+      const responseText = await response.text().catch(() => '');
+      
+      if (response.ok || response.status === 207) {
+        // 207 Multi-Status is also a valid response for CalDAV
+        const events = await this.parseCalDAVResponse(responseText);
         console.log(`✅ Found ${events.length} Apple Calendar events`);
         
         return {
@@ -405,38 +412,79 @@ END:VCALENDAR`;
           events: events
         };
       } else {
-        const errorText = await response.text().catch(() => '');
         console.error('❌ CalDAV REPORT error response:', response.status, response.statusText);
-        console.error('❌ Error details:', errorText.substring(0, 500));
+        console.error('❌ Error details:', responseText.substring(0, 500));
         console.error('❌ Calendar URL used:', calendarUrl);
+        console.error('❌ Query sent:', caldavQuery.substring(0, 300));
         
-        // Provide more specific error messages
-        let errorMessage = `Failed to fetch events: ${response.status} ${response.statusText}`;
-        
+        // For 400 errors, try a simpler query or different approach
         if (response.status === 400) {
-          // 400 could be authentication, path, or query format issue
-          // Check if error text mentions authentication
-          const lowerErrorText = errorText.toLowerCase();
+          console.log('🔄 Trying alternative calendar discovery for 400 error...');
+          
+          // Try to discover the calendar URL again with a different approach
+          const discoveredUrl = await this.discoverCalendarUrl();
+          if (discoveredUrl && discoveredUrl !== calendarUrl) {
+            console.log('🔄 Retrying with discovered URL:', discoveredUrl);
+            
+            // Try again with the discovered URL
+            const retryResponse = await fetch(discoveredUrl, {
+              method: 'REPORT',
+              headers: {
+                'Content-Type': 'application/xml; charset=utf-8',
+                'Depth': '1',
+                'Authorization': `Basic ${Buffer.from(`${cleanUsername}:${cleanPassword}`).toString('base64')}`,
+                'User-Agent': 'Concierge-AI-Calendar/1.0'
+              },
+              body: caldavQuery
+            });
+            
+            if (retryResponse.ok || retryResponse.status === 207) {
+              const retryText = await retryResponse.text().catch(() => '');
+              const events = await this.parseCalDAVResponse(retryText);
+              console.log(`✅ Found ${events.length} Apple Calendar events with discovered URL`);
+              
+              return {
+                success: true,
+                events: events
+              };
+            }
+          }
+          
+          // If still failing, provide helpful error message
+          const lowerErrorText = responseText.toLowerCase();
+          let errorMessage = `Failed to fetch events: ${response.status} ${response.statusText}`;
+          
           if (lowerErrorText.includes('auth') || lowerErrorText.includes('unauthorized') || lowerErrorText.includes('credential')) {
             errorMessage = 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.';
           } else {
             errorMessage += '. The calendar path may be incorrect or the CalDAV query format is invalid.';
             errorMessage += '\n\n💡 Tip: Try leaving the calendar path as "/calendars" to let the system discover the correct path automatically.';
+            errorMessage += '\n\nIf the issue persists, the calendar may need to be accessed via a different path. Check your iCloud calendar settings.';
           }
+          
+          if (responseText && !errorMessage.includes(responseText.substring(0, 100))) {
+            errorMessage += `\n\nDetails: ${responseText.substring(0, 200)}`;
+          }
+          
+          return {
+            success: false,
+            error: errorMessage
+          };
         } else if (response.status === 401 || response.status === 403) {
-          errorMessage = 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.';
+          return {
+            success: false,
+            error: 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.'
+          };
         } else if (response.status === 404) {
-          errorMessage += '. Calendar not found at the specified path.';
-          errorMessage += '\n\n💡 Tip: Try leaving the calendar path as "/calendars" to let the system discover the correct path automatically.';
-        }
-        
-        if (errorText && !errorMessage.includes(errorText.substring(0, 100))) {
-          errorMessage += `\n\nDetails: ${errorText.substring(0, 200)}`;
+          return {
+            success: false,
+            error: `Calendar not found at the specified path: ${calendarUrl}\n\n💡 Tip: Try leaving the calendar path as "/calendars" to let the system discover the correct path automatically.`
+          };
         }
         
         return {
           success: false,
-          error: errorMessage
+          error: `Failed to fetch events: ${response.status} ${response.statusText}. ${responseText.substring(0, 200)}`
         };
       }
     } catch (error) {
