@@ -159,24 +159,8 @@ export class EmailPollingService extends EventEmitter {
         lastMessageId: undefined // Clear lastMessageId to scan all emails in time window
       };
       
-      // Store original fetchEmails method
-      const originalFetchGmail = this.fetchGmailEmails.bind(this);
-      const originalFetchOutlook = this.fetchOutlookEmails.bind(this);
-      
-      // Override fetch methods to use extended time window
-      this.fetchGmailEmails = async (acc: EmailAccount) => {
-        return originalFetchGmail(acc, hoursBack);
-      };
-      this.fetchOutlookEmails = async (acc: EmailAccount) => {
-        return originalFetchOutlook(acc, hoursBack);
-      };
-      
-      // Trigger the scan
-      await this.pollEmails(scanAccount);
-      
-      // Restore original fetch methods
-      this.fetchGmailEmails = originalFetchGmail;
-      this.fetchOutlookEmails = originalFetchOutlook;
+      // Trigger the scan with extended time window
+      await this.pollEmails(scanAccount, hoursBack);
       
       // Wait a bit for the event to fire, then clean up
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -206,7 +190,7 @@ export class EmailPollingService extends EventEmitter {
   /**
    * Poll emails from the account
    */
-  private async pollEmails(account: EmailAccount): Promise<void> {
+  private async pollEmails(account: EmailAccount, hoursBack: number = 24): Promise<void> {
     const accountKey = `${account.userId}:${account.emailAddress}`;
     
     if (this.isPolling.get(accountKey)) {
@@ -217,10 +201,10 @@ export class EmailPollingService extends EventEmitter {
     this.isPolling.set(accountKey, true);
 
     try {
-      console.log(`📧 Polling emails for ${account.emailAddress}...`);
+      console.log(`📧 Polling emails for ${account.emailAddress} (looking back ${hoursBack} hours)...`);
       
       // Fetch new emails based on provider
-      const emails = await this.fetchEmails(account, 24);
+      const emails = await this.fetchEmails(account, hoursBack);
       
       console.log(`📧 Email fetch completed for ${account.emailAddress}: ${emails.length} email(s) found`);
       
@@ -272,12 +256,12 @@ export class EmailPollingService extends EventEmitter {
   /**
    * Fetch emails from the account based on provider
    */
-  private async fetchEmails(account: EmailAccount): Promise<PolledEmail[]> {
+  private async fetchEmails(account: EmailAccount, hoursBack: number = 24): Promise<PolledEmail[]> {
     switch (account.provider) {
       case 'gmail':
-        return await this.fetchGmailEmails(account);
+        return await this.fetchGmailEmails(account, hoursBack);
       case 'outlook':
-        return await this.fetchOutlookEmails(account);
+        return await this.fetchOutlookEmails(account, hoursBack);
       case 'imap':
       case 'exchange':
         return await this.fetchIMAPEmails(account);
@@ -305,9 +289,7 @@ export class EmailPollingService extends EventEmitter {
         clientSecret: account.credentials.clientSecret
       });
 
-      // For manual scans, look back 7 days to catch older test emails
-      // For automatic scans, use 24 hours
-      const hoursBack = 24; // Default to 24 hours
+      // Use the hoursBack parameter passed to this method
       const emails = await gmailService.fetchEmails(account.lastMessageId, 10, hoursBack);
       
       // Update credentials if they were refreshed
