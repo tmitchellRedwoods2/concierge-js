@@ -39,15 +39,25 @@ export class EmailParserService {
     );
     
     if (!hasAppointmentKeyword) {
+      console.log(`⚠️ Email parser: No appointment keywords found in email "${email.subject}"`);
+      console.log(`   Looking for keywords: ${appointmentKeywords.join(', ')}`);
+      console.log(`   Email text preview: ${text.substring(0, 200)}...`);
       return null;
     }
+    
+    console.log(`✅ Email parser: Found appointment keyword in email "${email.subject}"`);
 
     // Extract date and time
+    console.log(`🔍 Email parser: Attempting to extract date from email...`);
     const dateTime = this.extractDateTime(email.subject, email.body);
     if (!dateTime.startDate) {
-      console.log('⚠️ Could not extract date from email');
+      console.log('⚠️ Email parser: Could not extract date from email');
+      console.log(`   Subject: ${email.subject}`);
+      console.log(`   Body preview: ${email.body.substring(0, 300)}...`);
       return null;
     }
+    
+    console.log(`✅ Email parser: Extracted date: ${dateTime.startDate.toISOString()}`);
 
     // Extract doctor/provider name
     const doctorName = this.extractDoctorName(email.from, email.subject, email.body);

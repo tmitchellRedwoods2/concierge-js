@@ -357,8 +357,11 @@ export class EmailPollingService extends EventEmitter {
   private async processEmail(email: PolledEmail, userId: string): Promise<void> {
     try {
       console.log(`📧 Processing email: ${email.subject} from ${email.from}`);
+      console.log(`   Email body length: ${email.body.length} characters`);
+      console.log(`   Email body preview: ${email.body.substring(0, 300)}...`);
 
       // Parse appointment details from email
+      console.log(`🔍 Attempting to parse appointment from email...`);
       const parsedAppointment = emailParserService.parseAppointmentEmail({
         from: email.from,
         subject: email.subject,
@@ -367,9 +370,14 @@ export class EmailPollingService extends EventEmitter {
 
       if (!parsedAppointment) {
         console.log(`⚠️ Email does not contain appointment information: "${email.subject}"`);
-        console.log(`   Email body preview: ${email.body.substring(0, 200)}...`);
+        console.log(`   This could mean:`);
+        console.log(`   - Email doesn't contain appointment keywords (appointment, schedule, visit, etc.)`);
+        console.log(`   - Email doesn't contain a parseable date`);
+        console.log(`   - Email format is not recognized by the parser`);
+        console.log(`   Email body preview: ${email.body.substring(0, 500)}...`);
         
         // Still process through email trigger system for other automation rules
+        console.log(`📧 Processing email through trigger system for other automation rules...`);
         await emailTriggerService.processEmail({
           from: email.from,
           subject: email.subject,
