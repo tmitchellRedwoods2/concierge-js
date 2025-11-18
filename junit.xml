@@ -1,27 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="11" failures="0" errors="0" time="1.494">
-  <testsuite name="Calendar Test Sync API Route" errors="0" failures="0" skipped="0" timestamp="2025-11-14T00:42:33" time="1.125" tests="11">
-    <testcase classname="Calendar Test Sync API Route Authentication should return 401 if user is not authenticated" name="Calendar Test Sync API Route Authentication should return 401 if user is not authenticated" time="0.007">
+<testsuites name="jest tests" tests="18" failures="0" errors="0" time="1.509">
+  <testsuite name="UserPreferences Model - Database Tests" errors="0" failures="0" skipped="0" timestamp="2025-11-18T01:29:36" time="1.162" tests="18">
+    <testcase classname="UserPreferences Model - Database Tests Schema Validation should have all required calendar preference fields in schema" name="UserPreferences Model - Database Tests Schema Validation should have all required calendar preference fields in schema" time="0.055">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Event Creation should create calendar event from parsed appointment" name="Calendar Test Sync API Route Event Creation should create calendar event from parsed appointment" time="0.015">
+    <testcase classname="UserPreferences Model - Database Tests Schema Validation should have all sync settings fields in schema" name="UserPreferences Model - Database Tests Schema Validation should have all sync settings fields in schema" time="0.003">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Event Creation should return error if email does not contain appointment information" name="Calendar Test Sync API Route Event Creation should return error if email does not contain appointment information" time="0.001">
+    <testcase classname="UserPreferences Model - Database Tests Create Operations - Apple Calendar Config should create user preferences with Apple Calendar configuration" name="UserPreferences Model - Database Tests Create Operations - Apple Calendar Config should create user preferences with Apple Calendar configuration" time="0.005">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Event Creation should not create duplicate events" name="Calendar Test Sync API Route Event Creation should not create duplicate events" time="0.001">
+    <testcase classname="UserPreferences Model - Database Tests Create Operations - Apple Calendar Config should save Apple Calendar config with spaces in password (should be cleaned by service layer)" name="UserPreferences Model - Database Tests Create Operations - Apple Calendar Config should save Apple Calendar config with spaces in password (should be cleaned by service layer)" time="0.003">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Calendar Sync should automatically sync event to external calendar when sync is enabled" name="Calendar Test Sync API Route Calendar Sync should automatically sync event to external calendar when sync is enabled" time="0.001">
+    <testcase classname="UserPreferences Model - Database Tests Create Operations - Apple Calendar Config should create user preferences without Apple Calendar config" name="UserPreferences Model - Database Tests Create Operations - Apple Calendar Config should create user preferences without Apple Calendar config" time="0.003">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Calendar Sync should update event with external calendar info when sync succeeds" name="Calendar Test Sync API Route Calendar Sync should update event with external calendar info when sync succeeds" time="0.001">
+    <testcase classname="UserPreferences Model - Database Tests Read Operations - Apple Calendar Config should retrieve Apple Calendar config for user with config" name="UserPreferences Model - Database Tests Read Operations - Apple Calendar Config should retrieve Apple Calendar config for user with config" time="0.003">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Calendar Sync should continue event creation even if calendar sync fails" name="Calendar Test Sync API Route Calendar Sync should continue event creation even if calendar sync fails" time="0.001">
+    <testcase classname="UserPreferences Model - Database Tests Read Operations - Apple Calendar Config should return undefined for Apple Calendar config when not set" name="UserPreferences Model - Database Tests Read Operations - Apple Calendar Config should return undefined for Apple Calendar config when not set" time="0.003">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Notification should send notification when event is created" name="Calendar Test Sync API Route Notification should send notification when event is created" time="0.001">
+    <testcase classname="UserPreferences Model - Database Tests Read Operations - Apple Calendar Config should find users by Apple Calendar username" name="UserPreferences Model - Database Tests Read Operations - Apple Calendar Config should find users by Apple Calendar username" time="0.002">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Notification should continue even if notification fails" name="Calendar Test Sync API Route Notification should continue even if notification fails" time="0.005">
+    <testcase classname="UserPreferences Model - Database Tests Update Operations - Apple Calendar Config should update Apple Calendar config" name="UserPreferences Model - Database Tests Update Operations - Apple Calendar Config should update Apple Calendar config" time="0.005">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Error Handling should handle database connection errors" name="Calendar Test Sync API Route Error Handling should handle database connection errors" time="0.001">
+    <testcase classname="UserPreferences Model - Database Tests Update Operations - Apple Calendar Config should update entire calendarPreferences object including Apple Calendar config" name="UserPreferences Model - Database Tests Update Operations - Apple Calendar Config should update entire calendarPreferences object including Apple Calendar config" time="0.003">
     </testcase>
-    <testcase classname="Calendar Test Sync API Route Error Handling should handle event save errors" name="Calendar Test Sync API Route Error Handling should handle event save errors" time="0.001">
+    <testcase classname="UserPreferences Model - Database Tests Update Operations - Apple Calendar Config should add Apple Calendar config to existing preferences" name="UserPreferences Model - Database Tests Update Operations - Apple Calendar Config should add Apple Calendar config to existing preferences" time="0.003">
+    </testcase>
+    <testcase classname="UserPreferences Model - Database Tests Update Operations - Apple Calendar Config should remove Apple Calendar config when set to null" name="UserPreferences Model - Database Tests Update Operations - Apple Calendar Config should remove Apple Calendar config when set to null" time="0.002">
+    </testcase>
+    <testcase classname="UserPreferences Model - Database Tests Edge Cases - Apple Calendar Config should handle very long App-Specific Password" name="UserPreferences Model - Database Tests Edge Cases - Apple Calendar Config should handle very long App-Specific Password" time="0.001">
+    </testcase>
+    <testcase classname="UserPreferences Model - Database Tests Edge Cases - Apple Calendar Config should handle special characters in password" name="UserPreferences Model - Database Tests Edge Cases - Apple Calendar Config should handle special characters in password" time="0.001">
+    </testcase>
+    <testcase classname="UserPreferences Model - Database Tests Edge Cases - Apple Calendar Config should handle empty string values in Apple Calendar config" name="UserPreferences Model - Database Tests Edge Cases - Apple Calendar Config should handle empty string values in Apple Calendar config" time="0.002">
+    </testcase>
+    <testcase classname="UserPreferences Model - Database Tests Edge Cases - Apple Calendar Config should preserve all Apple Calendar config fields when updating other preferences" name="UserPreferences Model - Database Tests Edge Cases - Apple Calendar Config should preserve all Apple Calendar config fields when updating other preferences" time="0.002">
+    </testcase>
+    <testcase classname="UserPreferences Model - Database Tests Data Integrity - Apple Calendar Config should maintain data integrity when saving and retrieving" name="UserPreferences Model - Database Tests Data Integrity - Apple Calendar Config should maintain data integrity when saving and retrieving" time="0.001">
+    </testcase>
+    <testcase classname="UserPreferences Model - Database Tests Data Integrity - Apple Calendar Config should handle multiple users with different Apple Calendar configs" name="UserPreferences Model - Database Tests Data Integrity - Apple Calendar Config should handle multiple users with different Apple Calendar configs" time="0.022">
     </testcase>
   </testsuite>
 </testsuites>
