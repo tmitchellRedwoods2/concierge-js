@@ -133,8 +133,20 @@ export default function AppleCalendarSetupPage() {
                     placeholder="Your Apple ID password"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    We recommend using an App-Specific Password for security
+                    <strong>Important:</strong> You must use an App-Specific Password, not your regular Apple ID password. 
+                    Regular passwords will not work with CalDAV.
                   </p>
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-xs text-yellow-800 font-medium mb-1">How to create an App-Specific Password:</p>
+                    <ol className="text-xs text-yellow-700 list-decimal list-inside space-y-1">
+                      <li>Go to <a href="https://appleid.apple.com" target="_blank" rel="noopener noreferrer" className="underline">appleid.apple.com</a></li>
+                      <li>Sign in with your Apple ID</li>
+                      <li>Go to <strong>Sign-In and Security</strong> → <strong>App-Specific Passwords</strong></li>
+                      <li>Click <strong>Generate an app-specific password</strong></li>
+                      <li>Enter a label (e.g., "Concierge Calendar") and click <strong>Create</strong></li>
+                      <li>Copy the generated password and paste it here</li>
+                    </ol>
+                  </div>
                 </div>
 
                 <div>

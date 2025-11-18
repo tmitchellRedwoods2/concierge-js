@@ -126,9 +126,59 @@ END:VCALENDAR`;
     }
   }
 
+  private async testAuthentication(): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Test authentication with a simple OPTIONS request to the root
+      const testUrl = `${this.config.serverUrl}/`;
+      console.log('🔐 Testing authentication with:', testUrl);
+      
+      const response = await fetch(testUrl, {
+        method: 'OPTIONS',
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`,
+          'User-Agent': 'Concierge-AI-Calendar/1.0'
+        }
+      });
+      
+      console.log('🔐 Authentication test response:', response.status, response.statusText);
+      
+      if (response.status === 401 || response.status === 403) {
+        return {
+          success: false,
+          error: 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.'
+        };
+      }
+      
+      // 200, 204, or 405 (Method Not Allowed) are all acceptable - they mean the server responded
+      if (response.ok || response.status === 405) {
+        return { success: true };
+      }
+      
+      // For other status codes, we'll still try to proceed
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Authentication test error:', error);
+      // If the test fails, we'll still try to proceed with the actual request
+      // The actual request will provide a better error message
+      return { success: true };
+    }
+  }
+
   async getEvents(startDate?: Date, endDate?: Date): Promise<{ success: boolean; events?: AppleCalendarEvent[]; error?: string }> {
     try {
       console.log('🍎 Fetching Apple Calendar events...');
+      console.log('🍎 Server URL:', this.config.serverUrl);
+      console.log('🍎 Username:', this.config.username);
+      console.log('🍎 Calendar Path:', this.config.calendarPath);
+      
+      // First, test authentication with a simple request to the root
+      const authTestResult = await this.testAuthentication();
+      if (!authTestResult.success) {
+        return {
+          success: false,
+          error: authTestResult.error || 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password.'
+        };
+      }
       
       // Always try to discover the calendar URL first for better reliability
       let calendarUrl: string;
@@ -177,6 +227,15 @@ END:VCALENDAR`;
 </D:propfind>`
         });
 
+        console.log('🔍 PROPFIND response status:', propfindResponse.status, propfindResponse.statusText);
+        
+        if (propfindResponse.status === 401 || propfindResponse.status === 403) {
+          return {
+            success: false,
+            error: 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.'
+          };
+        }
+        
         if (!propfindResponse.ok && propfindResponse.status === 404) {
           // Calendar doesn't exist at this path, try discovery again
           console.log('⚠️ Calendar not found at path, trying alternative discovery...');
@@ -185,9 +244,15 @@ END:VCALENDAR`;
             calendarUrl = altUrl;
             console.log('🔄 Using alternative calendar URL:', calendarUrl);
           }
+        } else if (!propfindResponse.ok && propfindResponse.status === 400) {
+          // 400 might indicate authentication issue or wrong path
+          const errorText = await propfindResponse.text().catch(() => '');
+          console.error('❌ PROPFIND 400 error:', errorText.substring(0, 200));
+          // Continue to try REPORT anyway, but we'll handle the error there
         }
       } catch (propfindError) {
-        console.log('⚠️ PROPFIND check failed, continuing with REPORT...');
+        console.log('⚠️ PROPFIND check failed:', propfindError);
+        // Continue with REPORT attempt
       }
 
       const response = await fetch(calendarUrl, {
@@ -211,21 +276,32 @@ END:VCALENDAR`;
         };
       } else {
         const errorText = await response.text().catch(() => '');
-        console.error('❌ CalDAV error response:', response.status, response.statusText);
+        console.error('❌ CalDAV REPORT error response:', response.status, response.statusText);
         console.error('❌ Error details:', errorText.substring(0, 500));
+        console.error('❌ Calendar URL used:', calendarUrl);
         
         // Provide more specific error messages
         let errorMessage = `Failed to fetch events: ${response.status} ${response.statusText}`;
+        
         if (response.status === 400) {
-          errorMessage += '. The calendar path may be incorrect or the CalDAV query format is invalid.';
+          // 400 could be authentication, path, or query format issue
+          // Check if error text mentions authentication
+          const lowerErrorText = errorText.toLowerCase();
+          if (lowerErrorText.includes('auth') || lowerErrorText.includes('unauthorized') || lowerErrorText.includes('credential')) {
+            errorMessage = 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.';
+          } else {
+            errorMessage += '. The calendar path may be incorrect or the CalDAV query format is invalid.';
+            errorMessage += '\n\n💡 Tip: Try leaving the calendar path as "/calendars" to let the system discover the correct path automatically.';
+          }
         } else if (response.status === 401 || response.status === 403) {
-          errorMessage += '. Authentication failed. Please check your Apple ID credentials or use an App-Specific Password.';
+          errorMessage = 'Authentication failed. Please check your Apple ID credentials. You may need to use an App-Specific Password instead of your regular password. Go to appleid.apple.com → Sign-In and Security → App-Specific Passwords to generate one.';
         } else if (response.status === 404) {
           errorMessage += '. Calendar not found at the specified path.';
+          errorMessage += '\n\n💡 Tip: Try leaving the calendar path as "/calendars" to let the system discover the correct path automatically.';
         }
         
-        if (errorText) {
-          errorMessage += ` Details: ${errorText.substring(0, 200)}`;
+        if (errorText && !errorMessage.includes(errorText.substring(0, 100))) {
+          errorMessage += `\n\nDetails: ${errorText.substring(0, 200)}`;
         }
         
         return {
@@ -256,7 +332,10 @@ END:VCALENDAR`;
 
       // First, try PROPFIND on /calendars/ to discover available calendars
       try {
-        const propfindResponse = await fetch(`${this.config.serverUrl}/calendars/`, {
+        const discoveryUrl = `${this.config.serverUrl}/calendars/`;
+        console.log('🔍 Trying PROPFIND on:', discoveryUrl);
+        
+        const propfindResponse = await fetch(discoveryUrl, {
           method: 'PROPFIND',
           headers: {
             'Content-Type': 'application/xml',
@@ -274,17 +353,27 @@ END:VCALENDAR`;
 </D:propfind>`
         });
 
+        console.log('🔍 PROPFIND discovery response:', propfindResponse.status, propfindResponse.statusText);
+        
+        if (propfindResponse.status === 401 || propfindResponse.status === 403) {
+          console.error('❌ Authentication failed during calendar discovery');
+          return null;
+        }
+
         if (propfindResponse.ok) {
           const xml = await propfindResponse.text();
           console.log('📋 PROPFIND response received, parsing...');
+          console.log('📋 Response preview:', xml.substring(0, 500));
           
           // Try to extract calendar URLs from the XML response
           // Look for href attributes in the response
           const hrefMatches = xml.match(/<D:href>([^<]+)<\/D:href>/g);
           if (hrefMatches && hrefMatches.length > 0) {
+            console.log('📋 Found', hrefMatches.length, 'href matches');
             // Find the first calendar URL (usually the default calendar)
             for (const match of hrefMatches) {
               const href = match.replace(/<\/?D:href>/g, '');
+              console.log('📋 Checking href:', href);
               if (href.includes('calendar') && !href.includes('principals')) {
                 const calendarUrl = href.startsWith('http') ? href : `${this.config.serverUrl}${href}`;
                 console.log('✅ Discovered calendar URL:', calendarUrl);
@@ -292,9 +381,11 @@ END:VCALENDAR`;
               }
             }
           }
+        } else {
+          console.log('⚠️ PROPFIND discovery returned status:', propfindResponse.status);
         }
       } catch (propfindError) {
-        console.log('⚠️ PROPFIND discovery failed, trying direct paths...');
+        console.log('⚠️ PROPFIND discovery failed:', propfindError);
       }
 
       // If PROPFIND didn't work, try direct paths
