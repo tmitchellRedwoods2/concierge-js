@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
             passwordProvided: !!password
           }
         });
+        }
       }
     } catch (error) {
       console.error('Apple Calendar test error:', error);
