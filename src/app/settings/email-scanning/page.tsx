@@ -120,15 +120,19 @@ export default function EmailScanningPage() {
   };
 
   const scanNow = async (accountId: string) => {
+    console.log('🔍 Scan Now button clicked for account:', accountId);
     setScanningAccount(accountId);
     try {
+      console.log('📡 Sending POST request to /api/email/scan with accountId:', accountId);
       const response = await fetch('/api/email/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accountId })
       });
 
+      console.log('📡 Response status:', response.status);
       const data = await response.json();
+      console.log('📡 Response data:', data);
       
       if (data.success) {
         alert(data.message || 'Scan completed successfully!');
@@ -137,8 +141,8 @@ export default function EmailScanningPage() {
         alert(data.message || 'Failed to scan emails');
       }
     } catch (error) {
-      console.error('Error scanning emails:', error);
-      alert('Failed to scan emails');
+      console.error('❌ Error scanning emails:', error);
+      alert('Failed to scan emails: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setScanningAccount(null);
     }

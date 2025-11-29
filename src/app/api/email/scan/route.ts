@@ -9,16 +9,25 @@ import { emailPollingService } from '@/lib/services/email-polling';
  * Manually trigger an email scan for a specific account
  */
 export async function POST(request: NextRequest) {
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('📧 /api/email/scan endpoint called');
+  console.log('═══════════════════════════════════════════════════════');
+  
   try {
     const session = await auth();
+    console.log('📧 Session check:', session?.user?.id ? `User ID: ${session.user.id}` : 'No session');
+    
     if (!session?.user?.id) {
+      console.log('❌ Unauthorized - no session');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { accountId } = body;
+    console.log('📧 Request body:', { accountId });
 
     if (!accountId) {
+      console.log('❌ Missing accountId');
       return NextResponse.json(
         { error: 'Account ID is required' },
         { status: 400 }
@@ -85,18 +94,23 @@ export async function POST(request: NextRequest) {
     };
 
     // Trigger manual scan
+    console.log('📧 Triggering manual scan for account:', pollingAccount.emailAddress);
     const result = await emailPollingService.scanAccount(pollingAccount);
+    console.log('📧 Scan result:', result);
 
     // Update last checked time in database
     if (result.success) {
       account.lastChecked = new Date();
       await account.save();
+      console.log('📧 Updated lastChecked time in database');
     }
 
+    console.log('📧 Returning scan result to client');
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error('Error triggering email scan:', error);
+    console.error('❌ Error triggering email scan:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { 
         success: false,
