@@ -43,17 +43,22 @@ export class GmailAPIService {
    * Get OAuth2 authorization URL for Gmail
    */
   static getAuthUrl(userId: string, requestUrl?: string): string {
-    // Determine the base URL - prefer request URL, then env vars, then localhost
+    // Determine the base URL - prioritize production URL from env vars to avoid redirect_uri_mismatch
+    // This ensures OAuth works consistently even with Vercel preview deployments
     let baseUrl: string;
     
-    if (requestUrl) {
-      // Extract base URL from the request URL
+    // Priority 1: Use production URL from environment variable (most reliable)
+    if (process.env.NEXT_PUBLIC_APP_URL) {
+      baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    }
+    // Priority 2: Use request URL (for localhost or when NEXT_PUBLIC_APP_URL not set)
+    else if (requestUrl) {
       const url = new URL(requestUrl);
       baseUrl = `${url.protocol}//${url.host}`;
-    } else {
-      baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                'http://localhost:3000';
+    }
+    // Priority 3: Fallback to VERCEL_URL or localhost
+    else {
+      baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
     }
     
     // Remove trailing slash
@@ -104,15 +109,21 @@ export class GmailAPIService {
    */
   static async getTokensFromCode(code: string, requestUrl?: string): Promise<GmailCredentials & { emailAddress?: string }> {
     // Determine the base URL (must match the one used in getAuthUrl)
+    // Use the same priority logic as getAuthUrl to ensure consistency
     let baseUrl: string;
     
-    if (requestUrl) {
+    // Priority 1: Use production URL from environment variable (most reliable)
+    if (process.env.NEXT_PUBLIC_APP_URL) {
+      baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    }
+    // Priority 2: Use request URL (for localhost or when NEXT_PUBLIC_APP_URL not set)
+    else if (requestUrl) {
       const url = new URL(requestUrl);
       baseUrl = `${url.protocol}//${url.host}`;
-    } else {
-      baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                'http://localhost:3000';
+    }
+    // Priority 3: Fallback to VERCEL_URL or localhost
+    else {
+      baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
     }
     
     const redirectUri = `${baseUrl.replace(/\/$/, '')}/api/email/oauth/gmail/callback`;
