@@ -252,10 +252,20 @@ export class EmailPollingService extends EventEmitter {
       }
 
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`❌ Error polling emails for ${account.emailAddress}:`, error);
+      
+      // Check if this is an authentication error
+      if (errorMessage.includes('authentication expired') || 
+          errorMessage.includes('invalid_grant') ||
+          errorMessage.includes('reconnect')) {
+        console.error(`⚠️ Authentication issue detected for ${account.emailAddress}`);
+        console.error(`   User needs to reconnect this account in Settings → Email Scanning`);
+      }
+      
       this.emit('pollingError', {
         account,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: errorMessage
       });
     } finally {
       this.isPolling.set(accountKey, false);
@@ -308,7 +318,15 @@ export class EmailPollingService extends EventEmitter {
       }
 
       return emails;
-    } catch (error) {
+    } catch (error: any) {
+      // Check for authentication errors and provide user-friendly messages
+      if (error.message?.includes('Gmail authentication expired') || 
+          error.message?.includes('invalid_grant') ||
+          error.code === 'invalid_grant') {
+        console.error('❌ Gmail authentication error for', account.emailAddress);
+        console.error('   Error:', error.message);
+        throw new Error(`Gmail authentication expired for ${account.emailAddress}. Please reconnect your Gmail account in Settings → Email Scanning.`);
+      }
       console.error('❌ Error fetching Gmail emails:', error);
       throw error;
     }

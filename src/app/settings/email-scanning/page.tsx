@@ -138,7 +138,18 @@ export default function EmailScanningPage() {
         alert(data.message || 'Scan completed successfully!');
         await loadAccounts(); // Refresh to update lastChecked time
       } else {
-        alert(data.message || 'Failed to scan emails');
+        // Check if this is an authentication error
+        if (data.requiresReconnect || data.error === 'Gmail authentication expired') {
+          alert(
+            '⚠️ Gmail Authentication Expired\n\n' +
+            'Your Gmail account needs to be reconnected. Please:\n' +
+            '1. Delete this account (trash icon)\n' +
+            '2. Click "Connect Gmail" to reconnect\n\n' +
+            (data.message || '')
+          );
+        } else {
+          alert(data.message || 'Failed to scan emails');
+        }
       }
     } catch (error) {
       console.error('❌ Error scanning emails:', error);

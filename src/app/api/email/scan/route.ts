@@ -95,8 +95,26 @@ export async function POST(request: NextRequest) {
 
     // Trigger manual scan
     console.log('📧 Triggering manual scan for account:', pollingAccount.emailAddress);
-    const result = await emailPollingService.scanAccount(pollingAccount);
-    console.log('📧 Scan result:', result);
+    let result;
+    try {
+      result = await emailPollingService.scanAccount(pollingAccount);
+      console.log('📧 Scan result:', result);
+    } catch (error: any) {
+      // Check for authentication errors
+      if (error.message?.includes('authentication expired') || 
+          error.message?.includes('invalid_grant') ||
+          error.message?.includes('reconnect')) {
+        console.error('❌ Authentication error during scan:', error.message);
+        return NextResponse.json({
+          success: false,
+          error: 'Gmail authentication expired',
+          message: error.message || 'Your Gmail account needs to be reconnected. Please go to Settings → Email Scanning and reconnect your Gmail account.',
+          requiresReconnect: true
+        }, { status: 401 });
+      }
+      // Re-throw other errors
+      throw error;
+    }
 
     // Update last checked time in database
     if (result.success) {

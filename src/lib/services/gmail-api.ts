@@ -159,7 +159,14 @@ export class GmailAPIService {
         this.credentials.refreshToken = credentials.refresh_token;
       }
       return credentials.access_token;
-    } catch (error) {
+    } catch (error: any) {
+      // Check for invalid_grant error specifically
+      if (error.message?.includes('invalid_grant') || error.code === 'invalid_grant') {
+        console.error('❌ Gmail OAuth Error: invalid_grant during token refresh');
+        console.error('   The refresh token is invalid, expired, or has been revoked.');
+        console.error('   User needs to reconnect Gmail account.');
+        throw new Error('Gmail authentication expired. Please reconnect your Gmail account in Settings → Email Scanning.');
+      }
       console.error('Error refreshing Gmail access token:', error);
       throw error;
     }
@@ -242,11 +249,27 @@ export class GmailAPIService {
 
       return emails;
     } catch (error: any) {
+      // Check for invalid_grant error (refresh token is invalid/expired)
+      if (error.message?.includes('invalid_grant') || error.code === 'invalid_grant') {
+        console.error('❌ Gmail OAuth Error: invalid_grant');
+        console.error('   This means the refresh token is invalid, expired, or revoked.');
+        console.error('   The user needs to reconnect their Gmail account.');
+        throw new Error('Gmail authentication expired. Please reconnect your Gmail account in Settings → Email Scanning.');
+      }
+      
       if (error.code === 401) {
         // Token expired, try to refresh
-        await this.refreshAccessToken();
-        // Retry once
-        return this.fetchEmails(lastMessageId, maxResults);
+        try {
+          await this.refreshAccessToken();
+          // Retry once
+          return this.fetchEmails(lastMessageId, maxResults, hoursBack);
+        } catch (refreshError: any) {
+          // If refresh also fails with invalid_grant, throw a user-friendly error
+          if (refreshError.message?.includes('invalid_grant') || refreshError.code === 'invalid_grant') {
+            throw new Error('Gmail authentication expired. Please reconnect your Gmail account in Settings → Email Scanning.');
+          }
+          throw refreshError;
+        }
       }
       console.error('Error fetching Gmail emails:', error);
       throw error;
