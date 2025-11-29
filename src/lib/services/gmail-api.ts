@@ -197,17 +197,29 @@ export class GmailAPIService {
 
       const messages = response.data.messages || [];
       console.log(`📧 Gmail API returned ${messages.length} message(s) for query: ${query}`);
+      console.log(`📧 Query details: after:${timestamp} (${new Date(timestamp * 1000).toISOString()})`);
+      console.log(`📧 Current time: ${new Date().toISOString()}`);
+      console.log(`📧 Time window: ${hoursBack} hours (${Math.round(hoursBack/24)} days)`);
       
       if (messages.length === 0) {
         console.log(`⚠️ No messages found. Query was: ${query}`);
-        console.log(`⚠️ This might mean: 1) No emails in the time window, 2) Query syntax issue, or 3) Gmail API permissions issue`);
+        console.log(`⚠️ This might mean:`);
+        console.log(`   1) No emails in inbox within the last ${hoursBack} hours`);
+        console.log(`   2) Query syntax issue (timestamp: ${timestamp}, date: ${new Date(timestamp * 1000).toISOString()})`);
+        console.log(`   3) Gmail API permissions issue`);
+        console.log(`   4) All emails are archived/not in inbox`);
+        console.log(`💡 Try: Check your Gmail inbox manually to see if there are emails in this time range`);
+      } else {
+        console.log(`✅ Found ${messages.length} message(s) - fetching details...`);
       }
       
       const emails: PolledEmail[] = [];
 
       // Fetch full message details
-      for (const message of messages) {
+      for (let i = 0; i < messages.length; i++) {
+        const message = messages[i];
         try {
+          console.log(`📧 Fetching message ${i + 1}/${messages.length}: ${message.id}`);
           const messageDetail = await gmail.users.messages.get({
             userId: 'me',
             id: message.id!,
@@ -216,12 +228,17 @@ export class GmailAPIService {
 
           const email = this.parseGmailMessage(messageDetail.data);
           if (email) {
+            console.log(`✅ Parsed email ${i + 1}: "${email.subject}" from ${email.from}`);
             emails.push(email);
+          } else {
+            console.log(`⚠️ Failed to parse email ${i + 1} (ID: ${message.id})`);
           }
         } catch (error) {
-          console.error(`Error fetching message ${message.id}:`, error);
+          console.error(`❌ Error fetching message ${message.id}:`, error);
         }
       }
+      
+      console.log(`📧 Successfully parsed ${emails.length} of ${messages.length} message(s)`);
 
       return emails;
     } catch (error: any) {

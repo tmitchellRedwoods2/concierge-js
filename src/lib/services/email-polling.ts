@@ -208,6 +208,14 @@ export class EmailPollingService extends EventEmitter {
       
       console.log(`📧 Email fetch completed for ${account.emailAddress}: ${emails.length} email(s) found`);
       
+      // Always emit emailsProcessed event, even if no emails found
+      // This ensures the scanAccount method gets a response
+      this.emit('emailsProcessed', {
+        account,
+        emailCount: emails.length,
+        lastMessageId: emails.length > 0 ? emails[emails.length - 1].messageId : account.lastMessageId
+      });
+      
       if (emails.length === 0) {
         console.log(`⚠️ No emails found for ${account.emailAddress}`);
         console.log(`⚠️ This could mean:`);
@@ -215,6 +223,7 @@ export class EmailPollingService extends EventEmitter {
         console.log(`   2. All emails were already processed (check lastMessageId)`);
         console.log(`   3. Gmail API query issue`);
         console.log(`   4. Email provider authentication issue`);
+        console.log(`   5. Time window (${hoursBack} hours / ${Math.round(hoursBack/24)} days) doesn't include any emails`);
         return;
       }
 
