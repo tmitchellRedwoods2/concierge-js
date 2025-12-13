@@ -66,6 +66,8 @@ export const authOptions = {
             name: `${user.firstName} ${user.lastName}`,
             username: user.username,
             plan: user.plan,
+            role: user.role,
+            accessMode: user.accessMode,
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -82,6 +84,8 @@ export const authOptions = {
         token.id = user.id;
         token.username = user.username;
         token.plan = user.plan;
+        token.role = user.role;
+        token.accessMode = user.accessMode;
       }
       return token;
     },
@@ -90,6 +94,8 @@ export const authOptions = {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.plan = token.plan as string;
+        session.user.role = token.role as string;
+        session.user.accessMode = token.accessMode as string | undefined;
       }
       return session;
     },

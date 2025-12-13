@@ -3,6 +3,9 @@
  */
 import mongoose, { Schema, Document } from 'mongoose';
 
+export type UserRole = 'client' | 'admin' | 'agent';
+export type AccessMode = 'hands-off' | 'self-service' | 'ai-only';
+
 export interface IUser extends Document {
   username: string;
   email: string;
@@ -10,6 +13,8 @@ export interface IUser extends Document {
   firstName: string;
   lastName: string;
   plan: 'basic' | 'premium' | 'elite';
+  role: UserRole;
+  accessMode?: AccessMode; // Only for 'client' role
   netWorth?: number;
   annualIncome?: number;
   goals?: string[];
@@ -51,6 +56,28 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum: ['basic', 'premium', 'elite'],
       default: 'basic',
+    },
+    role: {
+      type: String,
+      enum: ['client', 'admin', 'agent'],
+      default: 'client',
+      required: true,
+    },
+    accessMode: {
+      type: String,
+      enum: ['hands-off', 'self-service', 'ai-only'],
+      default: 'self-service',
+      // Only applicable for 'client' role
+      validate: {
+        validator: function(this: IUser, value: AccessMode | undefined) {
+          // accessMode only applies to clients
+          if (this.role === 'client') {
+            return value !== undefined;
+          }
+          return value === undefined;
+        },
+        message: 'accessMode is only applicable for client role',
+      },
     },
     netWorth: {
       type: Number,
