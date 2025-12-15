@@ -1,127 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="58" failures="0" errors="0" time="2.931">
-  <testsuite name="Permissions System" errors="0" failures="0" skipped="0" timestamp="2025-12-15T17:59:23" time="0.281" tests="25">
-    <testcase classname="Permissions System hasPermission Client Role should grant hands-off permissions for hands-off mode" name="Permissions System hasPermission Client Role should grant hands-off permissions for hands-off mode" time="0.003">
+<testsuites name="jest tests" tests="7" failures="0" errors="0" time="0.718">
+  <testsuite name="usePermissions Hook" errors="0" failures="0" skipped="0" timestamp="2025-12-15T18:01:57" time="0.349" tests="7">
+    <testcase classname="usePermissions Hook Client Self-Service should return correct permissions for self-service client" name="usePermissions Hook Client Self-Service should return correct permissions for self-service client" time="0.008">
     </testcase>
-    <testcase classname="Permissions System hasPermission Client Role should deny dashboard access for hands-off mode" name="Permissions System hasPermission Client Role should deny dashboard access for hands-off mode" time="0">
+    <testcase classname="usePermissions Hook Client Hands-Off should return correct permissions for hands-off client" name="usePermissions Hook Client Hands-Off should return correct permissions for hands-off client" time="0.001">
     </testcase>
-    <testcase classname="Permissions System hasPermission Client Role should grant all permissions for self-service mode" name="Permissions System hasPermission Client Role should grant all permissions for self-service mode" time="0">
+    <testcase classname="usePermissions Hook Client AI-Only should return correct permissions for ai-only client" name="usePermissions Hook Client AI-Only should return correct permissions for ai-only client" time="0.001">
     </testcase>
-    <testcase classname="Permissions System hasPermission Client Role should grant ai-only permissions for ai-only mode" name="Permissions System hasPermission Client Role should grant ai-only permissions for ai-only mode" time="0.001">
+    <testcase classname="usePermissions Hook Admin should return correct permissions for admin" name="usePermissions Hook Admin should return correct permissions for admin" time="0.001">
     </testcase>
-    <testcase classname="Permissions System hasPermission Client Role should deny dashboard access for ai-only mode" name="Permissions System hasPermission Client Role should deny dashboard access for ai-only mode" time="0.001">
+    <testcase classname="usePermissions Hook Agent should return correct permissions for agent" name="usePermissions Hook Agent should return correct permissions for agent" time="0.001">
     </testcase>
-    <testcase classname="Permissions System hasPermission Admin Role should grant all permissions to admin" name="Permissions System hasPermission Admin Role should grant all permissions to admin" time="0">
+    <testcase classname="usePermissions Hook Unauthenticated should return unauthenticated state" name="usePermissions Hook Unauthenticated should return unauthenticated state" time="0.001">
     </testcase>
-    <testcase classname="Permissions System hasPermission Admin Role should ignore accessMode for admin" name="Permissions System hasPermission Admin Role should ignore accessMode for admin" time="0.001">
-    </testcase>
-    <testcase classname="Permissions System hasPermission Agent Role should grant service editing permissions to agent" name="Permissions System hasPermission Agent Role should grant service editing permissions to agent" time="0">
-    </testcase>
-    <testcase classname="Permissions System hasPermission Agent Role should deny UI access permissions to agent" name="Permissions System hasPermission Agent Role should deny UI access permissions to agent" time="0.001">
-    </testcase>
-    <testcase classname="Permissions System hasPermission should return false for invalid role" name="Permissions System hasPermission should return false for invalid role" time="0">
-    </testcase>
-    <testcase classname="Permissions System getUserPermissions should return correct permissions for client hands-off mode" name="Permissions System getUserPermissions should return correct permissions for client hands-off mode" time="0">
-    </testcase>
-    <testcase classname="Permissions System getUserPermissions should return all permissions for client self-service mode" name="Permissions System getUserPermissions should return all permissions for client self-service mode" time="0.001">
-    </testcase>
-    <testcase classname="Permissions System getUserPermissions should return correct permissions for client ai-only mode" name="Permissions System getUserPermissions should return correct permissions for client ai-only mode" time="0">
-    </testcase>
-    <testcase classname="Permissions System getUserPermissions should return all permissions for admin" name="Permissions System getUserPermissions should return all permissions for admin" time="0">
-    </testcase>
-    <testcase classname="Permissions System getUserPermissions should return service permissions for agent" name="Permissions System getUserPermissions should return service permissions for agent" time="0">
-    </testcase>
-    <testcase classname="Permissions System canAccessRoute should allow client self-service to access dashboard" name="Permissions System canAccessRoute should allow client self-service to access dashboard" time="0">
-    </testcase>
-    <testcase classname="Permissions System canAccessRoute should deny client hands-off from accessing dashboard" name="Permissions System canAccessRoute should deny client hands-off from accessing dashboard" time="0">
-    </testcase>
-    <testcase classname="Permissions System canAccessRoute should allow all clients to access messages" name="Permissions System canAccessRoute should allow all clients to access messages" time="0">
-    </testcase>
-    <testcase classname="Permissions System canAccessRoute should allow admin to access all routes" name="Permissions System canAccessRoute should allow admin to access all routes" time="0.001">
-    </testcase>
-    <testcase classname="Permissions System canAccessRoute should return true for unknown routes (default allow)" name="Permissions System canAccessRoute should return true for unknown routes (default allow)" time="0">
-    </testcase>
-    <testcase classname="Permissions System getDefaultRoute should return /admin for admin role" name="Permissions System getDefaultRoute should return /admin for admin role" time="0">
-    </testcase>
-    <testcase classname="Permissions System getDefaultRoute should return /dashboard for client self-service" name="Permissions System getDefaultRoute should return /dashboard for client self-service" time="0">
-    </testcase>
-    <testcase classname="Permissions System getDefaultRoute should return /messages for client hands-off" name="Permissions System getDefaultRoute should return /messages for client hands-off" time="0">
-    </testcase>
-    <testcase classname="Permissions System getDefaultRoute should return /messages for client ai-only" name="Permissions System getDefaultRoute should return /messages for client ai-only" time="0">
-    </testcase>
-    <testcase classname="Permissions System getDefaultRoute should return /workflows for agent role" name="Permissions System getDefaultRoute should return /workflows for agent role" time="0">
-    </testcase>
-  </testsuite>
-  <testsuite name="RBAC Middleware" errors="0" failures="0" skipped="0" timestamp="2025-12-15T17:59:23" time="0.283" tests="15">
-    <testcase classname="RBAC Middleware requireAuth should return auth context when user is authenticated" name="RBAC Middleware requireAuth should return auth context when user is authenticated" time="0.006">
-    </testcase>
-    <testcase classname="RBAC Middleware requireAuth should return null when user is not authenticated" name="RBAC Middleware requireAuth should return null when user is not authenticated" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware requireAuth should return null when session has no user" name="RBAC Middleware requireAuth should return null when session has no user" time="0.001">
-    </testcase>
-    <testcase classname="RBAC Middleware requireRole should return context when user has allowed role" name="RBAC Middleware requireRole should return context when user has allowed role" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware requireRole should return null when user does not have allowed role" name="RBAC Middleware requireRole should return null when user does not have allowed role" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware requireRole should return null when user is not authenticated" name="RBAC Middleware requireRole should return null when user is not authenticated" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware requirePermission should return context when user has permission" name="RBAC Middleware requirePermission should return context when user has permission" time="0.001">
-    </testcase>
-    <testcase classname="RBAC Middleware requirePermission should return null when user does not have permission" name="RBAC Middleware requirePermission should return null when user does not have permission" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware requirePermission should return context for admin with any permission" name="RBAC Middleware requirePermission should return context for admin with any permission" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware withAuth should call handler when user is authenticated" name="RBAC Middleware withAuth should call handler when user is authenticated" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware withAuth should return 401 when user is not authenticated" name="RBAC Middleware withAuth should return 401 when user is not authenticated" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware withRole should call handler when user has allowed role" name="RBAC Middleware withRole should call handler when user has allowed role" time="0.001">
-    </testcase>
-    <testcase classname="RBAC Middleware withRole should return 403 when user does not have allowed role" name="RBAC Middleware withRole should return 403 when user does not have allowed role" time="0">
-    </testcase>
-    <testcase classname="RBAC Middleware withPermission should call handler when user has permission" name="RBAC Middleware withPermission should call handler when user has permission" time="0.001">
-    </testcase>
-    <testcase classname="RBAC Middleware withPermission should return 403 when user does not have permission" name="RBAC Middleware withPermission should return 403 when user does not have permission" time="0">
-    </testcase>
-  </testsuite>
-  <testsuite name="Authentication RBAC Integration Tests" errors="0" failures="0" skipped="0" timestamp="2025-12-15T17:59:23" time="1.851" tests="6">
-    <testcase classname="Authentication RBAC Integration Tests Client Self-Service Flow should authenticate client and include role/accessMode in session" name="Authentication RBAC Integration Tests Client Self-Service Flow should authenticate client and include role/accessMode in session" time="0.134">
-    </testcase>
-    <testcase classname="Authentication RBAC Integration Tests Client Self-Service Flow should allow client self-service to access dashboard permission" name="Authentication RBAC Integration Tests Client Self-Service Flow should allow client self-service to access dashboard permission" time="0.096">
-    </testcase>
-    <testcase classname="Authentication RBAC Integration Tests Client Hands-Off Flow should authenticate client hands-off and deny dashboard access" name="Authentication RBAC Integration Tests Client Hands-Off Flow should authenticate client hands-off and deny dashboard access" time="0.065">
-    </testcase>
-    <testcase classname="Authentication RBAC Integration Tests Client Hands-Off Flow should allow client hands-off to access messages" name="Authentication RBAC Integration Tests Client Hands-Off Flow should allow client hands-off to access messages" time="0.064">
-    </testcase>
-    <testcase classname="Authentication RBAC Integration Tests Admin Flow should authenticate admin and grant all permissions" name="Authentication RBAC Integration Tests Admin Flow should authenticate admin and grant all permissions" time="0.066">
-    </testcase>
-    <testcase classname="Authentication RBAC Integration Tests Agent Flow should authenticate agent and allow service editing" name="Authentication RBAC Integration Tests Agent Flow should authenticate agent and allow service editing" time="0.064">
-    </testcase>
-  </testsuite>
-  <testsuite name="User Model - Role and AccessMode Database Tests" errors="0" failures="0" skipped="0" timestamp="2025-12-15T17:59:23" time="2.255" tests="12">
-    <testcase classname="User Model - Role and AccessMode Database Tests Schema Validation should have role and accessMode fields in schema" name="User Model - Role and AccessMode Database Tests Schema Validation should have role and accessMode fields in schema" time="0.17">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Schema Validation should set default role to client if not provided" name="User Model - Role and AccessMode Database Tests Schema Validation should set default role to client if not provided" time="0.066">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Schema Validation should set default accessMode to self-service for clients" name="User Model - Role and AccessMode Database Tests Schema Validation should set default accessMode to self-service for clients" time="0.066">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Schema Validation should allow admin role without accessMode" name="User Model - Role and AccessMode Database Tests Schema Validation should allow admin role without accessMode" time="0.066">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Schema Validation should allow agent role without accessMode" name="User Model - Role and AccessMode Database Tests Schema Validation should allow agent role without accessMode" time="0.065">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Role Enum Validation should reject invalid role values" name="User Model - Role and AccessMode Database Tests Role Enum Validation should reject invalid role values" time="0.065">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests AccessMode Enum Validation should reject invalid accessMode values" name="User Model - Role and AccessMode Database Tests AccessMode Enum Validation should reject invalid accessMode values" time="0.064">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Client Access Modes should save client with hands-off access mode" name="User Model - Role and AccessMode Database Tests Client Access Modes should save client with hands-off access mode" time="0.065">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Client Access Modes should save client with self-service access mode" name="User Model - Role and AccessMode Database Tests Client Access Modes should save client with self-service access mode" time="0.064">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Client Access Modes should save client with ai-only access mode" name="User Model - Role and AccessMode Database Tests Client Access Modes should save client with ai-only access mode" time="0.064">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Update Operations should allow updating user role" name="User Model - Role and AccessMode Database Tests Update Operations should allow updating user role" time="0.067">
-    </testcase>
-    <testcase classname="User Model - Role and AccessMode Database Tests Update Operations should allow updating client accessMode" name="User Model - Role and AccessMode Database Tests Update Operations should allow updating client accessMode" time="0.066">
+    <testcase classname="usePermissions Hook Loading State should return loading state" name="usePermissions Hook Loading State should return loading state" time="0">
     </testcase>
   </testsuite>
 </testsuites>
