@@ -66,14 +66,16 @@ const UserSchema = new Schema<IUser>(
     accessMode: {
       type: String,
       enum: ['hands-off', 'self-service', 'ai-only'],
-      default: 'self-service',
+      required: false,
       // Only applicable for 'client' role
       validate: {
         validator: function(this: IUser, value: AccessMode | undefined) {
           // accessMode only applies to clients
           if (this.role === 'client') {
+            // For clients, accessMode is required (default will be set in pre-save hook)
             return value !== undefined;
           }
+          // For non-clients, accessMode must be undefined
           return value === undefined;
         },
         message: 'accessMode is only applicable for client role',
@@ -98,6 +100,19 @@ const UserSchema = new Schema<IUser>(
     timestamps: true,
   }
 );
+
+// Pre-save hook to set default accessMode for clients
+UserSchema.pre('save', function(next) {
+  // Set default accessMode for clients if not provided
+  if (this.role === 'client' && !this.accessMode) {
+    this.accessMode = 'self-service';
+  }
+  // Ensure accessMode is undefined for non-clients
+  if (this.role !== 'client') {
+    this.accessMode = undefined;
+  }
+  next();
+});
 
 // Export a function to get the model to avoid initialization issues
 let UserModel: any = null;
