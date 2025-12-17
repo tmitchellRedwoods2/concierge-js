@@ -43,3 +43,6 @@ npm-cache/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# test output
+junit.xml
