@@ -36,6 +36,7 @@ export const authOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
+          console.log('❌ Auth: Missing credentials');
           return null;
         }
 
@@ -43,13 +44,45 @@ export const authOptions = {
           await connectDB();
           
           const User = getUser();
+          // Trim and normalize username for lookup
+          const normalizedUsername = (credentials.username as string).trim();
+          console.log(`🔍 Auth: Looking up user: "${normalizedUsername}"`);
+          
           const user = await User.findOne({ 
-            username: credentials.username as string 
+            username: normalizedUsername 
           });
-
+          
           if (!user) {
+            // Try case-insensitive lookup
+            const userCaseInsensitive = await User.findOne({ 
+              username: { $regex: new RegExp(`^${normalizedUsername}$`, 'i') }
+            });
+            if (userCaseInsensitive) {
+              console.log(`✅ Auth: Found user with case-insensitive match: ${userCaseInsensitive.username}`);
+              // Use the found user
+              const isPasswordValid = await bcrypt.compare(
+                credentials.password as string,
+                userCaseInsensitive.password
+              );
+              if (!isPasswordValid) {
+                console.log('❌ Auth: Password mismatch');
+                return null;
+              }
+              return {
+                id: userCaseInsensitive._id.toString(),
+                email: userCaseInsensitive.email,
+                name: `${userCaseInsensitive.firstName} ${userCaseInsensitive.lastName}`,
+                username: userCaseInsensitive.username,
+                plan: userCaseInsensitive.plan,
+                role: userCaseInsensitive.role,
+                accessMode: userCaseInsensitive.accessMode,
+              };
+            }
+            console.log(`❌ Auth: User not found: "${normalizedUsername}"`);
             return null;
           }
+
+          console.log(`✅ Auth: User found: ${user.username} (${user.email})`);
 
           const isPasswordValid = await bcrypt.compare(
             credentials.password as string,
@@ -57,8 +90,11 @@ export const authOptions = {
           );
 
           if (!isPasswordValid) {
+            console.log('❌ Auth: Password mismatch for user:', user.username);
             return null;
           }
+
+          console.log(`✅ Auth: Password valid for user: ${user.username}`);
 
           return {
             id: user._id.toString(),
