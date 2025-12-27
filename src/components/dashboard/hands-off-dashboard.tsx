@@ -47,33 +47,44 @@ export default function HandsOffDashboard() {
       setLoading(true);
       
       // Load upcoming appointments
-      const calendarResponse = await fetch('/api/calendar/events?startDate=' + new Date().toISOString());
-      if (calendarResponse.ok) {
-        const calendarData = await calendarResponse.json();
-        const upcoming = (calendarData.events || []).filter((event: any) => {
-          const eventDate = new Date(event.startDate);
-          return eventDate >= new Date() && eventDate <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        });
-        setUpcomingAppointments(upcoming.length);
+      try {
+        const calendarResponse = await fetch('/api/calendar/events?startDate=' + new Date().toISOString());
+        if (calendarResponse.ok) {
+          const calendarData = await calendarResponse.json();
+          const upcoming = (calendarData.events || []).filter((event: any) => {
+            if (!event || !event.startDate) return false;
+            const eventDate = new Date(event.startDate);
+            return eventDate >= new Date() && eventDate <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+          });
+          setUpcomingAppointments(upcoming.length);
+        }
+      } catch (error) {
+        console.error('Error loading appointments:', error);
       }
 
       // Load recent activity (simplified - in production, this would come from an activity feed API)
       const activities: RecentActivity[] = [];
       
       // Add recent appointments
-      const appointmentsResponse = await fetch('/api/calendar/events?limit=5');
-      if (appointmentsResponse.ok) {
-        const appointmentsData = await appointmentsResponse.json();
-        (appointmentsData.events || []).slice(0, 3).forEach((event: any) => {
-          activities.push({
-            id: event._id,
-            type: 'appointment',
-            title: event.title,
-            description: `Scheduled for ${new Date(event.startDate).toLocaleDateString()}`,
-            timestamp: event.createdAt || event.startDate,
-            status: new Date(event.startDate) < new Date() ? 'completed' : 'pending'
+      try {
+        const appointmentsResponse = await fetch('/api/calendar/events?limit=5');
+        if (appointmentsResponse.ok) {
+          const appointmentsData = await appointmentsResponse.json();
+          (appointmentsData.events || []).slice(0, 3).forEach((event: any) => {
+            if (event && event._id && event.title && event.startDate) {
+              activities.push({
+                id: event._id,
+                type: 'appointment',
+                title: event.title,
+                description: `Scheduled for ${new Date(event.startDate).toLocaleDateString()}`,
+                timestamp: event.createdAt || event.startDate,
+                status: new Date(event.startDate) < new Date() ? 'completed' : 'pending'
+              });
+            }
           });
-        });
+        }
+      } catch (error) {
+        console.error('Error loading recent appointments:', error);
       }
 
       setRecentActivity(activities.sort((a, b) => 

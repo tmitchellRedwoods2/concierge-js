@@ -43,7 +43,7 @@ import ThemeToggle from '@/components/dashboard/theme-toggle';
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { isHandsOffClient, isAiOnlyClient, isAdmin } = usePermissions();
+  const { isHandsOff, isAIOnly, isAdmin } = usePermissions();
   
   // Dashboard data state
   const [dashboardData, setDashboardData] = useState({
@@ -144,7 +144,7 @@ export default function DashboardPage() {
   }
 
   // Route to appropriate dashboard based on access mode
-  if (isHandsOffClient) {
+  if (isHandsOff) {
     return (
       <RouteGuard requiredPermission="view:calendar">
         <HandsOffDashboard />
@@ -152,7 +152,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (isAiOnlyClient) {
+  if (isAIOnly) {
     return (
       <RouteGuard requiredPermission="view:messages">
         <AIOnlyDashboard />
