@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="7" failures="0" errors="0" time="0.718">
-  <testsuite name="usePermissions Hook" errors="0" failures="0" skipped="0" timestamp="2025-12-15T18:01:57" time="0.349" tests="7">
-    <testcase classname="usePermissions Hook Client Self-Service should return correct permissions for self-service client" name="usePermissions Hook Client Self-Service should return correct permissions for self-service client" time="0.008">
+<testsuites name="jest tests" tests="6" failures="0" errors="0" time="0.887">
+  <testsuite name="Dashboard Page Routing" errors="0" failures="0" skipped="0" timestamp="2025-12-27T19:57:26" time="0.442" tests="6">
+    <testcase classname="Dashboard Page Routing AI-Only Client should redirect AI-only client to /messages" name="Dashboard Page Routing AI-Only Client should redirect AI-only client to /messages" time="0.019">
     </testcase>
-    <testcase classname="usePermissions Hook Client Hands-Off should return correct permissions for hands-off client" name="usePermissions Hook Client Hands-Off should return correct permissions for hands-off client" time="0.001">
+    <testcase classname="Dashboard Page Routing Agent User should redirect agent user to /workflows" name="Dashboard Page Routing Agent User should redirect agent user to /workflows" time="0.004">
     </testcase>
-    <testcase classname="usePermissions Hook Client AI-Only should return correct permissions for ai-only client" name="usePermissions Hook Client AI-Only should return correct permissions for ai-only client" time="0.001">
+    <testcase classname="Dashboard Page Routing Hands-Off Client should render hands-off dashboard" name="Dashboard Page Routing Hands-Off Client should render hands-off dashboard" time="0.004">
     </testcase>
-    <testcase classname="usePermissions Hook Admin should return correct permissions for admin" name="usePermissions Hook Admin should return correct permissions for admin" time="0.001">
+    <testcase classname="Dashboard Page Routing Self-Service Client should render self-service dashboard" name="Dashboard Page Routing Self-Service Client should render self-service dashboard" time="0.051">
     </testcase>
-    <testcase classname="usePermissions Hook Agent should return correct permissions for agent" name="usePermissions Hook Agent should return correct permissions for agent" time="0.001">
+    <testcase classname="Dashboard Page Routing Admin User should render self-service dashboard for admin" name="Dashboard Page Routing Admin User should render self-service dashboard for admin" time="0.032">
     </testcase>
-    <testcase classname="usePermissions Hook Unauthenticated should return unauthenticated state" name="usePermissions Hook Unauthenticated should return unauthenticated state" time="0.001">
-    </testcase>
-    <testcase classname="usePermissions Hook Loading State should return loading state" name="usePermissions Hook Loading State should return loading state" time="0">
+    <testcase classname="Dashboard Page Routing Unauthenticated User should return null when not authenticated" name="Dashboard Page Routing Unauthenticated User should return null when not authenticated" time="0.006">
     </testcase>
   </testsuite>
 </testsuites>
