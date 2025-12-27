@@ -43,7 +43,7 @@ import ThemeToggle from '@/components/dashboard/theme-toggle';
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { isHandsOff, isAIOnly, isAdmin } = usePermissions();
+  const { isHandsOff, isAIOnly, isAdmin, isAgent, role, accessMode } = usePermissions();
   
   // Dashboard data state
   const [dashboardData, setDashboardData] = useState({
@@ -82,9 +82,23 @@ export default function DashboardPage() {
   ];
 
   useEffect(() => {
-    // Load dashboard data
-    loadDashboardData();
-  }, []);
+    // Redirect AI-only clients to messages
+    if (isAIOnly) {
+      router.replace('/messages');
+      return;
+    }
+
+    // Redirect agent users to workflows
+    if (isAgent) {
+      router.replace('/workflows');
+      return;
+    }
+
+    // Load dashboard data for other users
+    if (!isHandsOff && !isAIOnly && !isAgent) {
+      loadDashboardData();
+    }
+  }, [isAIOnly, isAgent, isHandsOff, router]);
 
   const loadDashboardData = async () => {
     try {
@@ -144,18 +158,23 @@ export default function DashboardPage() {
   }
 
   // Route to appropriate dashboard based on access mode
+  // AI-only clients and agents are redirected in useEffect
+  if (isAIOnly || isAgent) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Hands-off clients get minimal dashboard
   if (isHandsOff) {
     return (
       <RouteGuard requiredPermission="view:calendar">
         <HandsOffDashboard />
-      </RouteGuard>
-    );
-  }
-
-  if (isAIOnly) {
-    return (
-      <RouteGuard requiredPermission="view:messages">
-        <AIOnlyDashboard />
       </RouteGuard>
     );
   }

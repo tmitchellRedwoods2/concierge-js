@@ -81,10 +81,30 @@ export async function middleware(request: NextRequest) {
 
   // Check route permissions
   const requiredPermission = routePermissions[pathname];
-  if (requiredPermission) {
-    const role = token.role as string;
-    const accessMode = token.accessMode as string | undefined;
+  const role = token.role as string;
+  const accessMode = token.accessMode as string | undefined;
 
+  // Handle agent role - redirect to workflows
+  if (role === 'agent') {
+    if (pathname === '/workflows' || pathname.startsWith('/api/')) {
+      return NextResponse.next();
+    }
+    // Redirect agents to workflows (their default route)
+    if (pathname !== '/workflows') {
+      return NextResponse.redirect(new URL('/workflows', request.url));
+    }
+  }
+
+  // Handle AI-only clients - redirect to messages
+  if (role === 'client' && accessMode === 'ai-only') {
+    if (pathname === '/messages' || pathname.startsWith('/api/')) {
+      return NextResponse.next();
+    }
+    // Redirect AI-only clients to messages
+    return NextResponse.redirect(new URL('/messages', request.url));
+  }
+
+  if (requiredPermission) {
     // Import permission check (we'll need to make this work in middleware)
     // For now, basic role check - full permission check happens in page components
     if (role === 'admin') {
@@ -94,15 +114,7 @@ export async function middleware(request: NextRequest) {
     // Basic checks for now - detailed permission checks in page components
     if (role === 'client' && accessMode === 'hands-off') {
       // Hands-off clients have limited access
-      if (['/messages', '/calendar'].includes(pathname)) {
-        return NextResponse.next();
-      }
-      return NextResponse.redirect(new URL('/messages', request.url));
-    }
-
-    if (role === 'client' && accessMode === 'ai-only') {
-      // AI-only clients can only access messages
-      if (pathname === '/messages') {
+      if (['/messages', '/calendar', '/dashboard'].includes(pathname)) {
         return NextResponse.next();
       }
       return NextResponse.redirect(new URL('/messages', request.url));
