@@ -3,6 +3,7 @@
 // Email Scanning Settings Page
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import RouteGuard from '@/components/auth/route-guard';
 import { Mail, Plus, Trash2, Play, Pause, RefreshCw, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 interface EmailAccount {
@@ -209,7 +210,8 @@ export default function EmailScanningPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <RouteGuard requiredPermission="view:email-scanning">
+      <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
@@ -572,6 +574,7 @@ export default function EmailScanningPage() {
         </div>
       </div>
     </div>
+    </RouteGuard>
   );
 }
 

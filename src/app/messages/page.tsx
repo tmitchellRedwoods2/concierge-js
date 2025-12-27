@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import RouteGuard from '@/components/auth/route-guard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -40,11 +41,7 @@ export default function MessagesPage() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-    }
-  }, [status, router]);
+  // RouteGuard handles authentication redirects
 
   useEffect(() => {
     loadSessions();
@@ -175,7 +172,8 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <RouteGuard requiredPermission="view:messages">
+      <div className="min-h-screen bg-gray-50">
       {/* Top Navigation Bar */}
       <nav className="bg-white shadow-sm border-b">
         <div className="w-full px-4 py-2">
@@ -480,5 +478,6 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+    </RouteGuard>
   );
 }

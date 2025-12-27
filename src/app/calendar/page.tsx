@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import RouteGuard from '@/components/auth/route-guard';
 import { Calendar, Clock, MapPin, Users, Plus, ExternalLink, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,19 +30,11 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('📅 Calendar page useEffect - status:', status, 'session:', session?.user?.id);
-    if (status === 'loading') {
-      console.log('📅 Still loading session...');
-      return;
+    if (session?.user?.id) {
+      console.log('📅 Loading events for user:', session.user.id);
+      loadEvents();
     }
-    if (!session) {
-      console.log('📅 No session, redirecting to login');
-      window.location.href = '/login';
-      return;
-    }
-    console.log('📅 Loading events for user:', session.user.id);
-    loadEvents();
-  }, [session, status]);
+  }, [session]);
 
   const loadEvents = async () => {
     try {
@@ -149,6 +142,7 @@ export default function CalendarPage() {
   }
 
   return (
+    <RouteGuard requiredPermission="view:calendar">
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -282,6 +276,7 @@ export default function CalendarPage() {
         ) : null}
       </div>
     </div>
+    </RouteGuard>
   );
 }
 

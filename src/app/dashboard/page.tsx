@@ -6,6 +6,10 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import RouteGuard from "@/components/auth/route-guard";
+import { usePermissions } from "@/lib/hooks/usePermissions";
+import HandsOffDashboard from "@/components/dashboard/hands-off-dashboard";
+import AIOnlyDashboard from "@/components/dashboard/ai-only-dashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +43,7 @@ import ThemeToggle from '@/components/dashboard/theme-toggle';
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isHandsOffClient, isAiOnlyClient, isAdmin } = usePermissions();
   
   // Dashboard data state
   const [dashboardData, setDashboardData] = useState({
@@ -77,12 +82,9 @@ export default function DashboardPage() {
   ];
 
   useEffect(() => {
-    if (status === "loading") return; // Still loading
-    if (!session) router.push("/login"); // Not authenticated
-    
     // Load dashboard data
     loadDashboardData();
-  }, [session, status, router]);
+  }, []);
 
   const loadDashboardData = async () => {
     try {
@@ -141,8 +143,27 @@ export default function DashboardPage() {
     return null; // Will redirect
   }
 
+  // Route to appropriate dashboard based on access mode
+  if (isHandsOffClient) {
+    return (
+      <RouteGuard requiredPermission="view:calendar">
+        <HandsOffDashboard />
+      </RouteGuard>
+    );
+  }
+
+  if (isAiOnlyClient) {
+    return (
+      <RouteGuard requiredPermission="view:messages">
+        <AIOnlyDashboard />
+      </RouteGuard>
+    );
+  }
+
+  // Self-service dashboard (default)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <RouteGuard requiredPermission="view:dashboard" allowedAccessModes={['self-service']}>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Top Navigation Bar */}
       <nav className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-2">
@@ -540,5 +561,6 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+    </RouteGuard>
   );
 }

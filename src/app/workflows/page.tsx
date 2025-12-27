@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import RouteGuard from '@/components/auth/route-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -716,7 +717,8 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <RouteGuard requiredPermission="manage:automation">
+      <div className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
       <nav className="bg-white border-b">
         <div className="container mx-auto px-4">
@@ -2237,5 +2239,6 @@ export default function WorkflowsPage() {
       )}
       </div>
     </div>
+    </RouteGuard>
   );
 }

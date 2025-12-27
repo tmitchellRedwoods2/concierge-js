@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import RouteGuard from '@/components/auth/route-guard';
 
 interface CalendarPreferences {
   primaryProvider: 'internal' | 'google' | 'outlook' | 'apple' | 'caldav';
@@ -95,7 +96,8 @@ export default function CalendarSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <RouteGuard requiredPermission="edit:calendar">
+      <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
@@ -313,6 +315,7 @@ export default function CalendarSettingsPage() {
         </div>
       </div>
     </div>
+    </RouteGuard>
   );
 }
 

@@ -20,8 +20,15 @@ const mockRemoveChild = jest.fn();
 const createMockLink = () => ({
   href: '',
   download: '',
+  target: '',
   style: { display: '' },
   click: mockClick,
+});
+
+// Create mock iframe element
+const createMockIframe = () => ({
+  src: '',
+  style: { display: '' },
 });
 
 beforeEach(() => {
@@ -96,53 +103,35 @@ describe('AppleCalendarButton Component', () => {
   });
 
   describe('ICS File Download', () => {
-    it('should fetch .ics file when button is clicked', async () => {
-      const mockICSContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR';
-      const mockBlob = new Blob([mockICSContent], { type: 'text/calendar' });
-      
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        blob: jest.fn().mockResolvedValue(mockBlob),
-      });
-
-      const { container } = render(<AppleCalendarButton {...defaultProps} />);
-      
-      // Mock document.createElement for anchor tags AFTER rendering
-      const mockLink = createMockLink();
-      const originalCreateElement = document.createElement.bind(document);
-      jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
-        if (tagName === 'a') {
-          return mockLink as any;
-        }
-        return originalCreateElement(tagName);
-      });
-      
-      jest.spyOn(document.body, 'appendChild').mockImplementation(mockAppendChild);
-      jest.spyOn(document.body, 'removeChild').mockImplementation(mockRemoveChild);
-
-      const button = container.querySelector('button');
-      fireEvent.click(button!);
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('/api/calendar/event/test-event-id/ics');
+    beforeEach(() => {
+      // Mock window.location.origin
+      Object.defineProperty(window, 'location', {
+        value: {
+          origin: 'http://localhost:3000',
+        },
+        writable: true,
       });
     });
 
-    it('should create blob URL and trigger download', async () => {
-      const mockICSContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR';
-      const mockBlob = new Blob([mockICSContent], { type: 'text/calendar' });
-      
+    it('should fetch .ics file when button is clicked', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        blob: jest.fn().mockResolvedValue(mockBlob),
+        headers: {
+          get: jest.fn().mockReturnValue('text/calendar'),
+        },
       });
 
       const { container } = render(<AppleCalendarButton {...defaultProps} />);
       
-      // Mock document.createElement for anchor tags AFTER rendering
+      // Set up mocks AFTER rendering
+      const mockIframe = createMockIframe();
       const mockLink = createMockLink();
+      
       const originalCreateElement = document.createElement.bind(document);
       jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+        if (tagName === 'iframe') {
+          return mockIframe as any;
+        }
         if (tagName === 'a') {
           return mockLink as any;
         }
@@ -156,26 +145,78 @@ describe('AppleCalendarButton Component', () => {
       fireEvent.click(button!);
 
       await waitFor(() => {
-        expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
+        expect(global.fetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/calendar/event/test-event-id/ics',
+          expect.objectContaining({
+            method: 'GET',
+            headers: expect.objectContaining({
+              'Accept': 'text/calendar, */*',
+            }),
+          })
+        );
+      });
+    });
+
+    it('should create iframe and link elements on successful fetch', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        headers: {
+          get: jest.fn().mockReturnValue('text/calendar'),
+        },
+      });
+
+      const { container } = render(<AppleCalendarButton {...defaultProps} />);
+      
+      // Set up mocks AFTER rendering
+      const mockIframe = createMockIframe();
+      const mockLink = createMockLink();
+      
+      const originalCreateElement = document.createElement.bind(document);
+      jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+        if (tagName === 'iframe') {
+          return mockIframe as any;
+        }
+        if (tagName === 'a') {
+          return mockLink as any;
+        }
+        return originalCreateElement(tagName);
+      });
+      
+      jest.spyOn(document.body, 'appendChild').mockImplementation(mockAppendChild);
+      jest.spyOn(document.body, 'removeChild').mockImplementation(mockRemoveChild);
+
+      const button = container.querySelector('button');
+      fireEvent.click(button!);
+
+      await waitFor(() => {
+        expect(document.createElement).toHaveBeenCalledWith('iframe');
+        expect(document.createElement).toHaveBeenCalledWith('a');
+        expect(mockIframe.src).toBe('http://localhost:3000/api/calendar/event/test-event-id/ics');
+        expect(mockLink.href).toBe('http://localhost:3000/api/calendar/event/test-event-id/ics');
+        expect(mockLink.download).toBe('event-test-event-id.ics');
         expect(mockClick).toHaveBeenCalled();
       });
     });
 
     it('should set correct download filename', async () => {
-      const mockICSContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR';
-      const mockBlob = new Blob([mockICSContent], { type: 'text/calendar' });
-      
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        blob: jest.fn().mockResolvedValue(mockBlob),
+        headers: {
+          get: jest.fn().mockReturnValue('text/calendar'),
+        },
       });
 
       const { container } = render(<AppleCalendarButton {...defaultProps} />);
       
-      // Mock document.createElement for anchor tags AFTER rendering
+      // Set up mocks AFTER rendering
+      const mockIframe = createMockIframe();
       const mockLink = createMockLink();
+      
       const originalCreateElement = document.createElement.bind(document);
       jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+        if (tagName === 'iframe') {
+          return mockIframe as any;
+        }
         if (tagName === 'a') {
           return mockLink as any;
         }
@@ -189,26 +230,30 @@ describe('AppleCalendarButton Component', () => {
       fireEvent.click(button!);
 
       await waitFor(() => {
-        expect(mockAppendChild).toHaveBeenCalled();
         expect(mockLink.download).toBe('event-test-event-id.ics');
+        expect(mockLink.target).toBe('_blank');
       });
     });
 
-    it('should clean up blob URL after download', async () => {
-      const mockICSContent = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR';
-      const mockBlob = new Blob([mockICSContent], { type: 'text/calendar' });
-      
+    it('should clean up iframe and link after download', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
-        blob: jest.fn().mockResolvedValue(mockBlob),
+        headers: {
+          get: jest.fn().mockReturnValue('text/calendar'),
+        },
       });
 
       const { container } = render(<AppleCalendarButton {...defaultProps} />);
       
-      // Mock document.createElement for anchor tags AFTER rendering
+      // Set up mocks AFTER rendering
+      const mockIframe = createMockIframe();
       const mockLink = createMockLink();
+      
       const originalCreateElement = document.createElement.bind(document);
       jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+        if (tagName === 'iframe') {
+          return mockIframe as any;
+        }
         if (tagName === 'a') {
           return mockLink as any;
         }
@@ -222,23 +267,30 @@ describe('AppleCalendarButton Component', () => {
       fireEvent.click(button!);
 
       await waitFor(() => {
-        expect(global.URL.createObjectURL).toHaveBeenCalled();
+        expect(mockAppendChild).toHaveBeenCalledTimes(2); // iframe and link
       });
 
-      // Wait for the setTimeout to execute (100ms delay)
+      // Wait for the setTimeout to execute (100ms for link, 2000ms for iframe)
       await new Promise(resolve => setTimeout(resolve, 150));
 
-      expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+      // Link should be removed after 100ms
+      expect(mockRemoveChild).toHaveBeenCalled();
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle fetch errors gracefully', async () => {
-      (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+    beforeEach(() => {
+      // Mock window.location.origin
+      Object.defineProperty(window, 'location', {
+        value: {
+          origin: 'http://localhost:3000',
+        },
+        writable: true,
+      });
+    });
 
-      // Mock window.location.href setter
-      delete (window as any).location;
-      (window as any).location = { href: '' };
+    it('should handle fetch errors gracefully and show fallback UI', async () => {
+      (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       const { container } = render(<AppleCalendarButton {...defaultProps} />);
       const button = container.querySelector('button');
@@ -246,36 +298,32 @@ describe('AppleCalendarButton Component', () => {
       fireEvent.click(button!);
 
       await waitFor(() => {
-        expect(window.location.href).toBe('/api/calendar/event/test-event-id/ics');
+        // Should show fallback UI with download link
+        expect(screen.getByText('Download .ics File')).toBeInTheDocument();
+        expect(screen.queryByText('Opening...')).not.toBeInTheDocument();
       });
     });
 
-    it('should fallback to direct navigation when fetch fails', async () => {
+    it('should fallback to direct link when fetch fails with non-ok response', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
         status: 404,
       });
 
-      // Mock window.location.href setter
-      delete (window as any).location;
-      (window as any).location = { href: '' };
-
       const { container } = render(<AppleCalendarButton {...defaultProps} />);
       const button = container.querySelector('button');
       
       fireEvent.click(button!);
 
       await waitFor(() => {
-        expect(window.location.href).toBe('/api/calendar/event/test-event-id/ics');
+        // Should show fallback UI
+        expect(screen.getByText('Download .ics File')).toBeInTheDocument();
+        expect(screen.queryByText('Opening...')).not.toBeInTheDocument();
       });
     });
 
     it('should stop loading state after error', async () => {
       (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
-
-      // Mock window.location.href setter
-      delete (window as any).location;
-      (window as any).location = { href: '' };
 
       const { container } = render(<AppleCalendarButton {...defaultProps} />);
       const button = container.querySelector('button');
