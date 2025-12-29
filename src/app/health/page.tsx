@@ -49,6 +49,8 @@ export default function HealthPage() {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [showProviderModal, setShowProviderModal] = useState(false);
+  const [showPrescriptionRefillSettings, setShowPrescriptionRefillSettings] = useState<any>(null);
+  const [refillLoading, setRefillLoading] = useState<string | null>(null);
   
   // Form states
   const [newPrescription, setNewPrescription] = useState({
@@ -1143,6 +1145,87 @@ export default function HealthPage() {
             <div className="flex gap-2 mt-6">
               <Button onClick={addAppointment}>Schedule Appointment</Button>
               <Button variant="outline" onClick={() => setShowAppointmentModal(false)}>Cancel</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prescription Refill Settings Modal */}
+      {showPrescriptionRefillSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Auto-Refill Settings</h2>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="auto-refill-enabled" className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="auto-refill-enabled"
+                    checked={showPrescriptionRefillSettings.autoRefillEnabled || false}
+                    onChange={(e) => {
+                      setShowPrescriptionRefillSettings({
+                        ...showPrescriptionRefillSettings,
+                        autoRefillEnabled: e.target.checked
+                      });
+                    }}
+                    className="w-4 h-4"
+                  />
+                  Enable Auto-Refill
+                </Label>
+                <p className="text-sm text-gray-500 mt-1">
+                  Automatically request refills when due
+                </p>
+              </div>
+              
+              {showPrescriptionRefillSettings.autoRefillEnabled && (
+                <div>
+                  <Label htmlFor="days-before">Days Before Refill Due to Request</Label>
+                  <Input
+                    id="days-before"
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={showPrescriptionRefillSettings.autoRefillDaysBefore || 7}
+                    onChange={(e) => {
+                      setShowPrescriptionRefillSettings({
+                        ...showPrescriptionRefillSettings,
+                        autoRefillDaysBefore: parseInt(e.target.value) || 7
+                      });
+                    }}
+                    className="mt-1"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Request refill this many days before it's due
+                  </p>
+                </div>
+              )}
+
+              <div className="text-sm text-gray-600">
+                <p><strong>Medication:</strong> {showPrescriptionRefillSettings.medicationName}</p>
+                <p><strong>Refills Remaining:</strong> {showPrescriptionRefillSettings.refillsRemaining}</p>
+                {showPrescriptionRefillSettings.nextRefillDueDate && (
+                  <p><strong>Next Refill Due:</strong> {new Date(showPrescriptionRefillSettings.nextRefillDueDate).toLocaleDateString()}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button 
+                onClick={() => handleUpdateAutoRefill(
+                  showPrescriptionRefillSettings._id,
+                  showPrescriptionRefillSettings.autoRefillEnabled || false,
+                  showPrescriptionRefillSettings.autoRefillDaysBefore
+                )}
+                className="flex-1"
+              >
+                Save Settings
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowPrescriptionRefillSettings(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </div>
