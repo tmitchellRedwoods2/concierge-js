@@ -105,8 +105,14 @@ export const authOptions = {
             role: user.role,
             accessMode: user.accessMode,
           };
-        } catch (error) {
+        } catch (error: any) {
           console.error("Auth error:", error);
+          console.error("Auth error details:", {
+            message: error?.message,
+            stack: error?.stack,
+            name: error?.name
+          });
+          // Return null to indicate authentication failure
           return null;
         }
       },
