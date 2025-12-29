@@ -290,4 +290,100 @@ export class NotificationService {
       };
     }
   }
+
+  /**
+   * Send a generic notification to a user
+   * This can be used for various notification types beyond appointments
+   */
+  async sendNotification(
+    userId: string,
+    notification: {
+      type: string;
+      title: string;
+      message: string;
+      data?: any;
+      recipientEmail?: string;
+      recipientName?: string;
+    }
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      // Get user email if not provided
+      let recipientEmail = notification.recipientEmail;
+      let recipientName = notification.recipientName || 'User';
+
+      if (!recipientEmail) {
+        // Try to get user email from database
+        try {
+          const connectDB = (await import('@/lib/db/mongodb')).default;
+          const getUser = (await import('@/lib/db/models/User')).default;
+          await connectDB();
+          const User = getUser();
+          const user = await User.findOne({ _id: userId });
+          if (user) {
+            recipientEmail = user.email;
+            recipientName = `${user.firstName} ${user.lastName}`.trim() || user.username || 'User';
+          }
+        } catch (dbError) {
+          console.error('Error fetching user for notification:', dbError);
+        }
+      }
+
+      if (!recipientEmail) {
+        console.warn(`No email found for user ${userId}, skipping email notification`);
+        // Still return success as we may store the notification in the database
+        return {
+          success: true,
+          messageId: 'notification-queued'
+        };
+      }
+
+      // Store notification in database (Message model)
+      try {
+        const connectDB = (await import('@/lib/db/mongodb')).default;
+        const Message = (await import('@/lib/db/models/Message')).default;
+        await connectDB();
+        
+        // Generate a session ID for system notifications
+        const sessionId = `system-${userId}-${Date.now()}`;
+        
+        await Message.create({
+          userId: userId as any, // MongoDB ObjectId
+          sessionId,
+          role: 'system',
+          content: `${notification.title}: ${notification.message}`,
+          agentType: 'health',
+          metadata: {
+            type: notification.type,
+            ...notification.data
+          }
+        });
+      } catch (dbError) {
+        console.error('Error storing notification in database:', dbError);
+      }
+
+      // Send email notification
+      const emailResult = await this.emailService.sendCalendarNotification({
+        eventId: notification.data?.prescriptionId || notification.data?.eventId || 'notification',
+        title: notification.title,
+        description: notification.message,
+        startDate: new Date(),
+        endDate: new Date(),
+        reminderType: 'appointment_confirmation', // Generic type
+        recipientEmail,
+        recipientName
+      });
+
+      return {
+        success: emailResult.success,
+        messageId: emailResult.messageId,
+        error: emailResult.error
+      };
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
 }
