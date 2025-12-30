@@ -33,7 +33,7 @@ async function verifyUser() {
       console.log('❌ User not found in database');
       console.log('\n📋 Available users:');
       const allUsers = await User.find().select('username email role');
-      allUsers.forEach(u => {
+      allUsers.forEach((u: any) => {
         console.log(`  - ${u.username} (${u.email}) - ${u.role}`);
       });
       return;

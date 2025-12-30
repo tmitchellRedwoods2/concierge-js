@@ -65,7 +65,8 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     
     // Require admin authentication for creating users
-    if (!session?.user || session.user.role !== 'admin') {
+    const userRole = (session?.user as any)?.role;
+    if (!session?.user || userRole !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
         { status: 401 }

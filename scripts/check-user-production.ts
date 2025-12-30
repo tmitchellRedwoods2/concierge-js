@@ -45,7 +45,7 @@ async function checkUser() {
       if (allUsers.length === 0) {
         console.log('   (No users found in database)');
       } else {
-        allUsers.forEach(u => {
+        allUsers.forEach((u: any) => {
           console.log(`   - ${u.username} (${u.email}) - ${u.role}`);
         });
       }

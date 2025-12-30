@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
     if (!isPreview) {
       const { auth } = await import('@/lib/auth');
       const session = await auth();
-      if (!session?.user || session.user.role !== 'admin') {
+      const userRole = (session?.user as any)?.role;
+      if (!session?.user || userRole !== 'admin') {
         return NextResponse.json(
           { error: 'Unauthorized - Admin access required in production' },
           { status: 401 }
