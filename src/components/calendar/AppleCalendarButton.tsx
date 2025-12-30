@@ -34,6 +34,11 @@ export default function AppleCalendarButton({ eventId, appleEventUrl, event }: A
 
     try {
       // Use absolute URL to avoid Next.js routing issues
+      // Check if window is available (client-side only)
+      if (typeof window === 'undefined') {
+        throw new Error('Window is not available');
+      }
+      
       const baseUrl = window.location.origin;
       const fullUrl = `${baseUrl}${icsUrl}`;
       

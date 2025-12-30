@@ -32,6 +32,8 @@ export default function EmailScanningPage() {
       loadDebugInfo();
       
       // Check for OAuth callback success/error
+      if (typeof window === 'undefined') return;
+      
       const params = new URLSearchParams(window.location.search);
       const success = params.get('success');
       const error = params.get('error');
