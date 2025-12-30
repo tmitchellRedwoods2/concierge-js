@@ -16,7 +16,12 @@ export async function GET(request: NextRequest) {
     const userCount = await User.countDocuments();
     
     // Get a sample user (if any exist)
-    const sampleUser = await User.findOne().select('username email role -password');
+    const sampleUser = await User.findOne().select('username email role');
+    
+    // Check for jmagner user specifically
+    const jmagnerUser = await User.findOne({ 
+      username: { $regex: /^jmagner$/i }
+    }).select('username email role');
     
     return NextResponse.json({
       success: true,
@@ -27,7 +32,13 @@ export async function GET(request: NextRequest) {
           username: sampleUser.username,
           email: sampleUser.email,
           role: sampleUser.role
-        } : null
+        } : null,
+        jmagnerUser: jmagnerUser ? {
+          username: jmagnerUser.username,
+          email: jmagnerUser.email,
+          role: jmagnerUser.role,
+          exists: true
+        } : { exists: false }
       },
       environment: {
         hasDatabaseUrl: !!process.env.DATABASE_URL,
