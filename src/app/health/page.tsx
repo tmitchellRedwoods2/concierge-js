@@ -581,10 +581,10 @@ export default function HealthPage() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <h3 className="font-semibold text-lg">{prescription.medicationName}</h3>
-                              {prescription.autoRefillEnabled && (
+                              {prescription.autoRefillEnabled === true && (
                                 <Badge className="bg-green-100 text-green-800">Auto-Refill Enabled</Badge>
                               )}
-                              {prescription.refillsRemaining === 0 && (
+                              {(!prescription.refillsRemaining || prescription.refillsRemaining === 0) && (
                                 <Badge variant="destructive">No Refills Remaining</Badge>
                               )}
                               {prescription.refillsRemaining > 0 && prescription.refillsRemaining <= 2 && (
@@ -618,23 +618,37 @@ export default function HealthPage() {
                                   {new Date(prescription.nextRefillDueDate).toLocaleDateString()}
                                 </span>
                                 {(() => {
-                                  const daysUntil = Math.ceil(
-                                    (new Date(prescription.nextRefillDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                                  );
-                                  if (daysUntil <= 7) {
-                                    return <span className="ml-2 text-yellow-600">({daysUntil} days)</span>;
+                                  try {
+                                    const daysUntil = Math.ceil(
+                                      (new Date(prescription.nextRefillDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                                    );
+                                    if (daysUntil <= 7 && daysUntil >= 0) {
+                                      return <span className="ml-2 text-yellow-600">({daysUntil} days)</span>;
+                                    }
+                                  } catch (e) {
+                                    // Invalid date, skip
                                   }
                                   return null;
                                 })()}
                               </div>
                             )}
-                            {prescription.refillHistory && prescription.refillHistory.length > 0 && (
+                            {prescription.refillHistory && Array.isArray(prescription.refillHistory) && prescription.refillHistory.length > 0 && (
                               <div className="mt-2 text-sm">
                                 <span className="text-gray-500">Last Refill: </span>
                                 <span className="font-medium">
-                                  {new Date(prescription.refillHistory[prescription.refillHistory.length - 1].date).toLocaleDateString()}
+                                  {(() => {
+                                    try {
+                                      const lastRefill = prescription.refillHistory[prescription.refillHistory.length - 1];
+                                      if (lastRefill?.date) {
+                                        return new Date(lastRefill.date).toLocaleDateString();
+                                      }
+                                    } catch (e) {
+                                      // Invalid date
+                                    }
+                                    return 'N/A';
+                                  })()}
                                 </span>
-                                {prescription.refillHistory[prescription.refillHistory.length - 1].status === 'ready' && (
+                                {prescription.refillHistory[prescription.refillHistory.length - 1]?.status === 'ready' && (
                                   <Badge className="ml-2 bg-blue-100 text-blue-800">Ready for Pickup</Badge>
                                 )}
                               </div>
@@ -648,7 +662,7 @@ export default function HealthPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleRequestRefill(prescription._id)}
-                              disabled={prescription.refillsRemaining === 0}
+                              disabled={!prescription.refillsRemaining || prescription.refillsRemaining === 0}
                             >
                               Request Refill
                             </Button>
