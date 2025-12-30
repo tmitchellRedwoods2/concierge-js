@@ -7,13 +7,12 @@ import bcrypt from 'bcryptjs';
 /**
  * GET /api/admin/users/jmagner
  * Check if jmagner user exists and verify authentication
+ * NOTE: This endpoint is open for diagnostic purposes
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    
     // Allow unauthenticated access for diagnostic purposes
-    // In production, you may want to restrict this
+    // This helps troubleshoot login issues
     
     await connectDB();
     const User = getUser();

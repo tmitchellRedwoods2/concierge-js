@@ -13,6 +13,8 @@ const publicRoutes = [
   '/signup',
   '/api/auth',
   '/api/test',
+  '/api/auth/test', // Diagnostic endpoint
+  '/api/admin/users/jmagner', // Diagnostic endpoint for troubleshooting
   '/api/test-calendar-public',
   '/api/test-email-public',
   '/api/test-workflow-public',
