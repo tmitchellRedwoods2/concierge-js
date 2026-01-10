@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePermissions } from '@/lib/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,8 +30,14 @@ export default function NewUserPage() {
     annualIncome: '',
   });
 
+  // Use useEffect for client-side redirect to avoid SSR issues
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !isAdmin) {
+      router.push('/admin');
+    }
+  }, [isAdmin, router]);
+
   if (!isAdmin) {
-    router.push('/admin');
     return null;
   }
 
@@ -89,7 +95,11 @@ export default function NewUserPage() {
     <div className="container mx-auto p-6 max-w-2xl">
       <Button
         variant="ghost"
-        onClick={() => router.back()}
+        onClick={() => {
+          if (typeof window !== 'undefined') {
+            router.back();
+          }
+        }}
         className="mb-4"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -277,7 +287,11 @@ export default function NewUserPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    router.back();
+                  }
+                }}
                 disabled={loading}
               >
                 Cancel
