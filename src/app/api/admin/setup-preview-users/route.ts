@@ -48,9 +48,22 @@ export async function POST(request: NextRequest) {
                      process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' ||
                      process.env.NODE_ENV === 'development';
 
-    // For security, in production require admin auth
+    await connectDB();
+    const User = getUser();
+    
+    // Check if any admin user exists
+    const adminExists = await User.findOne({ role: 'admin' });
+    
+    // Check if we're updating existing preview users (allow password reset without admin auth)
+    const updatingExistingPreviewUser = await User.findOne({
+      username: { $regex: new RegExp(`^${PREVIEW_USERS[0]?.username}$`, 'i') }
+    });
+
+    // For security, in production require admin auth IF an admin exists AND we're creating NEW users
+    // If no admin exists, allow unauthenticated access to create/update initial users
+    // If updating existing preview user, allow it without admin auth (for password resets)
     // In preview/dev, allow unauthenticated access for setup
-    if (!isPreview) {
+    if (!isPreview && adminExists && !updatingExistingPreviewUser) {
       const { auth } = await import('@/lib/auth');
       const session = await auth();
       const userRole = (session?.user as any)?.role;
@@ -61,9 +74,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-
-    await connectDB();
-    const User = getUser();
 
     const results = [];
     const errors = [];
@@ -76,10 +86,22 @@ export async function POST(request: NextRequest) {
         });
 
         if (existingUser) {
+          // Update password if user exists (for setup/reset purposes)
+          const hashedPassword = await bcrypt.hash(userData.password, 10);
+          existingUser.password = hashedPassword;
+          // Also update other fields to match expected values
+          if (userData.email) existingUser.email = userData.email;
+          if (userData.firstName) existingUser.firstName = userData.firstName;
+          if (userData.lastName) existingUser.lastName = userData.lastName;
+          if (userData.role) existingUser.role = userData.role;
+          if (userData.accessMode) existingUser.accessMode = userData.accessMode;
+          if (userData.plan) existingUser.plan = userData.plan;
+          await existingUser.save();
+          
           results.push({
             username: userData.username,
-            action: 'skipped',
-            message: 'User already exists'
+            action: 'updated',
+            message: 'User password and profile updated'
           });
           continue;
         }
