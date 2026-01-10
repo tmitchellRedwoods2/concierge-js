@@ -296,9 +296,11 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
             </Button>
             <Button variant="outline" size="sm" onClick={() => {
               // Fit view to show all nodes
-              const reactFlowInstance = document.querySelector('.react-flow') as any;
-              if (reactFlowInstance && reactFlowInstance.fitView) {
-                reactFlowInstance.fitView();
+              if (typeof window !== 'undefined' && document) {
+                const reactFlowInstance = document.querySelector('.react-flow') as any;
+                if (reactFlowInstance && reactFlowInstance.fitView) {
+                  reactFlowInstance.fitView();
+                }
               }
             }}>
               <Maximize className="w-4 h-4 mr-2" />
