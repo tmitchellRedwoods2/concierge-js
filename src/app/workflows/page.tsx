@@ -35,6 +35,8 @@ interface Workflow {
     conditions: any[];
   };
   steps: any[];
+  nodes?: any[]; // Optional for backward compatibility
+  edges?: any[]; // Optional for backward compatibility
   approvalRequired: boolean;
   autoExecute: boolean;
   isActive: boolean;
