@@ -89,9 +89,7 @@ export async function POST(request: NextRequest) {
       // Otherwise allow it (updating existing users or no admin exists)
     }
 
-    const results = [];
-    const errors = [];
-
+    // Now process all preview users
     for (const userData of PREVIEW_USERS) {
       try {
         // Check if user already exists
