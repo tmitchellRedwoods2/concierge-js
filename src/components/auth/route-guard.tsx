@@ -29,7 +29,7 @@ export default function RouteGuard({
   redirectTo,
 }: RouteGuardProps) {
   const { data: session, status } = useSession();
-  const { hasPermission, canAccessRoute, getDefaultRoute, isAdmin, role, accessMode } = usePermissions();
+  const { hasPermission, canAccessRoute, defaultRoute, isAdmin, role, accessMode } = usePermissions();
   const router = useRouter();
 
   useEffect(() => {
@@ -43,22 +43,28 @@ export default function RouteGuard({
 
     // Check role restrictions
     if (allowedRoles && role && !allowedRoles.includes(role)) {
-      router.push(redirectTo || getDefaultRoute());
+      if (typeof window !== 'undefined') {
+        router.push(redirectTo || defaultRoute || '/dashboard');
+      }
       return;
     }
 
     // Check access mode restrictions
     if (allowedAccessModes && accessMode && !allowedAccessModes.includes(accessMode)) {
-      router.push(redirectTo || getDefaultRoute());
+      if (typeof window !== 'undefined') {
+        router.push(redirectTo || defaultRoute || '/dashboard');
+      }
       return;
     }
 
     // Check permission
     if (requiredPermission && !hasPermission(requiredPermission)) {
-      router.push(redirectTo || getDefaultRoute());
+      if (typeof window !== 'undefined') {
+        router.push(redirectTo || defaultRoute || '/dashboard');
+      }
       return;
     }
-  }, [session, status, requiredPermission, allowedRoles, allowedAccessModes, hasPermission, role, accessMode, router, getDefaultRoute, redirectTo]);
+  }, [session, status, requiredPermission, allowedRoles, allowedAccessModes, hasPermission, role, accessMode, router, defaultRoute, redirectTo]);
 
   // Show loading state
   if (status === 'loading') {
