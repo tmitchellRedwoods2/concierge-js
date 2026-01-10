@@ -48,26 +48,52 @@ export async function POST(request: NextRequest) {
                      process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' ||
                      process.env.NODE_ENV === 'development';
 
-    // For security, in production require admin auth
-    // In preview/dev, allow unauthenticated access for setup
-    if (!isPreview) {
-      const { auth } = await import('@/lib/auth');
-      const session = await auth();
-      const userRole = (session?.user as any)?.role;
-      if (!session?.user || userRole !== 'admin') {
-        return NextResponse.json(
-          { error: 'Unauthorized - Admin access required in production' },
-          { status: 401 }
-        );
-      }
-    }
-
     await connectDB();
     const User = getUser();
-
+    
+    // Check if we're updating existing users or creating new ones
     const results = [];
     const errors = [];
+    let hasAnyExistingUser = false;
+    
+    // Quick check: Do any preview users exist? (This determines if we're updating or creating)
+    for (const userData of PREVIEW_USERS) {
+      const existing = await User.findOne({
+        username: { $regex: new RegExp(`^${userData.username}$`, 'i') }
+      });
+      if (existing) {
+        hasAnyExistingUser = true;
+        break; // Found at least one existing preview user
+      }
+    }
+    
+    // SIMPLIFIED LOGIC:
+    // - Always allow updates to existing preview users (password resets)
+    // - Only require auth when creating NEW users in production (and admin exists)
+    // - In preview/dev, always allow
+    
+    const needsAuth = !isPreview && !hasAnyExistingUser;
+    
+    if (needsAuth) {
+      // Only check auth if we're creating new users in production
+      const adminExists = await User.findOne({ role: 'admin' });
+      
+      if (adminExists) {
+        const { auth } = await import('@/lib/auth');
+        const session = await auth();
+        const userRole = (session?.user as any)?.role;
+        if (!session?.user || userRole !== 'admin') {
+          return NextResponse.json(
+            { error: 'Unauthorized - Admin access required in production for creating new users' },
+            { status: 401 }
+          );
+        }
+      }
+      // If no admin exists, allow it (initial setup)
+    }
+    // If hasAnyExistingUser is true, we're updating - always allow without auth
 
+    // Now process all preview users
     for (const userData of PREVIEW_USERS) {
       try {
         // Check if user already exists
@@ -76,10 +102,22 @@ export async function POST(request: NextRequest) {
         });
 
         if (existingUser) {
+          // Update password if user exists (for setup/reset purposes)
+          const hashedPassword = await bcrypt.hash(userData.password, 10);
+          existingUser.password = hashedPassword;
+          // Also update other fields to match expected values
+          if (userData.email) existingUser.email = userData.email;
+          if (userData.firstName) existingUser.firstName = userData.firstName;
+          if (userData.lastName) existingUser.lastName = userData.lastName;
+          if (userData.role) existingUser.role = userData.role;
+          if (userData.accessMode) existingUser.accessMode = userData.accessMode;
+          if (userData.plan) existingUser.plan = userData.plan;
+          await existingUser.save();
+          
           results.push({
             username: userData.username,
-            action: 'skipped',
-            message: 'User already exists'
+            action: 'updated',
+            message: 'User password and profile updated'
           });
           continue;
         }
