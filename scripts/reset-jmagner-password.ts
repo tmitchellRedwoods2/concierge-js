@@ -1,11 +1,16 @@
 /**
  * Script to reset jmagner user's password
- * Usage: npx tsx scripts/reset-jmagner-password.ts
+ * 
+ * Usage for PRODUCTION:
+ *   DATABASE_URL="your-production-mongodb-uri" npx tsx scripts/reset-jmagner-password.ts
+ * 
+ * Usage for LOCAL:
+ *   npx tsx scripts/reset-jmagner-password.ts
  * 
  * This script directly updates the jmagner user's password in the database
  * Useful when the API endpoint isn't accessible
  */
-import connectDB from '../src/lib/db/mongodb';
+import mongoose from 'mongoose';
 import getUser from '../src/lib/db/models/User';
 import bcrypt from 'bcryptjs';
 
@@ -14,8 +19,20 @@ const newPassword = 'jm71Concierge!';
 
 async function resetPassword() {
   try {
+    // Use DATABASE_URL from environment, or fallback to local
+    const dbUri = process.env.DATABASE_URL || process.env.MONGODB_URI || 'mongodb://localhost:27017/concierge';
+    
+    if (!process.env.DATABASE_URL && !process.env.MONGODB_URI) {
+      console.warn('⚠️  WARNING: No DATABASE_URL or MONGODB_URI found in environment.');
+      console.warn('   This will connect to: mongodb://localhost:27017/concierge');
+      console.warn('   For PRODUCTION, set DATABASE_URL before running:\n');
+      console.warn('   DATABASE_URL="your-production-uri" npx tsx scripts/reset-jmagner-password.ts\n');
+    } else {
+      console.log(`📍 Using database: ${dbUri.replace(/:[^:@]+@/, ':****@')}`); // Hide password in logs
+    }
+    
     console.log('🔍 Connecting to database...');
-    await connectDB();
+    await mongoose.connect(dbUri);
     console.log('✅ Database connected\n');
 
     const User = getUser();
@@ -57,6 +74,8 @@ async function resetPassword() {
     console.error('\nStack:', error.stack);
     process.exit(1);
   } finally {
+    await mongoose.connection.close();
+    console.log('\n🔌 Database connection closed');
     process.exit(0);
   }
 }

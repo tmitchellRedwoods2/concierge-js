@@ -51,31 +51,34 @@ export async function POST(request: NextRequest) {
     await connectDB();
     const User = getUser();
     
-    // FIRST: Process the users to see if any exist (we'll allow updates without auth)
+    // Check if we're updating existing users or creating new ones
     const results = [];
     const errors = [];
     let hasAnyExistingUser = false;
     
-    // Quick check: Do any preview users exist?
+    // Quick check: Do any preview users exist? (This determines if we're updating or creating)
     for (const userData of PREVIEW_USERS) {
       const existing = await User.findOne({
         username: { $regex: new RegExp(`^${userData.username}$`, 'i') }
       });
       if (existing) {
         hasAnyExistingUser = true;
-        break;
+        break; // Found at least one existing preview user
       }
     }
     
-    // Only require auth if:
-    // 1. We're in production (not preview/dev)
-    // 2. An admin exists
-    // 3. NO preview users exist (we're creating new ones, not updating)
-    if (!isPreview) {
+    // SIMPLIFIED LOGIC:
+    // - Always allow updates to existing preview users (password resets)
+    // - Only require auth when creating NEW users in production (and admin exists)
+    // - In preview/dev, always allow
+    
+    const needsAuth = !isPreview && !hasAnyExistingUser;
+    
+    if (needsAuth) {
+      // Only check auth if we're creating new users in production
       const adminExists = await User.findOne({ role: 'admin' });
       
-      // If admin exists AND no preview users exist, require auth for creating new users
-      if (adminExists && !hasAnyExistingUser) {
+      if (adminExists) {
         const { auth } = await import('@/lib/auth');
         const session = await auth();
         const userRole = (session?.user as any)?.role;
@@ -86,8 +89,9 @@ export async function POST(request: NextRequest) {
           );
         }
       }
-      // Otherwise allow it (updating existing users or no admin exists)
+      // If no admin exists, allow it (initial setup)
     }
+    // If hasAnyExistingUser is true, we're updating - always allow without auth
 
     // Now process all preview users
     for (const userData of PREVIEW_USERS) {
