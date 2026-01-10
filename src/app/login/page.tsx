@@ -3,7 +3,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,6 +17,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [callbackUrl, setCallbackUrl] = useState('/dashboard');
+
+  // Get the callback URL from query params on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const url = params.get('callbackUrl') || params.get('redirect') || '/dashboard';
+      setCallbackUrl(url);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,12 +38,14 @@ export default function LoginPage() {
         username,
         password,
         redirect: false,
+        callbackUrl: callbackUrl,
       });
 
       if (result?.error) {
         setError("Invalid username or password");
       } else {
-        router.push("/dashboard");
+        // Redirect to the original destination or dashboard
+        router.push(callbackUrl);
         router.refresh();
       }
     } catch {

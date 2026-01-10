@@ -189,26 +189,47 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const maxResults = parseInt(searchParams.get('maxResults') || '10');
+    console.log('📅 Calendar events API - User ID:', session.user.id);
 
-    const calendarService = new CalendarService();
-    const result = await calendarService.listEvents('primary', maxResults);
+    // Connect to database
+    const connectDB = (await import('@/lib/db/mongodb')).default;
+    await connectDB();
+
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+
+    console.log('📅 Calendar events API - Date range:', { startDate, endDate });
+
+    // Use InAppCalendarService to fetch events from MongoDB
+    const { InAppCalendarService } = await import('@/lib/services/in-app-calendar');
+    const calendarService = new InAppCalendarService();
+    const result = await calendarService.getEvents(
+      session.user.id,
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined
+    );
+
+    console.log('📅 Calendar events API - Result:', {
+      success: result.success,
+      eventCount: result.events?.length || 0,
+      error: result.error
+    });
 
     if (result.success) {
       return NextResponse.json({
         success: true,
-        events: result.events,
+        events: result.events || [],
       });
     } else {
       return NextResponse.json(
-        { error: result.error },
+        { error: result.error || 'Failed to fetch events' },
         { status: 500 }
       );
     }
 
   } catch (error) {
-    console.error('Calendar API error:', error);
+    console.error('❌ Calendar API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

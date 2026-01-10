@@ -61,6 +61,11 @@ export class InAppCalendarService {
   async getEvents(userId: string, startDate?: Date, endDate?: Date) {
     try {
       console.log('📅 Fetching in-app calendar events for user:', userId);
+      console.log('📅 Date range:', { startDate, endDate });
+      
+      // Ensure we're connected to the database
+      const connectDB = (await import('@/lib/db/mongodb')).default;
+      await connectDB();
       
       const query: any = { userId };
       
@@ -72,11 +77,30 @@ export class InAppCalendarService {
         .sort({ startDate: 1 })
         .lean();
 
-      console.log(`✅ Found ${events.length} in-app calendar events`);
+      console.log(`✅ Found ${events.length} in-app calendar events for user ${userId}`);
+      console.log('📅 Query used:', JSON.stringify(query, null, 2));
+      console.log('📅 Event IDs:', events.map((e: any) => e._id));
+      console.log('📅 Event details:', events.map((e: any) => ({
+        id: e._id?.toString(),
+        title: e.title,
+        startDate: e.startDate,
+        source: e.source,
+        userId: e.userId
+      })));
+      
+      // Ensure proper serialization for frontend (convert ObjectId to string, dates to ISO strings)
+      const serializedEvents = events.map((event: any) => ({
+        ...event,
+        _id: event._id?.toString() || event._id,
+        startDate: event.startDate ? new Date(event.startDate).toISOString() : event.startDate,
+        endDate: event.endDate ? new Date(event.endDate).toISOString() : event.endDate,
+        createdAt: event.createdAt ? new Date(event.createdAt).toISOString() : event.createdAt,
+        updatedAt: event.updatedAt ? new Date(event.updatedAt).toISOString() : event.updatedAt,
+      }));
       
       return {
         success: true,
-        events: events
+        events: serializedEvents
       };
     } catch (error) {
       console.error('❌ Error fetching in-app calendar events:', error);

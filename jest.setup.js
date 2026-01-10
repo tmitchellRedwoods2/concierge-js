@@ -109,6 +109,9 @@ jest.mock('@/lib/db/models/Message', () => createMockModel())
 jest.mock('@/lib/db/models/ChatSession', () => createMockModel())
 jest.mock('@/lib/db/models/Account', () => createMockModel())
 
+// Calendar models
+jest.mock('@/lib/models/CalendarEvent', () => createMockModel())
+
 // Mock Web APIs for Node.js environment
 if (typeof global.Request === 'undefined') {
   global.Request = class Request {
@@ -190,17 +193,30 @@ if (typeof global.Headers === 'undefined') {
 
 // Mock NextResponse
 jest.mock('next/server', () => {
-  const NextResponse = {
-    json: (data, init) => {
-      const response = {
-        json: async () => data,
-        status: init?.status || 200,
-        statusText: init?.statusText || 'OK',
-        headers: new Map(Object.entries(init?.headers || {})),
-        ok: (init?.status || 200) >= 200 && (init?.status || 200) < 300,
-      }
-      return response
-    },
+  const NextResponse = function(body, init) {
+    const response = {
+      json: async () => typeof body === 'string' ? JSON.parse(body) : body,
+      text: async () => typeof body === 'string' ? body : JSON.stringify(body),
+      status: init?.status || 200,
+      statusText: init?.statusText || 'OK',
+      headers: new Map(Object.entries(init?.headers || {})),
+      ok: (init?.status || 200) >= 200 && (init?.status || 200) < 300,
+      _body: body,
+    }
+    return response
+  }
+  
+  NextResponse.json = (data, init) => {
+    const response = {
+      json: async () => data,
+      text: async () => JSON.stringify(data),
+      status: init?.status || 200,
+      statusText: init?.statusText || 'OK',
+      headers: new Map(Object.entries(init?.headers || {})),
+      ok: (init?.status || 200) >= 200 && (init?.status || 200) < 300,
+      _body: data,
+    }
+    return response
   }
   
   return {

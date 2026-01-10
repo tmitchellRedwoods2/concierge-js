@@ -6,6 +6,7 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import RouteGuard from '@/components/auth/route-guard';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +49,8 @@ export default function HealthPage() {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [showProviderModal, setShowProviderModal] = useState(false);
+  const [showPrescriptionRefillSettings, setShowPrescriptionRefillSettings] = useState<any>(null);
+  const [refillLoading, setRefillLoading] = useState<string | null>(null);
   
   // Form states
   const [newPrescription, setNewPrescription] = useState({
@@ -259,6 +262,55 @@ export default function HealthPage() {
     }
   };
 
+  const handleRequestRefill = async (prescriptionId: string) => {
+    try {
+      setRefillLoading(prescriptionId);
+      const response = await fetch(`/api/health/prescriptions/${prescriptionId}/refill`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ manualRequest: true })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        alert(`Refill requested successfully! Confirmation: ${data.pharmacyConfirmationNumber || 'Pending'}`);
+        await loadPrescriptions();
+      } else {
+        alert(`Failed to request refill: ${data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to request refill:', error);
+      alert('An error occurred while requesting the refill');
+    } finally {
+      setRefillLoading(null);
+    }
+  };
+
+  const handleUpdateAutoRefill = async (prescriptionId: string, autoRefillEnabled: boolean, autoRefillDaysBefore?: number) => {
+    try {
+      const response = await fetch(`/api/health/prescriptions/${prescriptionId}/auto-refill`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          autoRefillEnabled,
+          autoRefillDaysBefore 
+        })
+      });
+
+      if (response.ok) {
+        await loadPrescriptions();
+        setShowPrescriptionRefillSettings(null);
+      } else {
+        const data = await response.json();
+        alert(`Failed to update auto-refill settings: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to update auto-refill settings:', error);
+      alert('An error occurred while updating auto-refill settings');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       scheduled: { color: "bg-blue-100 text-blue-800", icon: <Calendar className="w-3 h-3" /> },
@@ -278,7 +330,8 @@ export default function HealthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <RouteGuard requiredPermission="view:health" allowedAccessModes={['self-service']}>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Top Navigation Bar */}
       <nav className="bg-white shadow-sm border-b">
         <div className="w-full px-4 py-2">
@@ -526,7 +579,20 @@ export default function HealthPage() {
                       <div key={prescription._id} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{prescription.medicationName}</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-lg">{prescription.medicationName}</h3>
+                              {prescription.autoRefillEnabled === true && (
+                                <Badge className="bg-green-100 text-green-800">Auto-Refill Enabled</Badge>
+                              )}
+                              {(!prescription.refillsRemaining || prescription.refillsRemaining === 0) && (
+                                <Badge variant="destructive">No Refills Remaining</Badge>
+                              )}
+                              {prescription.refillsRemaining > 0 && prescription.refillsRemaining <= 2 && (
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-800">
+                                  {prescription.refillsRemaining} Refills Left
+                                </Badge>
+                              )}
+                            </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm">
                               <div>
                                 <span className="text-gray-500">Dosage:</span>
@@ -545,11 +611,68 @@ export default function HealthPage() {
                                 <p className="font-medium">{prescription.refillsRemaining}</p>
                               </div>
                             </div>
+                            {prescription.nextRefillDueDate && (
+                              <div className="mt-2 text-sm">
+                                <span className="text-gray-500">Next Refill Due: </span>
+                                <span className="font-medium">
+                                  {new Date(prescription.nextRefillDueDate).toLocaleDateString()}
+                                </span>
+                                {(() => {
+                                  try {
+                                    const daysUntil = Math.ceil(
+                                      (new Date(prescription.nextRefillDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                                    );
+                                    if (daysUntil <= 7 && daysUntil >= 0) {
+                                      return <span className="ml-2 text-yellow-600">({daysUntil} days)</span>;
+                                    }
+                                  } catch (e) {
+                                    // Invalid date, skip
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            )}
+                            {prescription.refillHistory && Array.isArray(prescription.refillHistory) && prescription.refillHistory.length > 0 && (
+                              <div className="mt-2 text-sm">
+                                <span className="text-gray-500">Last Refill: </span>
+                                <span className="font-medium">
+                                  {(() => {
+                                    try {
+                                      const lastRefill = prescription.refillHistory[prescription.refillHistory.length - 1];
+                                      if (lastRefill?.date) {
+                                        return new Date(lastRefill.date).toLocaleDateString();
+                                      }
+                                    } catch (e) {
+                                      // Invalid date
+                                    }
+                                    return 'N/A';
+                                  })()}
+                                </span>
+                                {prescription.refillHistory[prescription.refillHistory.length - 1]?.status === 'ready' && (
+                                  <Badge className="ml-2 bg-blue-100 text-blue-800">Ready for Pickup</Badge>
+                                )}
+                              </div>
+                            )}
                             {prescription.notes && (
                               <p className="text-sm text-gray-600 mt-2">{prescription.notes}</p>
                             )}
                           </div>
                           <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRequestRefill(prescription._id)}
+                              disabled={!prescription.refillsRemaining || prescription.refillsRemaining === 0}
+                            >
+                              Request Refill
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowPrescriptionRefillSettings(prescription)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
@@ -1040,6 +1163,88 @@ export default function HealthPage() {
           </div>
         </div>
       )}
+
+      {/* Prescription Refill Settings Modal */}
+      {showPrescriptionRefillSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Auto-Refill Settings</h2>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="auto-refill-enabled" className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="auto-refill-enabled"
+                    checked={showPrescriptionRefillSettings.autoRefillEnabled || false}
+                    onChange={(e) => {
+                      setShowPrescriptionRefillSettings({
+                        ...showPrescriptionRefillSettings,
+                        autoRefillEnabled: e.target.checked
+                      });
+                    }}
+                    className="w-4 h-4"
+                  />
+                  Enable Auto-Refill
+                </Label>
+                <p className="text-sm text-gray-500 mt-1">
+                  Automatically request refills when due
+                </p>
+              </div>
+              
+              {showPrescriptionRefillSettings.autoRefillEnabled && (
+                <div>
+                  <Label htmlFor="days-before">Days Before Refill Due to Request</Label>
+                  <Input
+                    id="days-before"
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={showPrescriptionRefillSettings.autoRefillDaysBefore || 7}
+                    onChange={(e) => {
+                      setShowPrescriptionRefillSettings({
+                        ...showPrescriptionRefillSettings,
+                        autoRefillDaysBefore: parseInt(e.target.value) || 7
+                      });
+                    }}
+                    className="mt-1"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Request refill this many days before it's due
+                  </p>
+                </div>
+              )}
+
+              <div className="text-sm text-gray-600">
+                <p><strong>Medication:</strong> {showPrescriptionRefillSettings.medicationName}</p>
+                <p><strong>Refills Remaining:</strong> {showPrescriptionRefillSettings.refillsRemaining}</p>
+                {showPrescriptionRefillSettings.nextRefillDueDate && (
+                  <p><strong>Next Refill Due:</strong> {new Date(showPrescriptionRefillSettings.nextRefillDueDate).toLocaleDateString()}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button 
+                onClick={() => handleUpdateAutoRefill(
+                  showPrescriptionRefillSettings._id,
+                  showPrescriptionRefillSettings.autoRefillEnabled || false,
+                  showPrescriptionRefillSettings.autoRefillDaysBefore
+                )}
+                className="flex-1"
+              >
+                Save Settings
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowPrescriptionRefillSettings(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </RouteGuard>
   );
 }

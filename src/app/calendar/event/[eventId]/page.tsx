@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
 import { notFound, redirect } from 'next/navigation';
+import AppleCalendarButton from '@/components/calendar/AppleCalendarButton';
 
 interface CalendarEventPageProps {
   params: {
@@ -11,18 +12,12 @@ interface CalendarEventPageProps {
 }
 
 export default async function CalendarEventPage({ params }: CalendarEventPageProps) {
-  const session = await auth();
-  
-  if (!session?.user?.id) {
-    redirect('/auth/signin');
-  }
-
   await connectDB();
 
   try {
+    // Allow public access to calendar events - no authentication required
     const event = await CalendarEvent.findOne({ 
-      _id: params.eventId, 
-      userId: session.user.id 
+      _id: params.eventId
     });
 
     if (!event) {
@@ -191,18 +186,24 @@ export default async function CalendarEventPage({ params }: CalendarEventPagePro
 
               {/* Actions */}
               <div className="mt-8 pt-6 border-t border-gray-200">
-                <div className="flex space-x-4">
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                    Edit Event
-                  </button>
-                  <button className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
-                    Delete Event
-                  </button>
+                <div className="flex flex-wrap gap-4">
+                  <AppleCalendarButton
+                    eventId={params.eventId}
+                    appleEventUrl={event.appleEventUrl}
+                    event={{
+                      title: event.title,
+                      startDate: event.startDate,
+                      endDate: event.endDate,
+                      location: event.location,
+                      description: event.description,
+                      attendees: event.attendees
+                    }}
+                  />
                   <a 
-                    href="/workflows" 
+                    href="/calendar" 
                     className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
                   >
-                    Back to Workflows
+                    View All Events
                   </a>
                 </div>
               </div>

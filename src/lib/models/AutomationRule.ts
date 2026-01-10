@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAutomationRule extends Document {
+  _id: string;
   userId: string;
   name: string;
   description: string;
@@ -19,6 +20,7 @@ export interface IAutomationRule extends Document {
 }
 
 const AutomationRuleSchema = new Schema<IAutomationRule>({
+  _id: { type: String, required: true },
   userId: { type: String, required: true, index: true },
   name: { type: String, required: true },
   description: { type: String, default: '' },

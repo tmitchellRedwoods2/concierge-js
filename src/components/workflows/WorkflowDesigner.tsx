@@ -40,6 +40,7 @@ import APINode from './nodes/APINode';
 import ConditionNode from './nodes/ConditionNode';
 import ApprovalNode from './nodes/ApprovalNode';
 import EndNode from './nodes/EndNode';
+import AutomationRuleNode from './nodes/AutomationRuleNode';
 
 // Custom Edge Types
 import ApprovalEdge from './edges/ApprovalEdge';
@@ -51,18 +52,16 @@ const nodeTypes: NodeTypes = {
   condition: ConditionNode,
   approval: ApprovalNode,
   end: EndNode,
+  automation_rule: AutomationRuleNode,
 };
 
 const edgeTypes: EdgeTypes = {
   approval: ApprovalEdge,
 };
 
-interface WorkflowStep {
-  id: string;
-  type: string;
-  name: string;
-  config: any;
-  position: { x: number; y: number };
+interface WorkflowNodeData {
+  label: string;
+  [key: string]: any;
 }
 
 interface WorkflowDesignerProps {
@@ -226,14 +225,14 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
 
   const saveWorkflow = useCallback(() => {
     const workflowData = {
+      id: workflow?.id,
       name: workflow?.name || 'New Workflow',
       description: workflow?.description || '',
       nodes: nodes.map(node => ({
         id: node.id,
         type: node.type,
-        name: node.data.label,
-        config: node.data,
-        position: node.position
+        position: node.position,
+        data: node.data
       })),
       edges: edges.map(edge => ({
         id: edge.id,
@@ -250,9 +249,8 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
       nodes: nodes.map(node => ({
         id: node.id,
         type: node.type,
-        name: node.data.label,
-        config: node.data,
-        position: node.position
+        position: node.position,
+        data: node.data
       })),
       edges: edges.map(edge => ({
         id: edge.id,
@@ -367,6 +365,15 @@ export default function WorkflowDesigner({ workflow, onSave, onTest, onClose }: 
             >
               <Plus className="w-4 h-4 mr-2" />
               Approval
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => addNode('automation_rule')}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Automation Rule
             </Button>
             <Button
               variant="outline"
@@ -500,6 +507,11 @@ function getDefaultNodeData(type: string) {
       return {
         approvers: [],
         timeout: 24 * 60 * 60 * 1000 // 24 hours
+      };
+    case 'automation_rule':
+      return {
+        ruleId: '',
+        ruleName: ''
       };
     case 'end':
       return {

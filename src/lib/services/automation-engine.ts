@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { NotificationService } from './notification-service';
 import { CalendarEvent } from '@/lib/models/CalendarEvent';
 import { AutomationRule as AutomationRuleModel } from '@/lib/models/AutomationRule';
+import { CalendarSyncService } from './calendar-sync';
 import connectDB from '@/lib/db/mongodb';
 
 export interface AutomationRule {
@@ -53,6 +54,7 @@ export interface ExecutionLog {
 export class AutomationEngine extends EventEmitter {
   private rules: Map<string, AutomationRule> = new Map();
   private notificationService: NotificationService | null = null;
+  private calendarSyncService: CalendarSyncService | null = null;
   private isRunning: boolean = false;
   private executionQueue: Array<{ rule: AutomationRule; context: AutomationContext }> = [];
   private executionLogs: Map<string, ExecutionLog[]> = new Map(); // userId -> logs[]
@@ -61,6 +63,7 @@ export class AutomationEngine extends EventEmitter {
     super();
     try {
       this.notificationService = new NotificationService();
+      this.calendarSyncService = new CalendarSyncService();
       this.startExecutionLoop();
       // Load rules from database asynchronously
       this.loadRulesFromDB().catch(err => {
@@ -71,6 +74,7 @@ export class AutomationEngine extends EventEmitter {
       // Continue without notification service if it fails
       // This allows rules to be created even if email service isn't configured
       this.notificationService = null;
+      this.calendarSyncService = null;
     }
   }
 
@@ -358,26 +362,49 @@ export class AutomationEngine extends EventEmitter {
   // Email action
   private async sendEmailAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     try {
-      const { to, subject, template, data } = action.config;
+      const { to, recipientEmail, subject, template, data } = action.config;
+      const resolvedRecipient = to || recipientEmail;
+
+      console.log(`📧 Email action config:`, { to, recipientEmail, subject, template, data });
+      console.log(`📧 Resolved recipient: ${resolvedRecipient}`);
+
+      if (!resolvedRecipient || resolvedRecipient.trim() === '') {
+        throw new Error('Recipient email is required for send_email action');
+      }
       
-      const emailData = {
-        type: template || 'appointment_confirmation',
-        recipientEmail: to,
-        recipientName: data?.recipientName || 'User',
-        title: data?.title || subject,
+      // Construct event object for sendAppointmentConfirmation
+      const eventId = data?.eventId || context.triggerData?.calendarEventId || `event_${Date.now()}`;
+      const eventData = {
+        _id: eventId,
+        id: eventId,
+        title: data?.title || subject || 'Appointment',
+        description: data?.description || '',
         startDate: data?.startDate || new Date().toISOString(),
         endDate: data?.endDate || new Date(Date.now() + 3600000).toISOString(),
         location: data?.location || '',
-        description: data?.description || '',
-        ...data
+        attendees: data?.attendees || [resolvedRecipient],
       };
 
+      // Construct event URL
+      const eventUrl = data?.eventUrl || `/calendar/event/${eventId}`;
+
       const notificationService = this.getNotificationService();
-      const result = await notificationService.sendAppointmentConfirmation(emailData);
-      console.log(`📧 Email sent to ${to}`);
+      const result = await notificationService.sendAppointmentConfirmation(
+        eventData,
+        context.userId,
+        resolvedRecipient,
+        data?.recipientName || 'User',
+        eventUrl
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send email');
+      }
+      
+      console.log(`📧 Email sent to ${resolvedRecipient}`);
       return {
-        message: `Email sent successfully to ${to}`,
-        details: { to, subject, template, result }
+        message: `Email sent successfully to ${resolvedRecipient}`,
+        details: { to: resolvedRecipient, subject, template, result }
       };
     } catch (error) {
       console.error('❌ Failed to send email action:', error);
@@ -401,6 +428,10 @@ export class AutomationEngine extends EventEmitter {
   private async createCalendarEventAction(action: AutomationAction, context: AutomationContext): Promise<{ message: string; details: any }> {
     const { title, startDate, endDate, location, description } = action.config;
     
+    // Determine source and workflowExecutionId from context
+    const source = context.triggerData?.workflowExecutionId ? 'workflow' : (context.triggerData?.email ? 'email' : 'manual');
+    const workflowExecutionId = context.triggerData?.workflowExecutionId || undefined;
+    
     const event = new CalendarEvent({
       title,
       startDate: new Date(startDate),
@@ -409,14 +440,98 @@ export class AutomationEngine extends EventEmitter {
       description: description || '',
       userId: context.userId,
       attendees: action.config.attendees || [],
-      allDay: action.config.allDay || false
+      allDay: action.config.allDay || false,
+      source: source as 'workflow' | 'manual' | 'import' | 'email',
+      workflowExecutionId: workflowExecutionId,
+      createdBy: context.userId,
+      status: 'confirmed'
     });
 
     await event.save();
-    console.log(`📅 Calendar event created: ${title}`);
+    const eventId = event._id.toString();
+    console.log(`📅 Calendar event created: ${title} (source: ${source})`);
+
+    // Generate ICS URL for automatic Apple Calendar integration
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000';
+    const icsUrl = `${baseUrl}/api/calendar/event/${eventId}/ics`;
+
+    // Automatically sync to external calendar (Google Calendar, Apple Calendar, etc.)
+    if (this.calendarSyncService) {
+      try {
+        const syncResult = await this.calendarSyncService.syncEventIfEnabled(
+          {
+            _id: eventId,
+            id: eventId,
+            title,
+            startDate: new Date(startDate).toISOString(),
+            endDate: new Date(endDate).toISOString(),
+            location: location || '',
+            description: description || '',
+            attendees: action.config.attendees || []
+          },
+          context.userId
+        );
+
+        if (syncResult.success) {
+          console.log(`📅 Event synced to external calendar: ${syncResult.externalEventId}`);
+          // Update event with external calendar info if available
+          if (syncResult.externalEventId && syncResult.calendarType) {
+            if (syncResult.calendarType === 'google') {
+              event.googleEventId = syncResult.externalEventId;
+              event.googleEventUrl = syncResult.externalCalendarUrl;
+            } else if (syncResult.calendarType === 'apple') {
+              event.appleEventId = syncResult.externalEventId;
+              event.appleEventUrl = syncResult.externalCalendarUrl;
+            }
+            await event.save();
+          }
+        } else {
+          console.log(`⚠️ Calendar sync not enabled or failed (non-blocking): ${syncResult.error}`);
+        }
+      } catch (error) {
+        console.error('⚠️ Calendar sync error (non-blocking):', error);
+        // Don't throw - calendar sync failure shouldn't block event creation
+      }
+    }
+
+    // If this is from an email trigger, automatically send notification with ICS link
+    if (context.triggerData?.email && this.notificationService) {
+      try {
+        await this.notificationService.sendAppointmentConfirmation(
+          {
+            _id: eventId,
+            id: eventId,
+            title,
+            startDate: new Date(startDate).toISOString(),
+            endDate: new Date(endDate).toISOString(),
+            location: location || '',
+            description: description || '',
+            attendees: action.config.attendees || []
+          },
+          context.userId,
+          context.triggerData.email.from || '',
+          'User',
+          `/calendar/event/${eventId}`
+        );
+        console.log(`📧 Notification sent for event ${eventId}`);
+      } catch (error) {
+        console.error('⚠️ Failed to send notification:', error);
+      }
+    }
+
     return {
       message: `Calendar event "${title}" created successfully`,
-      details: { eventId: event._id.toString(), title, startDate, endDate }
+      details: { 
+        eventId, 
+        title, 
+        startDate, 
+        endDate, 
+        source, 
+        workflowExecutionId,
+        icsUrl // Include ICS URL for automatic download
+      }
     };
   }
 
@@ -587,24 +702,22 @@ export class AutomationEngine extends EventEmitter {
       // Load from database first to ensure we have latest
       const rules = await AutomationRuleModel.find({ userId }).lean();
       
-      // Update in-memory Map
+      this.rules = new Map();
       for (const ruleDoc of rules) {
         const id = ruleDoc._id.toString();
-        if (!this.rules.has(id)) {
-          const rule: AutomationRule = {
-            id,
-            name: ruleDoc.name,
-            description: ruleDoc.description,
-            trigger: ruleDoc.trigger,
-            actions: ruleDoc.actions as AutomationAction[],
-            enabled: ruleDoc.enabled,
-            userId: ruleDoc.userId,
-            createdAt: ruleDoc.createdAt || new Date(),
-            lastExecuted: ruleDoc.lastExecuted,
-            executionCount: ruleDoc.executionCount || 0
-          };
-          this.rules.set(id, rule);
-        }
+        const rule: AutomationRule = {
+          id,
+          name: ruleDoc.name,
+          description: ruleDoc.description,
+          trigger: ruleDoc.trigger,
+          actions: ruleDoc.actions as AutomationAction[],
+          enabled: ruleDoc.enabled,
+          userId: ruleDoc.userId,
+          createdAt: ruleDoc.createdAt || new Date(),
+          lastExecuted: ruleDoc.lastExecuted,
+          executionCount: ruleDoc.executionCount || 0
+        };
+        this.rules.set(id, rule);
       }
       
       // Return from in-memory Map (filtered by userId)
@@ -635,6 +748,50 @@ export class AutomationEngine extends EventEmitter {
     return true;
   }
 
+  // Update an existing rule
+  async updateRule(ruleId: string, updates: Partial<Omit<AutomationRule, 'id' | 'userId' | 'createdAt' | 'executionCount' | 'lastExecuted'>>): Promise<boolean> {
+    const rule = this.rules.get(ruleId);
+    if (!rule) return false;
+    
+    try {
+      await connectDB();
+      
+      // Update in database
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.trigger !== undefined) updateData.trigger = updates.trigger;
+      if (updates.actions !== undefined) updateData.actions = updates.actions;
+      if (updates.enabled !== undefined) updateData.enabled = updates.enabled;
+      
+      await AutomationRuleModel.findByIdAndUpdate(ruleId, updateData);
+      
+      // Update in-memory rule
+      if (updates.name !== undefined) rule.name = updates.name;
+      if (updates.description !== undefined) rule.description = updates.description;
+      if (updates.trigger !== undefined) rule.trigger = updates.trigger;
+      if (updates.actions !== undefined) rule.actions = updates.actions;
+      if (updates.enabled !== undefined) rule.enabled = updates.enabled;
+      
+      // If trigger type changed to schedule, reschedule
+      if (updates.trigger && updates.trigger.type === 'schedule') {
+        this.scheduleRule(rule);
+      }
+      
+      console.log(`✏️ Rule ${ruleId} updated: ${updates.name || rule.name}`);
+      return true;
+    } catch (error) {
+      console.error('Error updating rule in database:', error);
+      // Fallback to in-memory only
+      if (updates.name !== undefined) rule.name = updates.name;
+      if (updates.description !== undefined) rule.description = updates.description;
+      if (updates.trigger !== undefined) rule.trigger = updates.trigger;
+      if (updates.actions !== undefined) rule.actions = updates.actions;
+      if (updates.enabled !== undefined) rule.enabled = updates.enabled;
+      return true;
+    }
+  }
+
   // Delete a rule
   async deleteRule(ruleId: string): Promise<boolean> {
     const rule = this.rules.get(ruleId);
@@ -654,6 +811,24 @@ export class AutomationEngine extends EventEmitter {
         console.log(`🗑️ Rule ${ruleId} deleted (in-memory only)`);
       }
       return deleted;
+    }
+  }
+
+  // Execute a single action (public method for workflows to use)
+  async executeSingleAction(action: AutomationAction, context: Partial<AutomationContext>): Promise<{ message?: string; details?: any } | void> {
+    const fullContext: AutomationContext = {
+      userId: context.userId || '',
+      triggerData: context.triggerData || {},
+      executionId: context.executionId || `workflow_${Date.now()}`,
+      timestamp: context.timestamp || new Date(),
+      ...context
+    };
+    
+    try {
+      return await this.executeAction(action, fullContext);
+    } catch (error) {
+      console.error(`❌ Failed to execute action ${action.type}:`, error);
+      throw error;
     }
   }
 

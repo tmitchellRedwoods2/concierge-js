@@ -1,10 +1,177 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import connectDB from '@/lib/db/mongodb';
-import { InAppCalendarService } from '@/lib/services/in-app-calendar';
 import { CalendarSyncService } from '@/lib/services/calendar-sync';
 import { WorkflowExecution } from '@/lib/models/WorkflowExecution';
-import { NotificationService } from '@/lib/services/notification-service';
+import { CalendarEvent } from '@/lib/models/CalendarEvent';
+import { automationEngine } from '@/lib/services/automation-engine';
+import { AutomationRule as AutomationRuleModel } from '@/lib/models/AutomationRule';
+import { WorkflowModel } from '@/lib/models/Workflow';
+
+// Helper function to resolve template variables in action configs
+// Supports variables like: {aiResult.date}, {aiResult.time}, {triggerResult.email}, etc.
+function resolveTemplateVariables(obj: any, context: any): any {
+  if (typeof obj === 'string') {
+    // Replace template variables like {aiResult.date}, {triggerResult.email}, etc.
+    return obj.replace(/\{([^}]+)\}/g, (match, path) => {
+      const parts = path.split('.');
+      let value = context;
+      for (const part of parts) {
+        if (value && typeof value === 'object' && part in value) {
+          value = value[part];
+        } else {
+          return match; // Return original if path not found
+        }
+      }
+      return value !== undefined ? value : match;
+    });
+  } else if (Array.isArray(obj)) {
+    return obj.map(item => resolveTemplateVariables(item, context));
+  } else if (obj && typeof obj === 'object') {
+    const resolved: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      resolved[key] = resolveTemplateVariables(value, context);
+    }
+    return resolved;
+  }
+  return obj;
+}
+
+// Helper function to execute an automation rule node
+async function executeAutomationRuleNode(
+  node: any,
+  context: any,
+  userId: string
+): Promise<any> {
+  const { ruleId, ruleName } = node.data || {};
+  
+  if (!ruleId) {
+    throw new Error('Automation rule ID is required');
+  }
+
+  console.log(`⚡ Executing automation rule: ${ruleName || ruleId} in workflow step: ${node.id}`);
+
+  try {
+    // Get the automation rule
+    const rules = await automationEngine.getUserRules(userId);
+    const rule = rules.find((r: any) => r.id === ruleId);
+
+    if (!rule) {
+      throw new Error(`Automation rule not found: ${ruleId}`);
+    }
+
+    if (!rule.enabled) {
+      console.warn(`⚠️ Automation rule ${ruleId} is disabled, skipping execution`);
+      return {
+        success: false,
+        error: 'Automation rule is disabled',
+        skipped: true
+      };
+    }
+
+    // Prepare context with all workflow data for template variable resolution
+    // This includes: triggerResult, aiResult, and any other workflow context
+    const templateContext = {
+      aiResult: context.aiResult || {},
+      triggerResult: context.triggerResult || {},
+      workflowExecutionId: context.executionId,
+      workflowStep: node.id,
+      ...context // Include all other context data
+    };
+
+    // Execute the automation rule with workflow context
+    // The rule will execute its actions with the workflow context
+    const executionContext = {
+      userId,
+      triggerData: {
+        ...context,
+        workflowNodeId: node.id,
+        workflowNodeType: 'automation_rule',
+        source: 'workflow'
+      },
+      executionId: context.executionId || `workflow_${Date.now()}`,
+      timestamp: new Date()
+    };
+
+    // Execute the rule's actions directly (bypassing trigger matching since we're calling from workflow)
+    // Resolve template variables in action configs using AI-extracted data
+    const results: any[] = [];
+    for (const action of rule.actions || []) {
+      try {
+        // Resolve template variables in action config using AI-extracted data
+        const resolvedAction = {
+          ...action,
+          config: resolveTemplateVariables(action.config || {}, templateContext)
+        };
+
+        console.log(`📋 Executing action ${action.type} with resolved config:`, JSON.stringify(resolvedAction.config, null, 2));
+        if (templateContext.aiResult) {
+          console.log('🧠 AI Context for automation action:', JSON.stringify(templateContext.aiResult, null, 2));
+        }
+
+        const actionResult = await automationEngine.executeSingleAction(
+          resolvedAction,
+          executionContext
+        );
+        results.push({
+          actionType: action.type,
+          success: true,
+          result: actionResult
+        });
+      } catch (actionError) {
+        console.error(`❌ Error executing action ${action.type}:`, actionError);
+        results.push({
+          actionType: action.type,
+          success: false,
+          error: actionError instanceof Error ? actionError.message : 'Unknown error'
+        });
+      }
+    }
+
+    const success = results.some(r => r.success);
+
+    // Update execution count and last executed timestamp
+    if (success) {
+      try {
+        const lastExecuted = new Date();
+        rule.executionCount = (rule.executionCount || 0) + 1;
+        rule.lastExecuted = lastExecuted;
+
+        await connectDB();
+        await AutomationRuleModel.findByIdAndUpdate(ruleId, {
+          executionCount: rule.executionCount,
+          lastExecuted
+        });
+        const updatedRule = await AutomationRuleModel.findById(ruleId).lean();
+        console.log('📊 Updated rule stats:', {
+          ruleId,
+          executionCount: updatedRule?.executionCount,
+          lastExecuted: updatedRule?.lastExecuted,
+        });
+      } catch (trackError) {
+        console.error('Error tracking automation rule execution:', trackError);
+        // Don't fail the execution if tracking fails
+      }
+    }
+
+    return {
+      success,
+      ruleId,
+      ruleName: rule.name,
+      actionsExecuted: results.length,
+      results
+    };
+
+  } catch (error) {
+    console.error(`❌ Error executing automation rule ${ruleId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      ruleId,
+      ruleName
+    };
+  }
+}
 
 // Mock workflow execution for demo purposes
 export async function POST(request: NextRequest) {
@@ -19,6 +186,35 @@ export async function POST(request: NextRequest) {
 
     console.log('Starting workflow execution for:', workflowId);
     await connectDB();
+
+    // Load workflow definition directly from MongoDB
+    let workflow: any = null;
+    try {
+      workflow = await WorkflowModel.findOne({ _id: workflowId, userId: session.user.id })
+        .lean()
+        .exec();
+
+      if (!workflow) {
+        workflow = await WorkflowModel.findOne({ _id: workflowId }).lean().exec();
+      }
+    } catch (error) {
+      console.error('Error loading workflow definition:', error);
+    }
+
+    if (!workflow) {
+      console.warn(`Workflow definition not found for ${workflowId}. Proceeding with fallback execution.`);
+    }
+
+    // Check if workflow has automation_rule nodes and execute them
+    // TODO: Update workflow execution to use workflow.nodes structure instead of hardcoded steps
+    if (workflow?.nodes) {
+      const automationRuleNodes = workflow.nodes.filter((node: any) => node.type === 'automation_rule');
+      if (automationRuleNodes.length > 0) {
+        console.log(`Found ${automationRuleNodes.length} automation rule node(s) in workflow`);
+        // For now, we'll execute automation rules after the hardcoded steps
+        // In the future, we should execute nodes in order based on edges
+      }
+    }
 
     // Add overall timeout for the entire workflow execution
     const workflowTimeout = new Promise((_, reject) => 
@@ -44,6 +240,8 @@ export async function POST(request: NextRequest) {
         };
 
         // Step 2: AI Processing (extract appointment details)
+        // Use actual email from trigger data, or fallback to a valid placeholder
+        const recipientEmail = triggerData?.email || triggerResult.result.email || 'user@example.com';
         const aiResult = {
           id: 'ai-1',
           type: 'ai',
@@ -52,84 +250,156 @@ export async function POST(request: NextRequest) {
             date: '2024-01-15',
             time: '14:00',
             duration: 60,
-            attendee: 'john.doe@example.com',
+            attendee: recipientEmail, // Use actual recipient email from trigger data
             location: 'Conference Room A',
             title: 'AI Scheduled Appointment'
           }
         };
 
-        // Step 3: Create internal calendar event
-        let calendarResult;
+        // Step 3: Create calendar event using AutomationEngine action
+        let calendarResult: any = { success: false };
+        let calendarEventId: string | null = null;
+        
         try {
-          console.log('📅 Creating internal calendar event...');
-          const inAppCalendarService = new InAppCalendarService();
+          console.log('📅 Creating calendar event using automation action...');
           
           const startDate = new Date(`${aiResult.result.date}T${aiResult.result.time}`);
           const endDate = new Date(startDate.getTime() + (aiResult.result.duration * 60000));
           
-          const eventData = {
-            title: aiResult.result.title,
-            description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
-            startDate: startDate,
-            endDate: endDate,
-            location: aiResult.result.location,
-            attendees: [aiResult.result.attendee],
-            reminders: {
-              email: true,
-              popup: true,
-              minutes: 15
-            },
-            source: 'workflow' as const,
-            workflowExecutionId: executionId
-          };
-
-          console.log('📅 Internal calendar event data:', eventData);
-          
-          calendarResult = await inAppCalendarService.createEvent(eventData, session.user.id);
-          console.log('✅ Internal calendar result:', calendarResult);
-          
-          // Sync to external calendar if enabled
-          if (calendarResult.success && calendarResult.event) {
-            const syncService = new CalendarSyncService();
-            const syncResult = await syncService.syncEventIfEnabled(calendarResult.event, session.user.id);
-            console.log('🔄 External calendar sync result:', syncResult);
-          }
-
-          // Send email notification
-          if (calendarResult.success && calendarResult.event) {
-            try {
-              console.log('📧 Sending email notification...');
-              const notificationService = new NotificationService();
-              const notificationResult = await notificationService.sendAppointmentConfirmation(
-                {
-                  _id: calendarResult.eventId,
-                  title: aiResult.result.title,
-                  description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
-                  startDate: startDate.toISOString(),
-                  endDate: endDate.toISOString(),
-                  location: aiResult.result.location,
-                  attendees: [aiResult.result.attendee],
-                },
-                session.user.id,
-                aiResult.result.attendee,
-                'Customer'
-              );
-
-              if (notificationResult.success) {
-                console.log('✅ Email notification sent successfully');
-              } else {
-                console.log('⚠️ Failed to send email notification:', notificationResult.error);
+          // Use AutomationEngine to create calendar event
+          const calendarActionResult = await automationEngine.executeSingleAction(
+            {
+              type: 'create_calendar_event',
+              config: {
+                title: aiResult.result.title,
+                description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                location: aiResult.result.location,
+                attendees: [aiResult.result.attendee],
+                allDay: false
               }
-            } catch (emailError) {
-              console.error('❌ Email notification error (non-blocking):', emailError);
+            },
+            {
+              userId: session.user.id,
+              triggerData: {
+                workflowExecutionId: executionId,
+                workflowStep: 'api-1',
+                ...triggerResult.result,
+                ...aiResult.result
+              },
+              executionId: executionId,
+              timestamp: new Date()
             }
+          );
+
+          if (calendarActionResult?.details?.eventId) {
+            calendarEventId = calendarActionResult.details.eventId;
+            calendarResult = {
+              success: true,
+              eventId: calendarEventId,
+              eventUrl: `/calendar/event/${calendarEventId}`,
+              message: calendarActionResult.message || 'Calendar event created',
+              event: calendarActionResult.details
+            };
+            console.log('✅ Calendar event created via automation action:', calendarEventId);
+            
+            // Automatically sync to Apple Calendar if configured (bypasses user preferences)
+            if (calendarEventId) {
+              try {
+                const event = await CalendarEvent.findById(calendarEventId);
+                if (event) {
+                  const syncService = new CalendarSyncService();
+                  
+                  // First, try automatic Apple Calendar sync
+                  const appleSyncResult = await syncService.syncToAppleCalendarIfConfigured(event, session.user.id);
+                  if (appleSyncResult.success) {
+                    console.log('🍎 Apple Calendar auto-sync successful:', appleSyncResult);
+                  }
+                  
+                  // Also try user-configured sync (for other providers or if Apple sync failed)
+                  const syncResult = await syncService.syncEventIfEnabled(event, session.user.id);
+                  if (syncResult.success && !appleSyncResult.success) {
+                    console.log('🔄 External calendar sync successful:', syncResult);
+                  } else if (!syncResult.success && !appleSyncResult.success) {
+                    console.log('⚠️ External calendar sync not enabled or failed:', syncResult.error);
+                  }
+                }
+              } catch (syncError) {
+                console.error('❌ Calendar sync error (non-blocking):', syncError);
+              }
+            }
+          } else {
+            throw new Error('Calendar event creation failed - no event ID returned');
           }
         } catch (error) {
-          console.error('❌ Internal calendar error:', error);
+          console.error('❌ Calendar event creation error:', error);
           calendarResult = {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'
           };
+        }
+
+        // Step 4: Send email notification using AutomationEngine action
+        let emailResult: any = { success: false };
+        if (calendarResult.success && calendarEventId) {
+          try {
+            console.log('📧 Sending email notification using automation action...');
+            
+            const startDate = new Date(`${aiResult.result.date}T${aiResult.result.time}`);
+            const endDate = new Date(startDate.getTime() + (aiResult.result.duration * 60000));
+            
+            // Use AutomationEngine to send email
+            const eventUrl = `/calendar/event/${calendarEventId}`;
+            const emailActionResult = await automationEngine.executeSingleAction(
+              {
+                type: 'send_email',
+                config: {
+                  to: aiResult.result.attendee,
+                  subject: `Appointment Confirmation: ${aiResult.result.title}`,
+                  template: 'appointment_confirmation',
+                  data: {
+                    title: aiResult.result.title,
+                    recipientName: 'Customer',
+                    recipientEmail: aiResult.result.attendee,
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    location: aiResult.result.location,
+                    description: `Appointment scheduled via AI workflow from: ${triggerResult.result.email}`,
+                    eventId: calendarEventId,
+                    eventUrl: eventUrl
+                  }
+                }
+              },
+              {
+                userId: session.user.id,
+                triggerData: {
+                  workflowExecutionId: executionId,
+                  workflowStep: 'api-1',
+                  calendarEventId: calendarEventId,
+                  ...triggerResult.result,
+                  ...aiResult.result
+                },
+                executionId: executionId,
+                timestamp: new Date()
+              }
+            );
+
+            if (emailActionResult) {
+              emailResult = {
+                success: true,
+                message: emailActionResult.message || 'Email sent successfully'
+              };
+              console.log('✅ Email notification sent via automation action');
+            }
+          } catch (emailError) {
+            console.error('❌ Email notification error (non-blocking):', emailError);
+            // Don't fail the workflow if email fails
+            emailResult = {
+              success: false,
+              error: emailError instanceof Error ? emailError.message : 'Unknown error'
+            };
+          }
         }
         
         const apiResult = {
@@ -142,13 +412,63 @@ export async function POST(request: NextRequest) {
             status: 'scheduled',
             message: calendarResult.message || 'Calendar event created',
             calendarEventCreated: true,
-            eventDetails: calendarResult.event
+            eventDetails: calendarResult.event,
+            emailSent: emailResult.success
           } : {
             error: calendarResult.error,
             status: 'failed',
             calendarEventCreated: false
           }
         };
+
+        // Execute automation_rule nodes if workflow has them
+        const automationRuleResults: any[] = [];
+        if (workflow?.nodes) {
+          const automationRuleNodes = workflow.nodes.filter((node: any) => node.type === 'automation_rule');
+          for (const node of automationRuleNodes) {
+            try {
+              // Prepare context with structured data for template variable resolution
+              const ruleContext = {
+                executionId,
+                workflowExecutionId: executionId,
+                workflowStep: node.id,
+                // Structured data for template variables
+                aiResult: aiResult.result, // AI-extracted data (date, time, location, etc.)
+                triggerResult: triggerResult.result, // Trigger data (email, content, etc.)
+                // Flattened data for backward compatibility
+                ...triggerResult.result,
+                ...aiResult.result,
+                calendarEventId: calendarEventId || undefined
+              };
+              
+              const ruleResult = await executeAutomationRuleNode(
+                node,
+                ruleContext,
+                session.user.id
+              );
+              
+              automationRuleResults.push({
+                id: node.id,
+                type: 'automation_rule',
+                status: ruleResult.success ? 'completed' : 'failed',
+                result: ruleResult
+              });
+              
+              console.log(`✅ Automation rule node ${node.id} executed:`, ruleResult.success ? 'success' : 'failed');
+            } catch (ruleError) {
+              console.error(`❌ Error executing automation rule node ${node.id}:`, ruleError);
+              automationRuleResults.push({
+                id: node.id,
+                type: 'automation_rule',
+                status: 'failed',
+                result: {
+                  success: false,
+                  error: ruleError instanceof Error ? ruleError.message : 'Unknown error'
+                }
+              });
+            }
+          }
+        }
 
         // Step 4: End
         const endResult = {
@@ -168,7 +488,13 @@ export async function POST(request: NextRequest) {
           status: calendarResult.success ? 'completed' : 'failed',
           startTime,
           endTime: new Date().toISOString(),
-          steps: [triggerResult, aiResult, apiResult, endResult],
+          steps: [
+            triggerResult, 
+            aiResult, 
+            apiResult, 
+            ...automationRuleResults,
+            endResult
+          ],
           triggerData,
         result: calendarResult.success ? {
           appointmentId: calendarResult.eventId,

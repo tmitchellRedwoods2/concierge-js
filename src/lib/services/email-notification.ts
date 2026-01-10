@@ -27,6 +27,7 @@ export interface CalendarEventNotification {
   reminderType: 'appointment_reminder' | 'appointment_confirmation' | 'appointment_cancelled' | 'appointment_modified';
   recipientEmail: string;
   recipientName?: string;
+  eventUrl?: string; // URL to view the calendar event
 }
 
 export class EmailNotificationService {
@@ -95,7 +96,7 @@ export class EmailNotificationService {
   }
 
   private getEmailTemplate(type: string, notification: CalendarEventNotification): EmailTemplate {
-    const { title, startDate, endDate, location, description } = notification;
+    const { title, startDate, endDate, location, description, eventUrl } = notification;
     const startTime = startDate.toLocaleString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -117,8 +118,8 @@ export class EmailNotificationService {
       case 'appointment_confirmation':
         return {
           subject: `✅ Confirmed: ${title} - ${startTime}`,
-          html: this.getConfirmationEmailHTML(title, startDate, endDate, location, description),
-          text: this.getConfirmationEmailText(title, startDate, endDate, location, description),
+          html: this.getConfirmationEmailHTML(title, startDate, endDate, location, description, eventUrl, notification.eventId),
+          text: this.getConfirmationEmailText(title, startDate, endDate, location, description, eventUrl, notification.eventId),
         };
 
       case 'appointment_cancelled':
@@ -219,7 +220,7 @@ If you need to make changes, please contact us or use the calendar app.
     `.trim();
   }
 
-  private getConfirmationEmailHTML(title: string, startDate: Date, endDate: Date, location?: string, description?: string): string {
+  private getConfirmationEmailHTML(title: string, startDate: Date, endDate: Date, location?: string, description?: string, eventUrl?: string, eventId?: string): string {
     const startTime = startDate.toLocaleString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -229,6 +230,12 @@ If you need to make changes, please contact us or use the calendar app.
       minute: '2-digit',
       timeZoneName: 'short',
     });
+
+    // Generate ICS download URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+      || 'http://localhost:3000';
+    const icsUrl = eventId ? `${baseUrl}/api/calendar/event/${eventId}/ics` : null;
 
     return `
       <!DOCTYPE html>
@@ -244,13 +251,17 @@ If you need to make changes, please contact us or use the calendar app.
           .time { color: #007bff; font-weight: bold; }
           .location { color: #6c757d; }
           .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef; font-size: 14px; color: #6c757d; }
+          .button-group { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center; }
+          .button { display: inline-block; padding: 12px 24px; margin: 5px; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
+          .button-primary { background: #007bff; }
+          .button-success { background: #28a745; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
             <h1>✅ Appointment Confirmed</h1>
-            <p>Your appointment has been successfully scheduled.</p>
+            <p>Your appointment has been automatically added to your calendar.</p>
           </div>
           
           <div class="event-details">
@@ -258,10 +269,28 @@ If you need to make changes, please contact us or use the calendar app.
             <p class="time">📅 ${startTime}</p>
             ${location ? `<p class="location">📍 ${location}</p>` : ''}
             ${description ? `<p>${description}</p>` : ''}
+            <div class="button-group">
+              ${icsUrl ? `
+                <a href="${icsUrl}" class="button button-success" style="background: #28a745; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
+                  📅 Add to Apple Calendar
+                </a>
+              ` : ''}
+              ${eventUrl ? `
+                <a href="${eventUrl}" class="button button-primary" style="background: #007bff; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
+                  View Event Details
+                </a>
+              ` : ''}
+            </div>
+            ${icsUrl ? `
+              <p style="text-align: center; margin-top: 10px; font-size: 12px; color: #6c757d;">
+                💡 <strong>Tip:</strong> Click "Add to Apple Calendar" to automatically add this event to your Calendar.app. 
+                On macOS, the event will open automatically in Calendar.
+              </p>
+            ` : ''}
           </div>
           
           <div class="footer">
-            <p>This confirmation was sent by your Concierge AI assistant.</p>
+            <p>This confirmation was automatically sent by your Concierge AI assistant.</p>
             <p>You will receive a reminder before your appointment.</p>
           </div>
         </div>
@@ -270,7 +299,7 @@ If you need to make changes, please contact us or use the calendar app.
     `;
   }
 
-  private getConfirmationEmailText(title: string, startDate: Date, endDate: Date, location?: string, description?: string): string {
+  private getConfirmationEmailText(title: string, startDate: Date, endDate: Date, location?: string, description?: string, eventUrl?: string, eventId?: string): string {
     const startTime = startDate.toLocaleString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -281,6 +310,11 @@ If you need to make changes, please contact us or use the calendar app.
       timeZoneName: 'short',
     });
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL 
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+      || 'http://localhost:3000';
+    const icsUrl = eventId ? `${baseUrl}/api/calendar/event/${eventId}/ics` : null;
+
     return `
 APPOINTMENT CONFIRMED
 
@@ -288,8 +322,10 @@ ${title}
 📅 ${startTime}
 ${location ? `📍 ${location}` : ''}
 ${description ? `\n${description}` : ''}
+${icsUrl ? `\n\n📅 Add to Apple Calendar: ${icsUrl}` : ''}
+${eventUrl ? `\n\nView Calendar Event: ${eventUrl}` : ''}
 
-This confirmation was sent by your Concierge AI assistant.
+This confirmation was automatically sent by your Concierge AI assistant.
 You will receive a reminder before your appointment.
     `.trim();
   }

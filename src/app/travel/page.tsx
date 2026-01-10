@@ -6,6 +6,7 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import RouteGuard from '@/components/auth/route-guard';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -497,7 +498,8 @@ export default function TravelPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <RouteGuard requiredPermission="view:travel" allowedAccessModes={['self-service']}>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Top Navigation Bar */}
       <nav className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-2">
@@ -1598,5 +1600,6 @@ export default function TravelPage() {
         )}
       </div>
     </div>
+    </RouteGuard>
   );
 }

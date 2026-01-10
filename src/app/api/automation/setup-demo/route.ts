@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = session.user.id;
+    const userEmail = (session.user as any).email || process.env.SMTP_USER || 'user@example.com';
     const createdRules: string[] = [];
 
     // 1. Daily Health Check Reminder
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
         {
           type: 'send_email',
           config: {
-            to: 'user@example.com',
+            to: userEmail,
             subject: 'Daily Health Check Reminder',
             template: 'health_reminder',
             data: {
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
               {
                 type: 'send_email',
                 config: {
-                  to: 'user@example.com',
+                  to: userEmail,
                   subject: 'Medical Appointment Scheduled',
                   template: 'appointment_confirmation',
                   data: {
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
         {
           type: 'send_email',
           config: {
-            to: 'user@example.com',
+            to: userEmail,
             subject: 'Meeting Follow-up',
             template: 'meeting_followup',
             data: {
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
         {
           type: 'send_email',
           config: {
-            to: 'user@example.com',
+            to: userEmail,
             subject: 'Medication Reminder',
             template: 'medication_reminder',
             data: {
@@ -232,7 +233,7 @@ export async function POST(request: NextRequest) {
         {
           type: 'send_email',
           config: {
-            to: 'user@example.com',
+            to: userEmail,
             subject: 'Medical Communication Received',
             template: 'health_reminder',
             data: {
