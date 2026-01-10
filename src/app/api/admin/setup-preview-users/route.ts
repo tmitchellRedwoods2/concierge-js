@@ -51,45 +51,42 @@ export async function POST(request: NextRequest) {
     await connectDB();
     const User = getUser();
     
-    // Check if any preview user already exists
-    // This allows password resets for existing preview users without admin auth
-    let hasExistingPreviewUser = false;
-    for (const userData of PREVIEW_USERS) {
-      const existing = await User.findOne({
-        username: { $regex: new RegExp(`^${userData.username}$`, 'i') }
-      });
-      if (existing) {
-        hasExistingPreviewUser = true;
-        console.log(`[setup-preview-users] Found existing preview user: ${userData.username}`);
-        break; // Found at least one existing preview user
-      }
-    }
-
+    // First, check if any preview users already exist (case-insensitive)
+    // If they exist, we're updating/resetting passwords, which should be allowed without admin auth
+    const existingUsersCheck = await Promise.all(
+      PREVIEW_USERS.map(userData => 
+        User.findOne({
+          username: { $regex: new RegExp(`^${userData.username}$`, 'i') }
+        })
+      )
+    );
+    const hasExistingPreviewUser = existingUsersCheck.some(user => user !== null);
+    
     // Check if any admin user exists
     const adminExists = await User.findOne({ role: 'admin' });
     
-    console.log(`[setup-preview-users] Environment check: isPreview=${isPreview}, adminExists=${!!adminExists}, hasExistingPreviewUser=${hasExistingPreviewUser}`);
+    console.log(`[setup-preview-users] Check: isPreview=${isPreview}, adminExists=${!!adminExists}, hasExistingPreviewUser=${hasExistingPreviewUser}`);
 
-    // Security rules:
-    // 1. Preview/dev environments: Always allow (no auth required)
-    // 2. Production with existing preview user: Allow update without auth (password reset)
-    // 3. Production with admin AND no existing preview users: Require admin auth (creating new users)
-    // 4. Production with no admin: Allow (initial setup)
-    if (!isPreview && adminExists && !hasExistingPreviewUser) {
-      // Only require auth if we're creating completely new preview users and an admin exists
-      console.log(`[setup-preview-users] Requiring admin auth - creating new users in production`);
+    // Security rules - Simplified:
+    // 1. Preview/dev: Always allow
+    // 2. Production with existing preview user: Always allow (password reset)
+    // 3. Production with no admin: Always allow (initial setup)
+    // 4. Production with admin AND creating NEW users: Require admin auth
+    const shouldRequireAuth = !isPreview && adminExists && !hasExistingPreviewUser;
+    
+    if (shouldRequireAuth) {
+      console.log(`[setup-preview-users] Requiring admin auth for new user creation`);
       const { auth } = await import('@/lib/auth');
       const session = await auth();
       const userRole = (session?.user as any)?.role;
       if (!session?.user || userRole !== 'admin') {
-        console.log(`[setup-preview-users] Auth failed - no admin session`);
         return NextResponse.json(
           { error: 'Unauthorized - Admin access required in production for creating new users' },
           { status: 401 }
         );
       }
     } else {
-      console.log(`[setup-preview-users] Allowing unauthenticated access - isPreview=${isPreview}, adminExists=${!!adminExists}, hasExistingPreviewUser=${hasExistingPreviewUser}`);
+      console.log(`[setup-preview-users] Allowing access without auth`);
     }
 
     const results = [];
