@@ -35,6 +35,7 @@ export type Permission =
   | 'edit:system'
   | 'use:ai-chat'
   | 'use:automation'
+  | 'manage:automation'
   | 'manage:clients'
   | 'manage:agents'
   | 'view:reports'
@@ -74,6 +75,7 @@ const PERMISSIONS: Record<UserRole, Record<AccessMode | 'default', Permission[]>
       'edit:settings',
       'use:ai-chat',
       'use:automation',
+      'manage:automation',
       'view:reports',
     ],
     'ai-only': [
@@ -112,6 +114,7 @@ const PERMISSIONS: Record<UserRole, Record<AccessMode | 'default', Permission[]>
       'edit:system',
       'use:ai-chat',
       'use:automation',
+      'manage:automation',
       'manage:clients',
       'manage:agents',
       'manage:system',
@@ -127,6 +130,7 @@ const PERMISSIONS: Record<UserRole, Record<AccessMode | 'default', Permission[]>
       'view:legal',
       'view:tax',
       'view:travel',
+      'view:workflows',
       'edit:calendar',
       'edit:expenses',
       'edit:investments',
@@ -136,6 +140,7 @@ const PERMISSIONS: Record<UserRole, Record<AccessMode | 'default', Permission[]>
       'edit:tax',
       'edit:travel',
       'use:automation',
+      'manage:automation',
     ],
   },
 };
