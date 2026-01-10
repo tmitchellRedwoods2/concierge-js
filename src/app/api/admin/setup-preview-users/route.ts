@@ -60,12 +60,15 @@ export async function POST(request: NextRequest) {
       });
       if (existing) {
         hasExistingPreviewUser = true;
+        console.log(`[setup-preview-users] Found existing preview user: ${userData.username}`);
         break; // Found at least one existing preview user
       }
     }
 
     // Check if any admin user exists
     const adminExists = await User.findOne({ role: 'admin' });
+    
+    console.log(`[setup-preview-users] Environment check: isPreview=${isPreview}, adminExists=${!!adminExists}, hasExistingPreviewUser=${hasExistingPreviewUser}`);
 
     // Security rules:
     // 1. Preview/dev environments: Always allow (no auth required)
@@ -74,15 +77,19 @@ export async function POST(request: NextRequest) {
     // 4. Production with no admin: Allow (initial setup)
     if (!isPreview && adminExists && !hasExistingPreviewUser) {
       // Only require auth if we're creating completely new preview users and an admin exists
+      console.log(`[setup-preview-users] Requiring admin auth - creating new users in production`);
       const { auth } = await import('@/lib/auth');
       const session = await auth();
       const userRole = (session?.user as any)?.role;
       if (!session?.user || userRole !== 'admin') {
+        console.log(`[setup-preview-users] Auth failed - no admin session`);
         return NextResponse.json(
           { error: 'Unauthorized - Admin access required in production for creating new users' },
           { status: 401 }
         );
       }
+    } else {
+      console.log(`[setup-preview-users] Allowing unauthenticated access - isPreview=${isPreview}, adminExists=${!!adminExists}, hasExistingPreviewUser=${hasExistingPreviewUser}`);
     }
 
     const results = [];
