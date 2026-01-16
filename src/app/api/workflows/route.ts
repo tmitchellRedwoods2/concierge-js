@@ -400,6 +400,12 @@ export async function GET(request: NextRequest) {
       approvalRequired: workflow.approvalRequired,
       autoExecute: workflow.autoExecute,
       isActive: workflow.isActive,
+      isAgentic: workflow.isAgentic || false,
+      targetAccessMode: workflow.targetAccessMode || [],
+      autoApprove: workflow.autoApprove ?? true,
+      executionPriority: workflow.executionPriority || 5,
+      maxRetries: workflow.maxRetries || 3,
+      retryDelayMs: workflow.retryDelayMs || 5000,
       createdAt: workflow.createdAt,
       updatedAt: workflow.updatedAt,
     }));
@@ -437,6 +443,15 @@ export async function POST(request: NextRequest) {
       approvalRequired,
       autoExecute,
       isActive,
+      // Agentic workflow fields
+      isAgentic,
+      targetAccessMode,
+      autoApprove,
+      executionPriority,
+      maxRetries,
+      retryDelayMs,
+      // Assignment fields
+      assignedUserIds,
     } = body;
 
     await connectDB();
@@ -455,6 +470,13 @@ export async function POST(request: NextRequest) {
       approvalRequired: approvalRequired || false,
       autoExecute: autoExecute || false,
       isActive: isActive ?? false,
+      // Agentic workflow fields
+      isAgentic: isAgentic ?? false,
+      targetAccessMode: targetAccessMode || [],
+      autoApprove: autoApprove ?? (isAgentic ? true : false),
+      executionPriority: executionPriority || 5,
+      maxRetries: maxRetries || 3,
+      retryDelayMs: retryDelayMs || 5000,
     });
 
     return NextResponse.json({
@@ -470,6 +492,12 @@ export async function POST(request: NextRequest) {
         approvalRequired: newWorkflow.approvalRequired,
         autoExecute: newWorkflow.autoExecute,
         isActive: newWorkflow.isActive,
+        isAgentic: newWorkflow.isAgentic,
+        targetAccessMode: newWorkflow.targetAccessMode,
+        autoApprove: newWorkflow.autoApprove,
+        executionPriority: newWorkflow.executionPriority,
+        maxRetries: newWorkflow.maxRetries,
+        retryDelayMs: newWorkflow.retryDelayMs,
         createdAt: newWorkflow.createdAt,
         updatedAt: newWorkflow.updatedAt,
       },
@@ -504,6 +532,13 @@ export async function PUT(request: NextRequest) {
       trigger,
       approvalRequired,
       autoExecute,
+      // Agentic workflow fields
+      isAgentic,
+      targetAccessMode,
+      autoApprove,
+      executionPriority,
+      maxRetries,
+      retryDelayMs,
     } = body;
 
     await connectDB();
@@ -522,6 +557,13 @@ export async function PUT(request: NextRequest) {
       updateData.approvalRequired = approvalRequired;
     if (autoExecute !== undefined) updateData.autoExecute = autoExecute;
     if (isActive !== undefined) updateData.isActive = isActive;
+    // Agentic workflow fields
+    if (isAgentic !== undefined) updateData.isAgentic = isAgentic;
+    if (targetAccessMode !== undefined) updateData.targetAccessMode = targetAccessMode;
+    if (autoApprove !== undefined) updateData.autoApprove = autoApprove;
+    if (executionPriority !== undefined) updateData.executionPriority = executionPriority;
+    if (maxRetries !== undefined) updateData.maxRetries = maxRetries;
+    if (retryDelayMs !== undefined) updateData.retryDelayMs = retryDelayMs;
 
     const updatedWorkflow = await WorkflowModel.findOneAndUpdate(
       { _id: id, userId: session.user.id },
@@ -546,6 +588,12 @@ export async function PUT(request: NextRequest) {
         approvalRequired: updatedWorkflow.approvalRequired,
         autoExecute: updatedWorkflow.autoExecute,
         isActive: updatedWorkflow.isActive,
+        isAgentic: updatedWorkflow.isAgentic,
+        targetAccessMode: updatedWorkflow.targetAccessMode,
+        autoApprove: updatedWorkflow.autoApprove,
+        executionPriority: updatedWorkflow.executionPriority,
+        maxRetries: updatedWorkflow.maxRetries,
+        retryDelayMs: updatedWorkflow.retryDelayMs,
         createdAt: updatedWorkflow.createdAt,
         updatedAt: updatedWorkflow.updatedAt,
       },

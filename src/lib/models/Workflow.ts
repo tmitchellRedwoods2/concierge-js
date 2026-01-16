@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+import { AccessMode } from '@/lib/db/models/User';
 
 export interface WorkflowDocument extends mongoose.Document {
   _id: string;
@@ -12,6 +13,13 @@ export interface WorkflowDocument extends mongoose.Document {
   approvalRequired: boolean;
   autoExecute: boolean;
   isActive: boolean;
+  // Agentic workflow fields
+  isAgentic?: boolean; // Marks workflow as agentic (runs automatically without user approval)
+  targetAccessMode?: AccessMode[]; // Which access modes this workflow targets (e.g., ['hands-off'])
+  autoApprove?: boolean; // Whether actions should be auto-approved (default: true for agentic)
+  executionPriority?: number; // Priority for execution (1-10, higher = more important)
+  maxRetries?: number; // Maximum retry attempts on failure
+  retryDelayMs?: number; // Delay between retries in milliseconds
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +37,18 @@ const WorkflowSchema = new Schema<WorkflowDocument>(
     approvalRequired: { type: Boolean, default: false },
     autoExecute: { type: Boolean, default: false },
     isActive: { type: Boolean, default: false },
+    // Agentic workflow fields
+    isAgentic: { type: Boolean, default: false, index: true },
+    targetAccessMode: { 
+      type: [String], 
+      enum: ['hands-off', 'self-service', 'ai-only'],
+      default: [],
+      index: true,
+    },
+    autoApprove: { type: Boolean, default: true },
+    executionPriority: { type: Number, default: 5, min: 1, max: 10 },
+    maxRetries: { type: Number, default: 3, min: 0 },
+    retryDelayMs: { type: Number, default: 5000, min: 0 },
   },
   {
     timestamps: true,

@@ -145,6 +145,22 @@ export const POST = withRole(['admin'], async (request: NextRequest, context) =>
 
     await user.save();
 
+    // Auto-assign agentic workflows for hands-off users
+    if (role === 'client' && accessMode === 'hands-off') {
+      try {
+        const { assignDefaultAgenticWorkflows } = await import(
+          '@/lib/services/agentic-workflow-assignment'
+        );
+        await assignDefaultAgenticWorkflows(
+          user._id.toString(),
+          accessMode
+        );
+      } catch (error) {
+        // Log but don't fail user creation
+        console.error('Error assigning default agentic workflows:', error);
+      }
+    }
+
     // Return user without password
     const userObj = user.toObject();
     delete userObj.password;

@@ -40,6 +40,12 @@ interface Workflow {
   approvalRequired: boolean;
   autoExecute: boolean;
   isActive: boolean;
+  isAgentic?: boolean;
+  targetAccessMode?: string[];
+  autoApprove?: boolean;
+  executionPriority?: number;
+  maxRetries?: number;
+  retryDelayMs?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -102,7 +108,14 @@ export default function WorkflowsPage() {
     description: '',
     triggerType: 'email',
     approvalRequired: false,
-    autoExecute: true
+    autoExecute: true,
+    // Agentic workflow fields
+    isAgentic: false,
+    targetAccessMode: [] as string[],
+    autoApprove: true,
+    executionPriority: 5,
+    maxRetries: 3,
+    retryDelayMs: 5000,
   });
   const [recipientEmail, setRecipientEmail] = useState('');
   const [emailContent, setEmailContent] = useState('');
@@ -229,7 +242,14 @@ export default function WorkflowsPage() {
           steps: [],
           approvalRequired: newWorkflow.approvalRequired,
           autoExecute: newWorkflow.autoExecute,
-          isActive: false
+          isActive: false,
+          // Agentic workflow fields
+          isAgentic: newWorkflow.isAgentic,
+          targetAccessMode: newWorkflow.targetAccessMode,
+          autoApprove: newWorkflow.autoApprove,
+          executionPriority: newWorkflow.executionPriority,
+          maxRetries: newWorkflow.maxRetries,
+          retryDelayMs: newWorkflow.retryDelayMs,
         }),
       });
 
@@ -240,7 +260,13 @@ export default function WorkflowsPage() {
           description: '',
           triggerType: 'email',
           approvalRequired: false,
-          autoExecute: true
+          autoExecute: true,
+          isAgentic: false,
+          targetAccessMode: [],
+          autoApprove: true,
+          executionPriority: 5,
+          maxRetries: 3,
+          retryDelayMs: 5000,
         });
         loadData(); // Reload workflows
       }
@@ -1225,6 +1251,12 @@ export default function WorkflowsPage() {
                       <CardDescription>{workflow.description}</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
+                      {workflow.isAgentic && (
+                        <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                          <Bot className="h-3 w-3 mr-1" />
+                          Agentic
+                        </Badge>
+                      )}
                       <Switch 
                         checked={workflow.isActive} 
                         onCheckedChange={async (checked) => {
@@ -1274,7 +1306,7 @@ export default function WorkflowsPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">Auto-Execute:</span>
                         <Badge variant={workflow.autoExecute ? "default" : "secondary"}>
@@ -1287,6 +1319,26 @@ export default function WorkflowsPage() {
                           {workflow.approvalRequired ? "Yes" : "No"}
                         </Badge>
                       </div>
+                      {workflow.isAgentic && (
+                        <>
+                          {workflow.targetAccessMode && workflow.targetAccessMode.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Target Mode:</span>
+                              <Badge variant="outline">
+                                {workflow.targetAccessMode.join(', ')}
+                              </Badge>
+                            </div>
+                          )}
+                          {workflow.executionPriority && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Priority:</span>
+                              <Badge variant="outline">
+                                {workflow.executionPriority}/10
+                              </Badge>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                     
                     <div className="flex gap-2 pt-4">
@@ -1618,6 +1670,125 @@ export default function WorkflowsPage() {
                   />
                   Auto Execute
                 </label>
+              </div>
+
+              {/* Agentic Workflow Configuration */}
+              <div className="border-t pt-4 space-y-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="isAgentic"
+                    checked={newWorkflow.isAgentic}
+                    onChange={(e) => setNewWorkflow(prev => ({ ...prev, isAgentic: e.target.checked }))}
+                    className="mr-2"
+                  />
+                  <label htmlFor="isAgentic" className="font-medium">
+                    Agentic Workflow (Runs automatically for hands-off users)
+                  </label>
+                </div>
+
+                {newWorkflow.isAgentic && (
+                  <div className="space-y-4 pl-6 border-l-2 border-blue-200">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Target Access Modes
+                      </label>
+                      <div className="space-y-2">
+                        {['hands-off', 'self-service', 'ai-only'].map((mode) => (
+                          <label key={mode} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={newWorkflow.targetAccessMode.includes(mode)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewWorkflow(prev => ({
+                                    ...prev,
+                                    targetAccessMode: [...prev.targetAccessMode, mode],
+                                  }));
+                                } else {
+                                  setNewWorkflow(prev => ({
+                                    ...prev,
+                                    targetAccessMode: prev.targetAccessMode.filter(m => m !== mode),
+                                  }));
+                                }
+                              }}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{mode.replace('-', ' ')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="autoApprove"
+                        checked={newWorkflow.autoApprove}
+                        onChange={(e) => setNewWorkflow(prev => ({ ...prev, autoApprove: e.target.checked }))}
+                        className="mr-2"
+                      />
+                      <label htmlFor="autoApprove">
+                        Auto-Approve Actions (No user confirmation needed)
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Execution Priority (1-10)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={newWorkflow.executionPriority}
+                          onChange={(e) => setNewWorkflow(prev => ({
+                            ...prev,
+                            executionPriority: parseInt(e.target.value) || 5,
+                          }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Max Retries
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="10"
+                          value={newWorkflow.maxRetries}
+                          onChange={(e) => setNewWorkflow(prev => ({
+                            ...prev,
+                            maxRetries: parseInt(e.target.value) || 3,
+                          }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Retry Delay (ms)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={newWorkflow.retryDelayMs}
+                        onChange={(e) => setNewWorkflow(prev => ({
+                          ...prev,
+                          retryDelayMs: parseInt(e.target.value) || 5000,
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Delay between retry attempts in milliseconds
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end space-x-2 pt-4">

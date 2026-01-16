@@ -22,6 +22,7 @@ export type Permission =
   | 'view:settings'
   | 'view:admin'
   | 'view:workflows'
+  | 'view:agentic-workflows'
   | 'edit:calendar'
   | 'edit:expenses'
   | 'edit:investments'
@@ -50,6 +51,7 @@ const PERMISSIONS: Record<UserRole, Record<AccessMode | 'default', Permission[]>
       'view:messages',
       'use:ai-chat',
       'view:reports',
+      'view:agentic-workflows',
     ],
     'self-service': [
       'view:dashboard',
@@ -100,6 +102,7 @@ const PERMISSIONS: Record<UserRole, Record<AccessMode | 'default', Permission[]>
       'view:settings',
       'view:admin',
       'view:workflows',
+      'view:agentic-workflows',
       'view:reports',
       'edit:calendar',
       'edit:expenses',
@@ -131,6 +134,7 @@ const PERMISSIONS: Record<UserRole, Record<AccessMode | 'default', Permission[]>
       'view:tax',
       'view:travel',
       'view:workflows',
+      'view:agentic-workflows',
       'edit:calendar',
       'edit:expenses',
       'edit:investments',
@@ -213,6 +217,7 @@ export function canAccessRoute(
     '/settings': 'view:settings',
     '/admin': 'view:admin',
     '/workflows': 'view:workflows',
+    '/agentic-workflows': 'view:agentic-workflows',
   };
 
   const requiredPermission = routePermissions[route];
